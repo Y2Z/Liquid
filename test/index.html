@@ -1,0 +1,103 @@
+<!doctype html>
+
+<style>
+
+input {
+    width: 360px;
+}
+
+</style>
+
+<h1>Liquid Test</h1>
+
+
+<h2>Links</h2>
+
+<ol>
+    <li>
+        <a href="/">[](/): this link should do nothing</a>
+    </li>
+    <li>
+        <a href="#">[](#): this link should do nothing</a>
+    </li>
+    <li>
+        <a href="http://duckduckgo.com">[](http://duckduckgo.com): this link should open a new browser window</a>
+    </li>
+    <li>
+        <a href="http://duckduckgo.com" target="_blank">[target="_blank"](http://duckduckgo.com): this link should open a new browser window</a>
+    </li>
+    <li>
+        <a href="/" target="_blank">[target="_blank"](/): this link should go to /</a>
+    </li>
+</ol>
+
+
+<h2>Forms</h2>
+
+<ol>
+    <li>
+        <form method="get">
+            <input name="q" value="Submitting this should make a GET request" />
+            <button type="submit">Submit</button>
+        </form>
+    </li>
+    <li>
+        <form method="post">
+            <input name="q" value="Submitting this should make a POST request" />
+            <button type="submit">Submit</button>
+        </form>
+    </li>
+    <li>
+        <form method="get" action="http://duckduckgo.com">
+            <input name="q" value="Submitting this should not do anything" />
+            <button type="submit">Submit</button>
+        </form>
+    </li>
+    <li>
+        <form method="post" action="http://duckduckgo.com">
+            <input name="q" value="Submitting this should not do anything" />
+            <button type="submit">Submit</button>
+        </form>
+    </li>
+</ol>
+
+
+<h2>JavaScript</h2>
+
+<ol>
+    <li>
+        Is JavaScript disabled? <noscript><b>Yes, it is.</b></noscript>
+    </li>
+    <li>
+        Is Custom JS injection in check? <b id="custom-js"></b>
+    </li>
+    <li>
+        <a href="javascript:alert('I don\'t know anything')">alert()</a>
+    </li>
+</ol>
+
+
+<h2>User-Agent</h2>
+
+<ol>
+    <li>
+        User-Agent string: <b id="user-agent"></b>
+        <script> document.getElementById("user-agent").innerText = navigator.userAgent </script>
+    </li>
+</ol>
+
+
+<h2>Sandboxing</h2>
+
+<ol>
+    <li>
+        It's okay to see this remote picture:
+        <br />
+        <img src="https://avatars1.githubusercontent.com/u/1024025?v=3&amp;s=64" />
+    </li>
+    <li>
+        You should never ever see the contents of this iframe:
+        <br />
+        <iframe src="https://avatars1.githubusercontent.com/u/1024025?v=3&amp;s=240"></iframe>
+    </li>
+</ol>

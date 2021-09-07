@@ -1,0 +1,10 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Liquid
+Comment=Convert web pages into desktop applications
+Exec=liquid
+Terminal=false
+Icon=liquid
+Categories=Qt;Network;WebBrowser;

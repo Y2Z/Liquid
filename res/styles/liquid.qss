@@ -1,0 +1,29 @@
+QTableWidget {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+QTableWidget::item {
+    border-bottom: 1px solid #ccc;
+    background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(245, 245, 245, 245), stop:1 rgba(255, 255, 255, 255));
+    color: #000;
+}
+
+QTableWidget QPushButton {
+    background-color: transparent;
+    border-radius: 0;
+    height: 100%;
+}
+QTableWidget QPushButton.btnDelete:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+QTableWidget QPushButton.btnEdit:hover {
+    background-color: rgba(0, 255, 0, 0.1);
+}
+QTableWidget QPushButton.btnRun:hover {
+    background-color: rgba(0, 0, 255, 0.1);
+}
+
+QLineEdit[readOnly="true"] {
+    color: rgba(0, 0, 0, 0.8);
+}
