@@ -102,9 +102,11 @@ void MainWindow::createDesktopFile(const QString liquidAppName, const QUrl liqui
         QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
         file.open(QIODevice::WriteOnly);
         file.write(context.toStdString().c_str());
-        file.setPermissions(QFileDevice::ReadUser|QFileDevice::WriteUser
-                            |QFileDevice::ExeUser|QFileDevice::ReadGroup
-                            |QFileDevice::ReadOther);
+        file.setPermissions(QFileDevice::ReadUser
+                          | QFileDevice::WriteUser
+                          | QFileDevice::ExeUser
+                          | QFileDevice::ReadGroup
+                          | QFileDevice::ReadOther);
         file.flush();
         file.close();
     }
@@ -181,10 +183,10 @@ void MainWindow::populateTable()
 
         QString liquidAppName = liquidAppFile.baseName();
         QSettings *liquidAppSettings = new QSettings(QSettings::IniFormat,
-                                               QSettings::UserScope,
-                                               CONFIG_APPS_PATH,
-                                               liquidAppName,
-                                               nullptr);
+                                                     QSettings::UserScope,
+                                                     CONFIG_APPS_PATH,
+                                                     liquidAppName,
+                                                     nullptr);
 
         QTableWidgetItem *appItemWidgetFirstColumn = new QTableWidgetItem();
         // Make them read-only (no text edit upon double-click)
