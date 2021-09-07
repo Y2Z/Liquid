@@ -14,6 +14,7 @@ It's capable of making websites appear and behave more like native OS applicatio
 - Ability to inject additional CSS and JS code, disable JS
 - Customizable User-Agent string
 
+
 ## Perks
 
 1. Avoid tracking Cookies and protect yourself from phishing attacks
@@ -25,17 +26,17 @@ It's capable of making websites appear and behave more like native OS applicatio
 
 ## Keyboard controls
 
-- `Ctrl + R`: Refresh the view
+- `Ctrl + R`: Refresh the current page
 - `Ctrl + Shift + R`: Make the app go back to its starting page
-- `Ctrl + L`: Freeze window geometry
 - `Ctrl + =`: Zoom in
 - `Ctrl + -`: Zoom out
 - `Ctrl + 0`: Reset zoom level
-- `Ctrl + F`: Toggle full-screen mode
-- `Escape`: Exit from full-screen mode
-- `Ctrl + Q`, `Ctrl + W`: Close the app
 - `Alt + Left`, `Backspace`: Go one step back
 - `Alt + Right`: Go one step forward
+- `Ctrl + F`: Toggle full-screen mode
+- `Escape`: Exit from full-screen mode
+- `Ctrl + L`: Lock/unlock window geometry
+- `Ctrl + Q`, `Ctrl + W`: Close the app
 
 
 ## Build
