@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Resolve dependencies
+      run: |
+        sudo apt-get update && \
+        sudo apt-get install qt5-default libqt5webkit5-dev
+    - name: Build
+      run: qmake && make
