@@ -119,6 +119,20 @@ void LiquidAppWindow::closeEvent(QCloseEvent *event)
 void LiquidAppWindow::exitFullScreen()
 {
     setWindowState(windowState() & ~Qt::WindowFullScreen);
+    if (isWindowGeometryLocked) {
+        // Pause here
+        {
+            QTime proceedAfter = QTime::currentTime().addMSecs(200);
+            while (QTime::currentTime() < proceedAfter) {
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+            }
+        }
+
+        // isWindowGeometryLocked = false;
+        // toggleWindowGeometryLock();
+        setMinimumSize(width(), height());
+        setMaximumSize(width(), height());
+    }
 }
 
 void LiquidAppWindow::loadFinished(bool ok)
@@ -131,7 +145,7 @@ void LiquidAppWindow::loadFinished(bool ok)
             updateWindowTitle(title());
         }
 
-        // Inject custom JS
+        // Inject additional JS
         if (liquidAppSettings->contains(SETTINGS_KEY_CUSTOM_JS)) {
             QString js = liquidAppSettings->value(SETTINGS_KEY_CUSTOM_JS).toString();
 
@@ -177,8 +191,10 @@ void LiquidAppWindow::reset()
 
 void LiquidAppWindow::resizeEvent(QResizeEvent *event)
 {
-    // Remember window size
-    liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+    // Save window size (unless in full-screen mode)
+    if (!isFullScreen()) {
+        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+    }
 
     QWebView::resizeEvent(event);
 }
@@ -192,6 +208,7 @@ void LiquidAppWindow::runLiquidApp(QString *name)
                                 nullptr);
 
     liquidAppName = name;
+    appWindowTitle = *liquidAppName;
 
     // Set custom user-agent HTTP header and handle page links
     setPage(new LiquidAppWebPage(this));
@@ -222,11 +239,9 @@ void LiquidAppWindow::runLiquidApp(QString *name)
     globalWebSettings->setAttribute(QWebSettings::JavascriptCanCloseWindows, false);
     globalWebSettings->setAttribute(QWebSettings::JavascriptCanAccessClipboard, false);
 
-    // Set inital window title
+    // Set custom window title
     if (liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
         appWindowTitle = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
-    } else {
-        appWindowTitle = *liquidAppName;
     }
     updateWindowTitle(appWindowTitle);
 
@@ -276,6 +291,7 @@ void LiquidAppWindow::runLiquidApp(QString *name)
         if (liquidAppSettings->contains(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED)) {
             if (liquidAppSettings->value(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED).toBool()) {
                 toggleWindowGeometryLock();
+                isWindowGeometryLocked = true;
             }
         }
 
@@ -292,42 +308,45 @@ void LiquidAppWindow::runLiquidApp(QString *name)
 
         // Reveal the app window
         show();
+        raise();
+        activateWindow();
     }
 }
 
 void LiquidAppWindow::toggleFullScreen()
 {
-    if (isWindowGeometryLocked) {
-        return;
-    }
-
     if (isFullScreen()) {
-        setWindowState(windowState() & ~Qt::WindowFullScreen);
+        exitFullScreen();
     } else {
+        // Make it temporarily possible to resize the window if geometry is locked
+        if (isWindowGeometryLocked) {
+            setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
+            setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        }
+        // Enter the full-screen mode
         setWindowState(windowState() | Qt::WindowFullScreen);
     }
 }
 
 void LiquidAppWindow::toggleWindowGeometryLock()
 {
-    // Prevent toggling window geometry lock while in fullscreen mode
-    if (isFullScreen()) {
-        return;
+    // Prevent toggling window geometry lock while in full-screen mode
+    if (!isFullScreen()) {
+        if (isWindowGeometryLocked) {
+            // Open up resizing restrictions
+            setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
+            setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+            isWindowGeometryLocked = false;
+        } else {
+            // Lock down resizing
+            setMinimumSize(width(), height());
+            setMaximumSize(width(), height());
+            isWindowGeometryLocked = true;
+        }
+
+        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED, isWindowGeometryLocked);
     }
 
-    if (isWindowGeometryLocked) {
-        // Open up resizing restrictions
-        setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
-        setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-        isWindowGeometryLocked = false;
-    } else {
-        // Lock down resizing
-        setMinimumSize(width(), height());
-        setMaximumSize(width(), height());
-        isWindowGeometryLocked = true;
-    }
-
-    liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED, isWindowGeometryLocked);
     updateWindowTitle(title());
 }
 
