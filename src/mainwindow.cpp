@@ -135,11 +135,11 @@ QString MainWindow::getLiquidAppsDirPath()
 void MainWindow::launchLiquidApp(QString liquidAppName)
 {
     QString liquidAppFilePath(QCoreApplication::applicationFilePath());
-    QProcess *process = new QProcess();
-    QString command = QString("%1 %2").arg(liquidAppFilePath).arg(liquidAppName);
-    // TODO: check if this liquid app is already running (only one instance is allowed)
-    process->startDetached(command);
-    delete process;
+    QProcess process;
+    process.setProgram(liquidAppFilePath);
+    process.setArguments(QStringList() << QStringLiteral("%1").arg(liquidAppName));
+    // TODO: check if this Liquid app is already running (only one instance is allowed)
+    process.startDetached();
 }
 
 void MainWindow::loadStyleSheet()
