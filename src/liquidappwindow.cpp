@@ -245,7 +245,7 @@ void LiquidAppWindow::runLiquidApp(QString *name)
     }
     updateWindowTitle(appWindowTitle);
 
-    QUrl url(liquidAppSettings->value(SETTINGS_KEY_URL).toString(), QUrl::StrictMode);
+    QUrl url(liquidAppSettings->value(SETTINGS_KEY_URL).toString());
     if (url.isValid()) {
         // Set the base background color
         QPalette palette;
@@ -310,6 +310,8 @@ void LiquidAppWindow::runLiquidApp(QString *name)
         show();
         raise();
         activateWindow();
+    } else {
+        qDebug() << "Invalid Liquid application URL:" << url;
     }
 }
 
