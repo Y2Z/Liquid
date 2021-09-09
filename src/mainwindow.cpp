@@ -181,7 +181,7 @@ void MainWindow::populateTable()
 
         appListTable->insertRow(i);
 
-        QString liquidAppName = liquidAppFile.baseName();
+        QString liquidAppName = liquidAppFile.completeBaseName();
         QSettings *liquidAppSettings = new QSettings(QSettings::IniFormat,
                                                      QSettings::UserScope,
                                                      CONFIG_APPS_PATH,
