@@ -2,10 +2,9 @@
 #include <QSettings>
 
 #include "config.h"
-
-#include "mainwindow.hpp"
 #include "liquidappcreateeditdialog.hpp"
 #include "liquidappwindow.hpp"
+#include "mainwindow.hpp"
 
 int main(int argc, char **argv)
 {
@@ -47,10 +46,10 @@ init:
 
             // Reveal Liquid app creation dialog
             liquidAppCreateEditDialog.show();
-
             switch (liquidAppCreateEditDialog.exec())
             {
                 case QDialog::Rejected:
+                    // Exit the program
                     return 0;
                 break;
 
@@ -62,6 +61,7 @@ init:
                     // to ensure no sub-directories would get created
                     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 
+                    // Launch the newly created Liquid app
                     goto init;
                 break;
             }

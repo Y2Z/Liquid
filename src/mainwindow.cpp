@@ -1,13 +1,20 @@
 #include "config.h"
-
-#include "mainwindow.hpp"
 #include "liquidappcreateeditdialog.hpp"
+#include "mainwindow.hpp"
 
 MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
 {
     setWindowTitle(CONFIG_PROG_NAME);
     setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
     setWidgetResizable(true);
+
+    settings = new QSettings(PROG_NAME, PROG_NAME);
+    if (settings->contains(SETTINGS_KEY_WINDOW_GEOMETRY)) {
+        QByteArray geometry = QByteArray::fromHex(
+            settings->value(SETTINGS_KEY_WINDOW_GEOMETRY).toByteArray()
+        );
+        restoreGeometry(geometry);
+    }
 
     loadStyleSheet();
 
@@ -166,6 +173,22 @@ void MainWindow::loadStyleSheet()
     }
 
     setStyleSheet(styleSheet);
+}
+
+void MainWindow::moveEvent(QMoveEvent *event)
+{
+    // Remember window position
+    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+
+    QScrollArea::moveEvent(event);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    // Remember window size
+    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+
+    QScrollArea::resizeEvent(event);
 }
 
 void MainWindow::populateTable()

@@ -191,7 +191,7 @@ void LiquidAppWindow::reset()
 
 void LiquidAppWindow::resizeEvent(QResizeEvent *event)
 {
-    // Save window size (unless in full-screen mode)
+    // Remember window size (unless in full-screen mode)
     if (!isFullScreen()) {
         liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
     }
