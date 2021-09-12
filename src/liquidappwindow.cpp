@@ -1,5 +1,4 @@
 #include "config.h"
-
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
