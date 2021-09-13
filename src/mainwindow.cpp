@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
 
     // Add new liquid app button
     createNewLiquidAppButton = new QPushButton(tr(ICON_ADD));
+    createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
     QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [=]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
         liquidAppCreateEditDialog.show();
@@ -203,14 +204,21 @@ void MainWindow::populateTable()
                                                      liquidAppName,
                                                      nullptr);
 
+        //////////////////
+        // First column //
+        //////////////////
+
         QTableWidgetItem *appItemWidgetFirstColumn = new QTableWidgetItem();
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
-
-        // First column
         QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
         appItemWidgetFirstColumn->setIcon(liquidAppIcon);
         appItemWidgetFirstColumn->setText(liquidAppName);
+        appListTable->setItem(i, 0, appItemWidgetFirstColumn);
+
+        ///////////////////
+        // Second column //
+        ///////////////////
 
         QWidget *appItemActionButtonsWidget = new QWidget();
         QHBoxLayout *appItemLayout = new QHBoxLayout();
@@ -220,6 +228,7 @@ void MainWindow::populateTable()
 
         // Delete button
         QPushButton *deleteButton = new QPushButton(tr(ICON_REMOVE));
+        deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [=]() {
             QMessageBox::StandardButton reply;
@@ -242,6 +251,7 @@ void MainWindow::populateTable()
 
         // Edit button
         QPushButton *editButton = new QPushButton(tr(ICON_EDIT));
+        editButton->setCursor(Qt::PointingHandCursor);
         editButton->setProperty("class", "btnEdit");
         QObject::connect(editButton, &QPushButton::clicked, [=]() {
             LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, liquidAppName);
@@ -265,13 +275,13 @@ void MainWindow::populateTable()
 
         // Launch button
         QPushButton *runButton = new QPushButton(tr(ICON_RUN));
+        runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
         QObject::connect(runButton, &QPushButton::clicked, [=]() {
             launchLiquidApp(liquidAppName);
         });
 
-        appListTable->setItem(i, 0, appItemWidgetFirstColumn);
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);
     }
 }

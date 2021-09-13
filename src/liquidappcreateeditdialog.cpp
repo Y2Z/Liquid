@@ -59,15 +59,18 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     basicButtonsLayout->setMargin(0);
     {
         advancedButton = new QPushButton(tr("Advanced"));
+        advancedButton->setCursor(Qt::PointingHandCursor);
         advancedButton->setCheckable(true);
         basicButtonsLayout->addWidget(advancedButton);
     }
     {
         cancelButton = new QPushButton(tr("Cancel"));
+        cancelButton->setCursor(Qt::PointingHandCursor);
         basicButtonsLayout->addWidget(cancelButton);
     }
     {
         saveButton = new QPushButton(tr((isEditingExisting) ? "Save" : "Create"));
+        saveButton->setCursor(Qt::PointingHandCursor);
         saveButton->setDefault(true);
         basicButtonsLayout->addWidget(saveButton);
     }
@@ -85,6 +88,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
     {
         enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"));
+        enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
             bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ENABLE_JS).toBool();
             enableJavaScriptCheckBox->setChecked(isChecked);
@@ -95,6 +99,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
     {
         allowCookiesCheckBox = new QCheckBox(tr("Allow Cookies"));
+        allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
             bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool();
             allowCookiesCheckBox->setChecked(isChecked);
@@ -105,6 +110,10 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
     {
         allowThirdPartyCookiesCheckBox = new QCheckBox(tr("Allow third-party Cookies"));
+        allowThirdPartyCookiesCheckBox->setCursor(Qt::PointingHandCursor);
+        if (!allowCookiesCheckBox->isChecked()) {
+            allowThirdPartyCookiesCheckBox->setEnabled(false);
+        }
         if (isEditingExisting) {
             bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES).toBool();
             allowThirdPartyCookiesCheckBox->setChecked(isChecked);
@@ -113,11 +122,13 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
     if (!isEditingExisting) {
         createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
+        createIconCheckBox->setCursor(Qt::PointingHandCursor);
         createIconCheckBox->setChecked(true);
         advancedLayout->addWidget(createIconCheckBox);
     }
     {
         customBackgroundButton = new QPushButton(tr("Set custom background color"));
+        customBackgroundButton->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
             if (existingLiquidAppSettings->contains(SETTINGS_KEY_BACKGROUND_COLOR)) {
                 backgroundColorName = existingLiquidAppSettings->value(SETTINGS_KEY_BACKGROUND_COLOR).toString();
