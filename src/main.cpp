@@ -33,6 +33,28 @@ static void onSignalHandler(int signum)
 
 int main(int argc, char **argv)
 {
+#if defined(__GNUC__) && defined(Q_OS_LINUX)
+    // Handle any further termination signals to ensure the
+    // QSharedMemory block is deleted even if the process crashes
+    signal(SIGHUP,  onSignalHandler);
+    signal(SIGINT,  onSignalHandler);
+    signal(SIGQUIT, onSignalHandler);
+    signal(SIGILL,  onSignalHandler);
+    signal(SIGABRT, onSignalHandler);
+    signal(SIGFPE,  onSignalHandler);
+    signal(SIGBUS,  onSignalHandler);
+    signal(SIGSEGV, onSignalHandler);
+    signal(SIGSYS,  onSignalHandler);
+    signal(SIGPIPE, onSignalHandler);
+    signal(SIGALRM, onSignalHandler);
+    signal(SIGTERM, onSignalHandler);
+    signal(SIGXCPU, onSignalHandler);
+    signal(SIGXFSZ, onSignalHandler);
+#endif
+
+    // Account for running on high-DPI displays
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
     QApplication app(argc, argv);
 
     MainWindow mainWindow;
@@ -41,23 +63,6 @@ int main(int argc, char **argv)
     // Set default Liquid window icon
     QIcon windowIcon(":/images/" PROG_NAME ".svg");
     app.setWindowIcon(windowIcon);
-
-    // Handle any further termination signals to ensure the
-    // QSharedMemory block is deleted even if the process crashes
-    signal(SIGHUP,  onSignalHandler); // 1
-    signal(SIGINT,  onSignalHandler); // 2
-    signal(SIGQUIT, onSignalHandler); // 3
-    signal(SIGILL,  onSignalHandler); // 4
-    signal(SIGABRT, onSignalHandler); // 6
-    signal(SIGFPE,  onSignalHandler); // 8
-    signal(SIGBUS,  onSignalHandler); // 10
-    signal(SIGSEGV, onSignalHandler); // 11
-    signal(SIGSYS,  onSignalHandler); // 12
-    signal(SIGPIPE, onSignalHandler); // 13
-    signal(SIGALRM, onSignalHandler); // 14
-    signal(SIGTERM, onSignalHandler); // 15
-    signal(SIGXCPU, onSignalHandler); // 24
-    signal(SIGXFSZ, onSignalHandler); // 25
 
     // Process arguments
     if (argc < 2) {
