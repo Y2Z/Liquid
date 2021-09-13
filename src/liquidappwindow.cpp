@@ -112,6 +112,10 @@ void LiquidAppWindow::bindShortcuts()
 
 void LiquidAppWindow::closeEvent(QCloseEvent *event)
 {
+    if (!isFullScreen()) {
+        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(liquidAppWindowGeometry.toHex()));
+    }
+
     event->accept();
 }
 
@@ -156,7 +160,7 @@ void LiquidAppWindow::loadFinished(bool ok)
 void LiquidAppWindow::moveEvent(QMoveEvent *event)
 {
     // Remember window position
-    liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+    liquidAppWindowGeometry = saveGeometry();
 
     QWebView::moveEvent(event);
 }
@@ -166,9 +170,9 @@ void LiquidAppWindow::refresh()
     isLoading = true;
 
     // Wipe all HTML but title
-    setHtml("<title>" + appWindowTitle + "</title>", url());
+    setHtml("<title>" + liquidAppWindowTitle + "</title>", url());
     if (!liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-        updateWindowTitle(appWindowTitle);
+        updateWindowTitle(liquidAppWindowTitle);
     }
 
     reload();
@@ -181,9 +185,9 @@ void LiquidAppWindow::reset()
     isLoading = true;
 
     if (!liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-        appWindowTitle = *liquidAppName;
+        liquidAppWindowTitle = *liquidAppName;
     }
-    updateWindowTitle(appWindowTitle);
+    updateWindowTitle(liquidAppWindowTitle);
 
     setUrl(url);
 }
@@ -192,7 +196,7 @@ void LiquidAppWindow::resizeEvent(QResizeEvent *event)
 {
     // Remember window size (unless in full-screen mode)
     if (!isFullScreen()) {
-        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+        liquidAppWindowGeometry = saveGeometry();
     }
 
     QWebView::resizeEvent(event);
@@ -207,7 +211,7 @@ void LiquidAppWindow::runLiquidApp(QString *name)
                                 nullptr);
 
     liquidAppName = name;
-    appWindowTitle = *liquidAppName;
+    liquidAppWindowTitle = *liquidAppName;
 
     // Set custom user-agent HTTP header and handle page links
     setPage(new LiquidAppWebPage(this));
@@ -240,9 +244,9 @@ void LiquidAppWindow::runLiquidApp(QString *name)
 
     // Set custom window title
     if (liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-        appWindowTitle = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
+        liquidAppWindowTitle = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
     }
-    updateWindowTitle(appWindowTitle);
+    updateWindowTitle(liquidAppWindowTitle);
 
     QUrl url(liquidAppSettings->value(SETTINGS_KEY_URL).toString());
     if (url.isValid()) {

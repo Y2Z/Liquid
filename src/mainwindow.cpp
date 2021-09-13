@@ -85,6 +85,14 @@ void MainWindow::bindShortcuts()
     connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    // Remember window position
+    saveSettings();
+
+    event->accept();
+}
+
 void MainWindow::createDesktopFile(const QString liquidAppName, const QUrl liquidAppStartingUrl)
 {
 #ifdef Q_OS_LINUX
@@ -173,22 +181,6 @@ void MainWindow::loadStyleSheet()
     }
 
     setStyleSheet(styleSheet);
-}
-
-void MainWindow::moveEvent(QMoveEvent *event)
-{
-    // Remember window position
-    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
-
-    QScrollArea::moveEvent(event);
-}
-
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-    // Remember window size
-    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
-
-    QScrollArea::resizeEvent(event);
 }
 
 void MainWindow::populateTable()
@@ -282,6 +274,12 @@ void MainWindow::populateTable()
         appListTable->setItem(i, 0, appItemWidgetFirstColumn);
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);
     }
+}
+
+void MainWindow::saveSettings()
+{
+    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+    settings->sync();
 }
 
 void MainWindow::removeDesktopFile(const QString liquidAppName)

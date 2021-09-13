@@ -24,8 +24,7 @@ public:
     static void removeDesktopFile(const QString liquidAppName);
 
 protected:
-    void moveEvent(QMoveEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void bindShortcuts();
@@ -34,6 +33,7 @@ private:
     void launchLiquidApp(QString liquidAppName);
     void loadStyleSheet();
     void populateTable();
+    void saveSettings();
 
     QTableWidget *appListTable;
     QPushButton *createNewLiquidAppButton;

@@ -34,15 +34,16 @@ public slots:
 
 protected:
     void bindShortcuts();
-    void closeEvent(QCloseEvent *event);
+    void closeEvent(QCloseEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-    void wheelEvent(QWheelEvent *event);
+    void wheelEvent(QWheelEvent *event) override;
     void zoomBy(qreal factor);
 
 private:
-    QString appWindowTitle;
+    QString liquidAppWindowTitle;
     QString *liquidAppName;
+    QByteArray liquidAppWindowGeometry;
 
     bool isLoading = false;
     bool isWindowGeometryLocked = false;
