@@ -4,6 +4,5 @@
     <qresource>
         <file>images/liquid.svg</file>
         <file>styles/liquid.qss</file>
-        <file>templates/errorpage.html</file>
     </qresource>
 </RCC>

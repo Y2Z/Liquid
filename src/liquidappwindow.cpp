@@ -24,7 +24,6 @@ LiquidAppWindow::LiquidAppWindow(QString *name, QWidget *parent) : QWebEngineVie
     QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
     globalWebSettings->setAttribute(QWebEngineSettings::AutoLoadImages, true);
     globalWebSettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
-    globalWebSettings->setAttribute(QWebEngineSettings::ErrorPageEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
@@ -284,16 +283,6 @@ void LiquidAppWindow::loadFinished(bool ok)
             // TODO: deal with absent <TITLE> returning page's URL when title() is called
             updateWindowTitle(title());
         }
-    } else {
-        QFile errorPageFile(":/templates/errorpage.html");
-        errorPageFile.open(QFile::ReadOnly | QFile::Text);
-        QTextStream in(&errorPageFile);
-        QString errorPageContent = in.readAll();
-        errorPageFile.close();
-
-        errorPageContent = errorPageContent.arg(url().toString());
-
-        setHtml(errorPageContent.toUtf8());
     }
 }
 
@@ -312,7 +301,6 @@ void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
     static QList<QWebEngineSettings::WebAttribute> webAttributeKeys = {
         QWebEngineSettings::AutoLoadImages,
         QWebEngineSettings::DnsPrefetchEnabled,
-        QWebEngineSettings::ErrorPageEnabled,
         QWebEngineSettings::HyperlinkAuditingEnabled,
         QWebEngineSettings::JavascriptCanAccessClipboard,
         QWebEngineSettings::JavascriptCanOpenWindows,
