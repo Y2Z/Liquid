@@ -7,14 +7,18 @@
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
 
-static QSharedMemory *sharedMemory = NULL;
+static QSharedMemory *sharedMemory = nullptr;
+
+LiquidAppWindow *liquidAppWindow;
+MainWindow *mainWindow;
 
 QString getUserName()
 {
     QString name = qgetenv("USER");
 
-    if (name.isEmpty())
+    if (name.isEmpty()) {
         name = qgetenv("USERNAME");
+    }
 
     return name;
 }
@@ -23,7 +27,19 @@ static void onSignalHandler(int signum)
 {
     if (sharedMemory) {
         delete sharedMemory;
-        sharedMemory = NULL;
+        sharedMemory = nullptr;
+    }
+
+    if (liquidAppWindow) {
+        liquidAppWindow->close();
+        delete liquidAppWindow;
+        liquidAppWindow = nullptr;
+    }
+
+    if (mainWindow) {
+        mainWindow->close();
+        delete mainWindow;
+        mainWindow = nullptr;
     }
 
     qDebug() << "Terminated with signal" << signum;
@@ -57,9 +73,6 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
 
-    MainWindow mainWindow;
-    LiquidAppWindow liquidAppWindow;
-
     // Set default Liquid window icon
     QIcon windowIcon(":/images/" PROG_NAME ".svg");
     app.setWindowIcon(windowIcon);
@@ -74,7 +87,8 @@ int main(int argc, char **argv)
             exit(-42);
         }
 
-        mainWindow.show();
+        // Show main program window
+        mainWindow = new MainWindow;
     } else  { // App name provided
         QString liquidAppName(argv[1]);
         // Replace directory separators (slashes) with underscores
@@ -99,12 +113,10 @@ init:
             }
 
             // Found existing liquid app settings file, show it
-            liquidAppWindow.runLiquidApp(&liquidAppName);
-
-            // TODO: check if this Liquid app is already running (allow only one instance)
+            liquidAppWindow = new LiquidAppWindow(&liquidAppName);
         } else {
             // No such Liquid app found, open Liquid app creation dialog
-            LiquidAppCreateEditDialog liquidAppCreateEditDialog(&mainWindow, liquidAppName);
+            LiquidAppCreateEditDialog liquidAppCreateEditDialog(mainWindow, liquidAppName);
 
             // Reveal Liquid app creation dialog
             liquidAppCreateEditDialog.show();

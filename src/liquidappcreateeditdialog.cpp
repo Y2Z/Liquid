@@ -350,6 +350,8 @@ void LiquidAppCreateEditDialog::save()
         }
     }
 
+    tempAppSettings->sync();
+
     accept();
 }
 

@@ -1,5 +1,5 @@
 VERSION_MAJOR = 0
-VERSION_MINOR = 6
+VERSION_MINOR = 7
 VERSION_PATCH = 0
 
 DEFINES     += "VERSION_MAJOR=$$VERSION_MAJOR" \
@@ -8,7 +8,7 @@ DEFINES     += "VERSION_MAJOR=$$VERSION_MAJOR" \
 
 VERSION      = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
-QT          += core gui network webkit webkitwidgets
+QT          += core gui webenginewidgets
 CONFIG      += c++11
 TEMPLATE     = app
 
