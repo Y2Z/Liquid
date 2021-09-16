@@ -4,9 +4,9 @@
 
 MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
 {
-    setWindowTitle(CONFIG_PROG_NAME);
     setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
     setWidgetResizable(true);
+    setWindowTitle(CONFIG_PROG_NAME);
 
     settings = new QSettings(PROG_NAME, PROG_NAME);
     if (settings->contains(SETTINGS_KEY_WINDOW_GEOMETRY)) {
@@ -42,8 +42,7 @@ MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
     QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [=]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
         liquidAppCreateEditDialog.show();
-        switch (liquidAppCreateEditDialog.exec())
-        {
+        switch (liquidAppCreateEditDialog.exec()) {
             case QDialog::Accepted:
                 // Give some time to the filesystem before scanning for the newly created app
                 {
@@ -72,10 +71,15 @@ MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
 
     // Fill the table
     populateTable();
+
+    show();
+    raise();
+    activateWindow();
 }
 
 MainWindow::~MainWindow()
 {
+    saveSettings();
 }
 
 void MainWindow::bindShortcuts()
@@ -119,10 +123,10 @@ void MainWindow::createDesktopFile(const QString liquidAppName, const QUrl liqui
         file.open(QIODevice::WriteOnly);
         file.write(context.toStdString().c_str());
         file.setPermissions(QFileDevice::ReadUser
-                          | QFileDevice::WriteUser
-                          | QFileDevice::ExeUser
-                          | QFileDevice::ReadGroup
-                          | QFileDevice::ReadOther);
+                           |QFileDevice::WriteUser
+                           |QFileDevice::ExeUser
+                           |QFileDevice::ReadGroup
+                           |QFileDevice::ReadOther);
         file.flush();
         file.close();
     }
@@ -154,7 +158,6 @@ void MainWindow::launchLiquidApp(QString liquidAppName)
     QProcess process;
     process.setProgram(liquidAppFilePath);
     process.setArguments(QStringList() << QStringLiteral("%1").arg(liquidAppName));
-    // TODO: check if this Liquid app is already running (only one instance is allowed)
     process.startDetached();
 }
 

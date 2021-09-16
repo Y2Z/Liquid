@@ -5,19 +5,22 @@
 #include <QCoreApplication>
 #include <QSettings>
 #include <QShortcut>
-#include <QtWebKit>
-#include <QtWebKitWidgets/QWebFrame>
-#include <QtWebKitWidgets/QWebView>
+#include <QtWebEngineWidgets/QWebEngineScript>
+#include <QtWebEngineWidgets/QWebEngineScriptCollection>
+#include <QtWebEngineWidgets/QWebEngineSettings>
+#include <QtWebEngineWidgets/QWebEngineView>
+#include <QWebEngineCookieStore>
 
-class LiquidAppWindow : public QWebView
+#include "liquidappwebpage.hpp"
+
+class LiquidAppWindow : public QWebEngineView
 {
     Q_OBJECT
 
 public:
-    explicit LiquidAppWindow(QWidget *parent = 0);
+    explicit LiquidAppWindow(QString *name, QWidget *parent = 0);
     ~LiquidAppWindow();
 
-    void runLiquidApp(QString *name);
     QSettings *liquidAppSettings;
 
 public slots:
@@ -41,9 +44,11 @@ protected:
     void zoomBy(qreal factor);
 
 private:
-    QString liquidAppWindowTitle;
     QString *liquidAppName;
+    LiquidAppWebPage *liquidAppWebPage;
+    QWebEngineProfile *liquidAppWebProfile;
     QByteArray liquidAppWindowGeometry;
+    QString liquidAppWindowTitle;
 
     bool isLoading = false;
     bool isWindowGeometryLocked = false;
@@ -63,4 +68,6 @@ private:
     QAction zoomInAction;
     QAction zoomOutAction;
     QAction zoomResetAction;
+
+    void setWebSettingsToDefault(QWebEngineSettings *webSettings);
 };

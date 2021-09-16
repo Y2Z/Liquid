@@ -1,27 +1,17 @@
 #pragma once
 
 #include <QtGui/QDesktopServices>
-#include <QtNetwork/QNetworkRequest>
-#include <QSettings>
-#include <QtWebKitWidgets/QWebPage>
-#include <QtWebKitWidgets/QWebFrame>
+#include <QWebEnginePage>
+#include <QWebEngineProfile>
 
-class LiquidAppWebPage : public QWebPage
+class LiquidAppWebPage : public QWebEnginePage
 {
 public:
-    LiquidAppWebPage(QObject *parent = 0);
-    QString userAgentForUrl(const QUrl &url) const;
-    bool extension(Extension extension,
-                   const ExtensionOption *option,
-                   ExtensionReturn *output);
-    bool supportsExtension(Extension extension) const;
+    LiquidAppWebPage(QWebEngineProfile *profile, QObject *parent = 0);
 
 protected:
-    bool acceptNavigationRequest(QWebFrame *frame,
-                                 const QNetworkRequest &request,
-                                 QWebPage::NavigationType type);
+    bool acceptNavigationRequest(const QUrl &reqUrl, QWebEnginePage::NavigationType navReqType, bool isMainFrame);
 
 private:
-    QString customUserAgent;
-    bool hasCustomUserAgent = false;
+    QWebEngineProfile *liquidAppWebProfile;
 };

@@ -14,6 +14,6 @@ jobs:
     - name: Resolve dependencies
       run: |
         sudo apt-get update && \
-        sudo apt-get install qt5-default libqt5webkit5-dev
+        sudo apt-get install qt5-default qtwebengine5-dev
     - name: Build
       run: qmake && make

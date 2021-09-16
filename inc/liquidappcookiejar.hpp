@@ -1,12 +1,15 @@
 #pragma once
 
-#include <QNetworkCookieJar>
+#include <QDateTime>
+#include <QList>
 #include <QNetworkCookie>
+#include <QNetworkCookieJar>
 #include <QSettings>
 #include <QStringList>
 #include <QVariantList>
-#include <QDateTime>
-#include <QList>
+#include <QWebEngineCookieStore>
+
+#include "liquidappwindow.hpp"
 
 class LiquidAppCookieJar : public QNetworkCookieJar
 {
@@ -16,11 +19,14 @@ public:
     LiquidAppCookieJar(QObject *parent);
     ~LiquidAppCookieJar();
 
-    bool insertCookie(const QNetworkCookie &cookie);
-    bool updateCookie(const QNetworkCookie &cookie);
-    bool deleteCookie(const QNetworkCookie &cookie);
+    bool removeCookie(const QNetworkCookie &cookie);
+    bool upsertCookie(const QNetworkCookie &cookie);
+
+    void restoreCookies(QWebEngineCookieStore *cookieStore);
 
 private:
     QSettings *liquidAppSettings;
+    LiquidAppWindow *parentWindow;
+
     void save();
 };
