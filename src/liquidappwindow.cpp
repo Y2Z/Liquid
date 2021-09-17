@@ -1,9 +1,12 @@
+#include <QApplication>
+#include <QBuffer>
+
 #include "config.h"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
 
-LiquidAppWindow::LiquidAppWindow(QString *name, QWidget *parent) : QWebEngineView(parent)
+LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
 {
     setMinimumSize(CONFIG_LIQUID_APP_WIN_MINSIZE_W, CONFIG_LIQUID_APP_WIN_MINSIZE_H);
 
@@ -145,8 +148,23 @@ LiquidAppWindow::LiquidAppWindow(QString *name, QWidget *parent) : QWebEngineVie
         // Connect keyboard shortcuts
         bindShortcuts();
 
+        if (liquidAppSettings->contains(SETTINGS_KEY_ICON)) {
+            QIcon liquidAppIcon;
+            QByteArray byteArray = QByteArray::fromHex(
+                liquidAppSettings->value(SETTINGS_KEY_ICON).toByteArray()
+            );
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::ReadOnly);
+            QDataStream in(&buffer);
+            in >> liquidAppIcon;
+            buffer.close();
+            window()->setWindowIcon(liquidAppIcon);
+        }
+
         // Trigger window title update if <title> changes
         connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
+
+        connect(page(), SIGNAL(iconChanged(QIcon)), this, SLOT(onIconChanged(QIcon)));
 
         // Catch loading's end
         connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished(bool)));
@@ -292,6 +310,24 @@ void LiquidAppWindow::moveEvent(QMoveEvent *event)
     liquidAppWindowGeometry = saveGeometry();
 
     QWebEngineView::moveEvent(event);
+}
+
+void LiquidAppWindow::onIconChanged(QIcon icon)
+{
+    // Set window icon
+    setWindowIcon(icon);
+
+    // Save icon in settings
+    if (!liquidAppSettings->contains(SETTINGS_KEY_ICON)) {
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        QDataStream out(&buffer);
+        out << icon;
+        buffer.close();
+        liquidAppSettings->setValue(SETTINGS_KEY_ICON, QString(byteArray.toHex()));
+        liquidAppSettings->sync();
+    }
 }
 
 void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
