@@ -50,6 +50,7 @@ private:
     QPlainTextEdit *customCSSarea;
     QPlainTextEdit *customJSarea;
     QLineEdit *userAgentInput;
+    QPlainTextEdit *notesArea;
     QCheckBox *createIconCheckBox;
     QPushButton *customBackgroundButton;
 };

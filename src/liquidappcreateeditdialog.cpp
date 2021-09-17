@@ -164,6 +164,14 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         }
         advancedLayout->addWidget(userAgentInput);
     }
+    {
+        notesArea = new QPlainTextEdit();
+        notesArea->setPlaceholderText(tr("Notes"));
+        if (isEditingExisting) {
+            notesArea->setPlainText(existingLiquidAppSettings->value(SETTINGS_KEY_NOTES).toString());
+        }
+        advancedLayout->addWidget(notesArea);
+    }
     advanced->setLayout(advancedLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -328,6 +336,25 @@ void LiquidAppCreateEditDialog::save()
         } else {
             if (userAgentInput->text() != "") {
                 tempAppSettings->setValue(SETTINGS_KEY_USER_AGENT, userAgentInput->text());
+            }
+        }
+    }
+
+    // Notes
+    {
+        if (isEditingExisting) {
+            if (tempAppSettings->contains(SETTINGS_KEY_NOTES) && notesArea->toPlainText().size() == 0) {
+                 tempAppSettings->remove(SETTINGS_KEY_NOTES);
+            } else {
+                if (tempAppSettings->value(SETTINGS_KEY_NOTES).toString().size() > 0
+                    || notesArea->toPlainText().size() > 0
+                ) {
+                    tempAppSettings->setValue(SETTINGS_KEY_NOTES, notesArea->toPlainText());
+                }
+            }
+        } else {
+            if (notesArea->toPlainText() != "") {
+                tempAppSettings->setValue(SETTINGS_KEY_NOTES, notesArea->toPlainText());
             }
         }
     }
