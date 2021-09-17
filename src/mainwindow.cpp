@@ -2,7 +2,7 @@
 #include "liquidappcreateeditdialog.hpp"
 #include "mainwindow.hpp"
 
-MainWindow::MainWindow(QWidget *parent) : QScrollArea(parent)
+MainWindow::MainWindow() : QScrollArea()
 {
     setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
     setWidgetResizable(true);
@@ -215,6 +215,16 @@ void MainWindow::populateTable()
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
         QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
+        if (liquidAppSettings->contains(SETTINGS_KEY_ICON)) {
+            QByteArray byteArray = QByteArray::fromHex(
+                liquidAppSettings->value(SETTINGS_KEY_ICON).toByteArray()
+            );
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::ReadOnly);
+            QDataStream in(&buffer);
+            in >> liquidAppIcon;
+            buffer.close();
+        }
         appItemWidgetFirstColumn->setIcon(liquidAppIcon);
         appItemWidgetFirstColumn->setText(liquidAppName);
         appListTable->setItem(i, 0, appItemWidgetFirstColumn);

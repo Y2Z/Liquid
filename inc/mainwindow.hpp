@@ -17,7 +17,7 @@
 class MainWindow : public QScrollArea
 {
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow();
     ~MainWindow();
 
     static void createDesktopFile(const QString liquidAppName, const QUrl liquidAppStartingUrl);

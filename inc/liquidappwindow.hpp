@@ -18,7 +18,7 @@ class LiquidAppWindow : public QWebEngineView
     Q_OBJECT
 
 public:
-    explicit LiquidAppWindow(QString *name, QWidget *parent = 0);
+    explicit LiquidAppWindow(QString *name);
     ~LiquidAppWindow();
 
     QSettings *liquidAppSettings;
@@ -26,6 +26,7 @@ public:
 public slots:
     void exitFullScreen();
     void loadFinished(bool ok);
+    void onIconChanged(QIcon icon);
     void refresh();
     void reset();
     void toggleFullScreen();

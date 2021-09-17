@@ -25,6 +25,7 @@
 #define SETTINGS_KEY_BACKGROUND_COLOR          "BackgroundColor"
 #define SETTINGS_KEY_ALLOW_COOKIES             "CookiesAllowed"
 #define SETTINGS_KEY_USER_AGENT                "CustomUserAgent"
+#define SETTINGS_KEY_ICON                      "Icon"
 #define SETTINGS_KEY_ENABLE_JS                 "JavaScriptEnabled"
 #define SETTINGS_KEY_TITLE                     "Title"
 #define SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES "ThirdPartyCookiesAllowed"
