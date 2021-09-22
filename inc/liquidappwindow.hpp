@@ -37,11 +37,11 @@ public slots:
     void zoomReset();
 
 protected:
-    void bindShortcuts();
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    bool handleWheelEvent(QWheelEvent *event);
     void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-    void wheelEvent(QWheelEvent *event) override;
     void zoomBy(qreal factor);
 
 private:
@@ -70,5 +70,6 @@ private:
     QAction zoomOutAction;
     QAction zoomResetAction;
 
+    void bindShortcuts();
     void setWebSettingsToDefault(QWebEngineSettings *webSettings);
 };

@@ -2,7 +2,7 @@
 
 Liquid is a tool that turns web resources into desktop applications.
 
-It's capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
+It’s capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
 
 
 ## Main features
