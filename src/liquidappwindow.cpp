@@ -164,6 +164,7 @@ LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
         // Trigger window title update if <title> changes
         connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
 
+        // Update Liquid application's icon using the one provided by the website
         connect(page(), SIGNAL(iconChanged(QIcon)), this, SLOT(onIconChanged(QIcon)));
 
         // Catch loading's end
@@ -261,6 +262,9 @@ void LiquidAppWindow::bindShortcuts()
     quitAction2.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_QUIT_2)));
     addAction(&quitAction2);
     connect(&quitAction2, SIGNAL(triggered()), this, SLOT(close()));
+
+    // Make it possible to intercept zoom events
+    QApplication::instance()->installEventFilter(this);
 }
 
 void LiquidAppWindow::closeEvent(QCloseEvent *event)
@@ -272,6 +276,24 @@ void LiquidAppWindow::closeEvent(QCloseEvent *event)
 
     event->accept();
     deleteLater();
+}
+
+bool LiquidAppWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched->parent() == this) {
+        switch (event->type()) {
+            case QEvent::Wheel:
+                if (handleWheelEvent(static_cast<QWheelEvent *>(event))) {
+                    return true;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    return QWebEngineView::eventFilter(watched, event);
 }
 
 void LiquidAppWindow::exitFullScreen()
@@ -289,6 +311,17 @@ void LiquidAppWindow::exitFullScreen()
         setMinimumSize(width(), height());
         setMaximumSize(width(), height());
     }
+}
+
+bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
+{
+    if (event->modifiers() & Qt::ControlModifier) {
+        (event->delta() > 0) ? zoomIn() : zoomOut();
+        event->accept();
+        return true;
+    }
+
+    return false;
 }
 
 void LiquidAppWindow::loadFinished(bool ok)
@@ -457,16 +490,6 @@ void LiquidAppWindow::updateWindowTitle(QString title)
     }
 
     setWindowTitle(title + textIcons);
-}
-
-void LiquidAppWindow::wheelEvent(QWheelEvent *event)
-{
-    if (event->modifiers() & Qt::ControlModifier) {
-        (event->delta() > 0) ? zoomIn() : zoomOut();
-        event->accept();
-    } else {
-        QWebEngineView::wheelEvent(event);
-    }
 }
 
 void LiquidAppWindow::zoomBy(qreal factor)
