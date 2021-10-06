@@ -140,6 +140,17 @@ void MainWindow::flushTable()
     }
 }
 
+QByteArray MainWindow::generateRandomByteArray(const int byteLength)
+{
+    quint32 buffer[byteLength];
+    static int seed = QRandomGenerator::global()->generate();
+
+    QRandomGenerator generator = QRandomGenerator(seed);
+    generator.fillRange(buffer, byteLength);
+
+    return QByteArray(reinterpret_cast<char*>(buffer), byteLength);
+}
+
 QString MainWindow::getLiquidAppsDirPath()
 {
     QSettings *dummyLiquidAppSettings = new QSettings(QSettings::IniFormat,
@@ -244,16 +255,38 @@ void MainWindow::populateTable()
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [=]() {
-            QMessageBox::StandardButton reply;
-            QString text = "Are you sure you want to remove Liquid app “" + liquidAppName + "”?";
-            reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
+            const QString text = QString("Are you sure you want to remove Liquid app “%1”?").arg(liquidAppName);
+            const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
                 removeDesktopFile(liquidAppName);
 
-                // Remove settings file
-                QFile file(liquidAppSettings->fileName());
-                // TODO: shred it instead of just removing (add checkbox for it?)
-                file.remove();
+                // Shred and unlink Liquid app settings file
+                QFile liquidAppSettingsFile(liquidAppSettings->fileName());
+                // Open file handle
+                if (liquidAppSettingsFile.open(QIODevice::ReadWrite)) {
+                    // Determine file length
+                    const int liquidAppSettingsFileSize = liquidAppSettingsFile.size();
+                    // Shred (especially important if it contains Cookie data)
+                    for (int i = 0, imax = 5; i < imax; i++) {
+                        // Write randomly generated array of bytes to disk
+                        liquidAppSettingsFile.write(generateRandomByteArray(liquidAppSettingsFileSize), liquidAppSettingsFileSize);
+                        // Close file handle
+                        liquidAppSettingsFile.close();
+
+                        qDebug().noquote() << QString("Wrote random data into config file for Liquid app %1").arg(liquidAppName);
+
+                        if (i < imax - 1) {
+                            // Put cursor back to start (to write again across the same byte range instead of appending data upon next iteration)
+                            liquidAppSettingsFile.open(QIODevice::ReadWrite);
+                        } else {
+                            // Unlink file
+                            liquidAppSettingsFile.remove();
+                            qDebug().noquote() << QString("Removed config file for Liquid app %1").arg(liquidAppName);
+                        }
+                    }
+                } else {
+                    qDebug().noquote() << QString("Unable to open file %1 in Read/Write mode").arg(liquidAppSettings->fileName());
+                }
 
                 // Refresh table
                 flushTable();

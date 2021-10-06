@@ -34,6 +34,7 @@ private:
     void loadStyleSheet();
     void populateTable();
     void saveSettings();
+    static QByteArray generateRandomByteArray(const int byteLength);
 
     QTableWidget *appListTable;
     QPushButton *createNewLiquidAppButton;
