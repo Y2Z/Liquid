@@ -9,7 +9,7 @@ It’s capable of making websites appear and behave more like native OS applicat
 
 - Fine zoom
 - Keyboard shortcuts
-- Window geometry (size) lock
+- Window geometry lock
 - Option to enable or disable (third-party) Cookies
 - Ability to inject additional CSS and JS code, disable JS
 - Customizable User-Agent string
@@ -37,7 +37,6 @@ It’s capable of making websites appear and behave more like native OS applicat
 - `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry
 - `Ctrl + Q`, `Ctrl + W`: Close the app
-#### Navigation
 - `Alt + Left`, `Backspace`: Go one step back
 - `Alt + Right`: Go one step forward
 
