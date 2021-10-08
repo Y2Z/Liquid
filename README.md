@@ -18,25 +18,28 @@ It’s capable of making websites appear and behave more like native OS applicat
 ## Perks
 
 1. Avoid tracking Cookies and protect yourself from phishing attacks
-2. Simultaneously use as many web user accounts as you'd like
-3. Make the Internet look the way you want by applying additional CSS:
-   hide ads and fix those ugly visual quirks for good
+2. Simultaneously use as many web user accounts as you like
+3. Customize websites to make them look the way you want by applying additional CSS:
+   hide ads, fix those ugly visual quirks for good, etc
 4. Play around with remote web pages by injecting additional JS code
 
 
-## Keyboard controls
+## Keyboard shortcuts
 
-- `Ctrl + R`: Refresh the current page
-- `Ctrl + Shift + R`: Make the app go back to its starting page
+#### View
 - `Ctrl + =`: Zoom in
 - `Ctrl + -`: Zoom out
 - `Ctrl + 0`: Reset zoom level
-- `Alt + Left`, `Backspace`: Go one step back
-- `Alt + Right`: Go one step forward
 - `Ctrl + F`: Toggle full-screen mode
 - `Escape`: Exit from full-screen mode
+#### Control
+- `Ctrl + R`: Refresh the current page
+- `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry
 - `Ctrl + Q`, `Ctrl + W`: Close the app
+#### Navigation
+- `Alt + Left`, `Backspace`: Go one step back
+- `Alt + Right`: Go one step forward
 
 
 ## Build
