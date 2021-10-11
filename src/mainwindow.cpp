@@ -142,15 +142,15 @@ void MainWindow::flushTable()
 
 QByteArray MainWindow::generateRandomByteArray(const int byteLength)
 {
-    quint32 buf[byteLength];
+    std::vector<quint32> buf;
 
     qsrand(QTime::currentTime().msec());
 
     for(int i = 0; i < byteLength; ++i) {
-        buf[i] = qrand();
+        buf.push_back(qrand());
     }
 
-    return QByteArray(reinterpret_cast<char*>(buf), byteLength);
+    return QByteArray(reinterpret_cast<const char*>(buf.data()), byteLength);
 }
 
 QString MainWindow::getLiquidAppsDirPath()
