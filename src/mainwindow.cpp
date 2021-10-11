@@ -142,18 +142,13 @@ void MainWindow::flushTable()
 
 QByteArray MainWindow::generateRandomByteArray(const int byteLength)
 {
-    uint buffer[byteLength];
+    quint32 buffer[byteLength];
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    static int seed = QRandomGenerator::global()->generate();
-    QRandomGenerator generator = QRandomGenerator(seed);
-    generator.fillRange(buffer, byteLength);
-#else
     qsrand(QTime::currentTime().msec());
+
     for(int i = 0; i < byteLength; ++i) {
         buffer[i] = qrand();
     }
-#endif
 
     return QByteArray(reinterpret_cast<char*>(buffer), byteLength);
 }
