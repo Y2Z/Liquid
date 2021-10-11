@@ -143,10 +143,17 @@ void MainWindow::flushTable()
 QByteArray MainWindow::generateRandomByteArray(const int byteLength)
 {
     quint32 buffer[byteLength];
-    static int seed = QRandomGenerator::global()->generate();
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    static int seed = QRandomGenerator::global()->generate();
     QRandomGenerator generator = QRandomGenerator(seed);
     generator.fillRange(buffer, byteLength);
+#else
+    qsrand(QTime::currentTime().msec());
+    for(int i = 0; i < byteLength; ++i) {
+        buffer[i] = qrand();
+    }
+#endif
 
     return QByteArray(reinterpret_cast<char*>(buffer), byteLength);
 }
@@ -165,11 +172,15 @@ QString MainWindow::getLiquidAppsDirPath()
 
 void MainWindow::launchLiquidApp(QString liquidAppName)
 {
-    QString liquidAppFilePath(QCoreApplication::applicationFilePath());
+    const QString liquidAppFilePath(QCoreApplication::applicationFilePath());
     QProcess process;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     process.setProgram(liquidAppFilePath);
     process.setArguments(QStringList() << QStringLiteral("%1").arg(liquidAppName));
     process.startDetached();
+#else
+    process.startDetached(liquidAppFilePath, QStringList() << QStringLiteral("%1").arg(liquidAppName));
+#endif
 }
 
 void MainWindow::loadStyleSheet()
