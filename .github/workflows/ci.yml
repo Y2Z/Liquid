@@ -7,13 +7,44 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-18.04
+          - os: ubuntu-20.04
+          - os: macos-10.15
+          - os: macos-11
+          - os: windows-2016
+          - os: windows-2019
+
+    continue-on-error: true
 
     steps:
     - uses: actions/checkout@v2
-    - name: Resolve dependencies
+    - uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Resolve dependencies (Ubuntu)
       run: |
         sudo apt-get update && \
         sudo apt-get install qt5-default qtwebengine5-dev
-    - name: Build
-      run: qmake && make
+      if: matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04'
+
+    - name: Resolve dependencies (macOS and Windows)
+      uses: jurplel/install-qt-action@v2
+      with:
+          modules: 'qtwebengine'
+      if: matrix.os != 'ubuntu-18.04' && matrix.os != 'ubuntu-20.04'
+
+    - name: Build (Ubuntu and macOS)
+      run: |
+        qmake
+        make -j
+      if: matrix.os != 'windows-2016' && matrix.os != 'windows-2019'
+
+    - name: Build (Windows)
+      run: |
+        qmake
+        nmake
+      if: matrix.os == 'windows-2016' || matrix.os == 'windows-2019'

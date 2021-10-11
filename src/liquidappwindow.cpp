@@ -26,11 +26,15 @@ LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
     // Default starting web settings for all Liquid apps
     QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
     globalWebSettings->setAttribute(QWebEngineSettings::AutoLoadImages, true);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
     globalWebSettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
+#endif
     globalWebSettings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanPaste, false);
+#endif
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
@@ -369,11 +373,15 @@ void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
 
     static QList<QWebEngineSettings::WebAttribute> webAttributeKeys = {
         QWebEngineSettings::AutoLoadImages,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
         QWebEngineSettings::DnsPrefetchEnabled,
+#endif
         QWebEngineSettings::HyperlinkAuditingEnabled,
         QWebEngineSettings::JavascriptCanAccessClipboard,
         QWebEngineSettings::JavascriptCanOpenWindows,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         QWebEngineSettings::JavascriptCanPaste,
+#endif
         QWebEngineSettings::JavascriptEnabled,
         QWebEngineSettings::LocalStorageEnabled,
 #if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
