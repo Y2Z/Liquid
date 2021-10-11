@@ -142,7 +142,7 @@ void MainWindow::flushTable()
 
 QByteArray MainWindow::generateRandomByteArray(const int byteLength)
 {
-    quint32 buffer[byteLength];
+    uint buffer[byteLength];
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     static int seed = QRandomGenerator::global()->generate();
