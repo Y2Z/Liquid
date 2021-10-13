@@ -11,6 +11,7 @@
 #include <QtWebEngineWidgets/QWebEngineSettings>
 #include <QtWebEngineWidgets/QWebEngineView>
 #include <QWebEngineCookieStore>
+#include <QWebEngineFullScreenRequest>
 
 #include "liquidappwebpage.hpp"
 
