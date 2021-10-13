@@ -29,6 +29,7 @@ LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
 #if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
     globalWebSettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
 #endif
+    globalWebSettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
     globalWebSettings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
     globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
@@ -164,6 +165,11 @@ LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
             buffer.close();
             window()->setWindowIcon(liquidAppIcon);
         }
+
+        // Allow page-level fullscreen happen
+        connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
+            request.accept();
+        });
 
         // Trigger window title update if <title> changes
         connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
@@ -303,8 +309,9 @@ bool LiquidAppWindow::eventFilter(QObject *watched, QEvent *event)
 void LiquidAppWindow::exitFullScreen()
 {
     setWindowState(windowState() & ~Qt::WindowFullScreen);
+
     if (isWindowGeometryLocked) {
-        // Pause here
+        // Pause here to wait for any kind of window resize animation to finish
         {
             QTime proceedAfter = QTime::currentTime().addMSecs(200);
             while (QTime::currentTime() < proceedAfter) {
@@ -376,6 +383,7 @@ void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
         QWebEngineSettings::DnsPrefetchEnabled,
 #endif
+        QWebEngineSettings::FullScreenSupportEnabled,
         QWebEngineSettings::HyperlinkAuditingEnabled,
         QWebEngineSettings::JavascriptCanAccessClipboard,
         QWebEngineSettings::JavascriptCanOpenWindows,

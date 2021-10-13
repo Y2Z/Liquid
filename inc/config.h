@@ -3,10 +3,10 @@
 /* Global constants */
 #define CONFIG_APPS_PATH                PROG_NAME "/" "apps"
 #define CONFIG_PROG_NAME                "Liquid"
-#define CONFIG_WIN_MINSIZE_W            320
-#define CONFIG_WIN_MINSIZE_H            480
-#define CONFIG_LIQUID_APP_WIN_MINSIZE_W 240
-#define CONFIG_LIQUID_APP_WIN_MINSIZE_H 180
+#define CONFIG_WIN_MINSIZE_W            300
+#define CONFIG_WIN_MINSIZE_H            400
+#define CONFIG_LIQUID_APP_WIN_MINSIZE_W 160
+#define CONFIG_LIQUID_APP_WIN_MINSIZE_H 120
 #define CONFIG_ZOOM_STEP                0.1
 #define CONFIG_ZOOM_MIN                 0.5
 #define CONFIG_ZOOM_MAX                 5
