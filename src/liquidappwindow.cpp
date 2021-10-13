@@ -1,12 +1,14 @@
 #include <QApplication>
 #include <QBuffer>
+#include <QClipboard>
+#include <QWebEngineHistory>
 
 #include "config.h"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
 
-LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
+LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 {
     setMinimumSize(CONFIG_LIQUID_APP_WIN_MINSIZE_W, CONFIG_LIQUID_APP_WIN_MINSIZE_H);
 
@@ -151,7 +153,10 @@ LiquidAppWindow::LiquidAppWindow(QString *name) : QWebEngineView()
         }
 
         // Connect keyboard shortcuts
-        bindShortcuts();
+        bindKeyboardShortcuts();
+
+        // Initialize context menu
+        setupContextMenu();
 
         if (liquidAppSettings->contains(SETTINGS_KEY_ICON)) {
             QIcon liquidAppIcon;
@@ -198,80 +203,105 @@ LiquidAppWindow::~LiquidAppWindow()
     delete liquidAppWebProfile;
 }
 
-void LiquidAppWindow::bindShortcuts()
+void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
+{
+    (void)event;
+
+    contextMenuBackAction->setEnabled(history()->canGoBack());
+    contextMenuForwardAction->setEnabled(history()->canGoForward());
+
+    contextMenu->exec(QCursor::pos());
+}
+
+void LiquidAppWindow::bindKeyboardShortcuts(void)
 {
     // Connect window geometry lock shortcut
-    toggleGeometryLockAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_GEOMETRY_LOCK_TOGGLE)));
-    addAction(&toggleGeometryLockAction);
-    connect(&toggleGeometryLockAction, SIGNAL(triggered()), this, SLOT(toggleWindowGeometryLock()));
+    toggleGeometryLockAction = new QAction;
+    toggleGeometryLockAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_GEOMETRY_LOCK_TOGGLE)));
+    addAction(toggleGeometryLockAction);
+    connect(toggleGeometryLockAction, SIGNAL(triggered()), this, SLOT(toggleWindowGeometryLock()));
 
     // Connect "go back" shortcut
-    backAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK)));
-    addAction(&backAction);
-    connect(&backAction, SIGNAL(triggered()), this, SLOT(back()));
+    backAction = new QAction;
+    backAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK)));
+    addAction(backAction);
+    connect(backAction, SIGNAL(triggered()), this, SLOT(back()));
 
     // Connect "go back" shortcut (backspace)
-    backAction2.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK_2)));
-    addAction(&backAction2);
-    connect(&backAction2, SIGNAL(triggered()), this, SLOT(back()));
+    backAction2 = new QAction;
+    backAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK_2)));
+    addAction(backAction2);
+    connect(backAction2, SIGNAL(triggered()), this, SLOT(back()));
 
     // Connect "go forward" shortcut
-    forwardAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_FORWARD)));
-    addAction(&forwardAction);
-    connect(&forwardAction, SIGNAL(triggered()), this, SLOT(forward()));
+    forwardAction = new QAction;
+    forwardAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_FORWARD)));
+    addAction(forwardAction);
+    connect(forwardAction, SIGNAL(triggered()), this, SLOT(forward()));
 
     // Connect "reload" shortcut
-    reloadAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD)));
-    addAction(&reloadAction);
-    connect(&reloadAction, SIGNAL(triggered()), this, SLOT(refresh()));
+    reloadAction = new QAction;
+    reloadAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD)));
+    addAction(reloadAction);
+    connect(reloadAction, SIGNAL(triggered()), this, SLOT(refresh()));
     // Connect "alternative reload" shortcut
-    reloadAction2.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD_2)));
-    addAction(&reloadAction2);
-    connect(&reloadAction2, SIGNAL(triggered()), this, SLOT(refresh()));
+    reloadAction2 = new QAction;
+    reloadAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD_2)));
+    addAction(reloadAction2);
+    connect(reloadAction2, SIGNAL(triggered()), this, SLOT(refresh()));
 
     // Connect "reset" shortcut
-    resetAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RESET)));
-    addAction(&resetAction);
-    connect(&resetAction, SIGNAL(triggered()), this, SLOT(reset()));
+    resetAction = new QAction;
+    resetAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RESET)));
+    addAction(resetAction);
+    connect(resetAction, SIGNAL(triggered()), this, SLOT(reset()));
 
     // Connect "fullscreen" shortcut
-    fullScreenAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE)));
-    addAction(&fullScreenAction);
-    connect(&fullScreenAction, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
+    fullScreenAction = new QAction;
+    fullScreenAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE)));
+    addAction(fullScreenAction);
+    connect(fullScreenAction, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
     // Connect "alternative fullscreen" shortcut
-    fullScreenAction2.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE_2)));
-    addAction(&fullScreenAction2);
-    connect(&fullScreenAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
+    fullScreenAction2 = new QAction;
+    fullScreenAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE_2)));
+    addAction(fullScreenAction2);
+    connect(fullScreenAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
 
     // Connect "fullscreen" exit shortcut
-    fullScreenExitAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_EXIT)));
-    addAction(&fullScreenExitAction);
-    connect(&fullScreenExitAction, SIGNAL(triggered()), this, SLOT(exitFullScreen()));
+    fullScreenExitAction = new QAction;
+    fullScreenExitAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_EXIT)));
+    addAction(fullScreenExitAction);
+    connect(fullScreenExitAction, SIGNAL(triggered()), this, SLOT(exitFullScreen()));
 
     // Connect "zoom in" shortcut
-    zoomInAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_IN)));
-    addAction(&zoomInAction);
-    connect(&zoomInAction, SIGNAL(triggered()), this, SLOT(zoomIn()));
+    zoomInAction = new QAction;
+    zoomInAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_IN)));
+    addAction(zoomInAction);
+    connect(zoomInAction, SIGNAL(triggered()), this, SLOT(zoomIn()));
 
     // Connect "zoom out" shortcut
-    zoomOutAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_OUT)));
-    addAction(&zoomOutAction);
-    connect(&zoomOutAction, SIGNAL(triggered()), this, SLOT(zoomOut()));
+    zoomOutAction = new QAction;
+    zoomOutAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_OUT)));
+    addAction(zoomOutAction);
+    connect(zoomOutAction, SIGNAL(triggered()), this, SLOT(zoomOut()));
 
     // Connect "reset zoom" shortcut
-    zoomResetAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_RESET)));
-    addAction(&zoomResetAction);
-    connect(&zoomResetAction, SIGNAL(triggered()), this, SLOT(zoomReset()));
+    zoomResetAction = new QAction;
+    zoomResetAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_ZOOM_RESET)));
+    addAction(zoomResetAction);
+    connect(zoomResetAction, SIGNAL(triggered()), this, SLOT(zoomReset()));
 
     // Connect "exit" shortcut
-    quitAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_QUIT)));
-    addAction(&quitAction);
-    connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    quitAction = new QAction;
+    quitAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_QUIT)));
+    addAction(quitAction);
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
     // Connect "alternative exit" shortcut
-    quitAction2.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_QUIT_2)));
-    addAction(&quitAction2);
-    connect(&quitAction2, SIGNAL(triggered()), this, SLOT(close()));
+    quitAction2 = new QAction;
+    quitAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_QUIT_2)));
+    addAction(quitAction2);
+    connect(quitAction2, SIGNAL(triggered()), this, SLOT(close()));
 
     // Make it possible to intercept zoom events
     QApplication::instance()->installEventFilter(this);
@@ -372,6 +402,33 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
         liquidAppSettings->setValue(SETTINGS_KEY_ICON, QString(byteArray.toHex()));
         liquidAppSettings->sync();
     }
+}
+
+void LiquidAppWindow::setupContextMenu(void)
+{
+    contextMenu = new QMenu;
+
+    contextMenuCopyUrlAction = new QAction(QIcon::fromTheme(QStringLiteral("internet-web-browser")), tr("Copy current Url"));
+    contextMenuReloadAction = new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("Reload"));
+    contextMenuBackAction = new QAction(QIcon::fromTheme(QStringLiteral("go-previous")), tr("Go back"));
+    contextMenuForwardAction = new QAction(QIcon::fromTheme(QStringLiteral("go-next")), tr("Go forward"));
+    contextMenuCloseAction = new QAction(QIcon::fromTheme(QStringLiteral("process-stop")), tr("Close"));
+
+    contextMenu->addAction(contextMenuCopyUrlAction);
+    contextMenu->addAction(contextMenuReloadAction);
+    contextMenu->addAction(contextMenuBackAction);
+    contextMenu->addAction(contextMenuForwardAction);
+    contextMenu->addAction(contextMenuCloseAction);
+
+    connect(contextMenuCopyUrlAction, &QAction::triggered, this, [this](){
+        QApplication::clipboard()->setText(page()->url().toString());
+    });
+    connect(contextMenuReloadAction, &QAction::triggered, this, &QWebEngineView::reload);
+    connect(contextMenuBackAction, &QAction::triggered, this, &QWebEngineView::back);
+    connect(contextMenuForwardAction, &QAction::triggered, this, &QWebEngineView::forward);
+    connect(contextMenuCloseAction, SIGNAL(triggered()), this, SLOT(close()));
+
+    setContextMenuPolicy(Qt::DefaultContextMenu);
 }
 
 void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
