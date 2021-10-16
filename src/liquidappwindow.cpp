@@ -45,6 +45,9 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 #endif
     globalWebSettings->setAttribute(QWebEngineSettings::PluginsEnabled, false);
     globalWebSettings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, true);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    globalWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
+#endif
 
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
@@ -90,6 +93,13 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
             liquidAppCookieJar->restoreCookies(cookieStore);
         }
 
+        // Restore window geometry
+        if (liquidAppSettings->contains(SETTINGS_KEY_WINDOW_GEOMETRY)) {
+            restoreGeometry(QByteArray::fromHex(
+                liquidAppSettings->value(SETTINGS_KEY_WINDOW_GEOMETRY).toByteArray()
+            ));
+        }
+
         // Toggle JavaScript on if enabled in application settings
         if (liquidAppSettings->contains(SETTINGS_KEY_ENABLE_JS)) {
             if (liquidAppSettings->value(SETTINGS_KEY_ENABLE_JS).toBool()) {
@@ -97,12 +107,15 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
             }
         }
 
-        // Restore window geometry
-        if (liquidAppSettings->contains(SETTINGS_KEY_WINDOW_GEOMETRY)) {
-            restoreGeometry(QByteArray::fromHex(
-                liquidAppSettings->value(SETTINGS_KEY_WINDOW_GEOMETRY).toByteArray()
-            ));
+        // Toggle JavaScript on if enabled in application settings
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        if (liquidAppSettings->contains(SETTINGS_KEY_SHOW_SCROLL_BARS)) {
+                settings()->setAttribute(
+                    QWebEngineSettings::ShowScrollBars,
+                    liquidAppSettings->value(SETTINGS_KEY_SHOW_SCROLL_BARS).toBool()
+                );
         }
+#endif
 
         // Web view zoom level
         if (liquidAppSettings->contains(SETTINGS_KEY_ZOOM)) {
@@ -454,6 +467,9 @@ void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
 #endif
         QWebEngineSettings::PluginsEnabled,
         QWebEngineSettings::ScrollAnimatorEnabled,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        QWebEngineSettings::ShowScrollBars,
+#endif
     };
 
     for (int i = 0; i < webAttributeKeys.size(); i++) {
