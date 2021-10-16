@@ -28,6 +28,7 @@
 #define SETTINGS_KEY_ICON                      "Icon"
 #define SETTINGS_KEY_ENABLE_JS                 "JavaScriptEnabled"
 #define SETTINGS_KEY_NOTES                     "Notes"
+#define SETTINGS_KEY_SHOW_SCROLL_BARS          "ShowScrollBars"
 #define SETTINGS_KEY_TITLE                     "Title"
 #define SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES "ThirdPartyCookiesAllowed"
 #define SETTINGS_KEY_URL                       "URL"

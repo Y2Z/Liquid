@@ -5,7 +5,7 @@ Liquid is a tool that turns web pages into desktop applications.
 It’s capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
 
 
-## Main features
+## Features
 
 - Fine zoom
 - Keyboard shortcuts
@@ -31,13 +31,14 @@ It’s capable of making websites appear and behave more like native OS applicat
 - `Ctrl + -`: Zoom out
 - `Ctrl + 0`: Reset zoom level
 - `Ctrl + F`: Toggle full-screen mode
+- `Ctrl + S`: Toggle scrollbar visibility
 - `Escape`: Exit from full-screen mode
 #### Control
 - `Ctrl + R`: Refresh the current page
 - `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry
 - `Ctrl + Q`, `Ctrl + W`: Close the app
-- `Ctrl + <click>`: Open link in system’s browser
+- `Ctrl + <click>`: Open link using system’s browser
 - `Alt + Left`, `Backspace`: Go one step back
 - `Alt + Right`: Go one step forward
 
@@ -58,7 +59,7 @@ It’s capable of making websites appear and behave more like native OS applicat
     sudo make uninstall
 
 
-## How to customize
+## Customize
 
 Placing a file named `liquid.qss` into `~/.config/liquid/` will serve as custom stylesheet for the program.
 You can use [liquid.qss](res/styles/liquid.qss) for reference.

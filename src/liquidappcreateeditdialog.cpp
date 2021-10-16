@@ -6,6 +6,7 @@
 LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString liquidAppName) : QDialog(parent)
 {
     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
+
     // Attempt to load liquid app's config file
     QSettings *existingLiquidAppSettings = new QSettings(QSettings::IniFormat,
                                                          QSettings::UserScope,
@@ -120,11 +121,28 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         }
         advancedLayout->addWidget(allowThirdPartyCookiesCheckBox);
     }
-    if (!isEditingExisting) {
-        createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
-        createIconCheckBox->setCursor(Qt::PointingHandCursor);
-        createIconCheckBox->setChecked(true);
-        advancedLayout->addWidget(createIconCheckBox);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    {
+        showScrollBarsCheckBox = new QCheckBox(tr("Show scroll bars"));
+        showScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
+        showScrollBarsCheckBox->setChecked(true);
+        if (isEditingExisting) {
+            if (existingLiquidAppSettings->contains(SETTINGS_KEY_SHOW_SCROLL_BARS)) {
+                showScrollBarsCheckBox->setChecked(
+                    existingLiquidAppSettings->value(SETTINGS_KEY_SHOW_SCROLL_BARS).toBool()
+                );
+            }
+        }
+        advancedLayout->addWidget(showScrollBarsCheckBox);
+    }
+#endif
+    {
+        if (!isEditingExisting) {
+            createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
+            createIconCheckBox->setCursor(Qt::PointingHandCursor);
+            createIconCheckBox->setChecked(true);
+            advancedLayout->addWidget(createIconCheckBox);
+        }
     }
     {
         customBackgroundButton = new QPushButton(tr("Set custom background color"));
@@ -263,6 +281,13 @@ void LiquidAppCreateEditDialog::save()
     {
         tempAppSettings->setValue(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
     }
+
+    // Show/hide scroll bars
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    {
+        tempAppSettings->setValue(SETTINGS_KEY_SHOW_SCROLL_BARS, showScrollBarsCheckBox->isChecked());
+    }
+#endif
 
     // Custom Liquid app window title
     {
