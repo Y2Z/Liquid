@@ -100,14 +100,14 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
             ));
         }
 
-        // Toggle JavaScript on if enabled in application settings
+        // Toggle JavaScript on if enabled in application config
         if (liquidAppSettings->contains(SETTINGS_KEY_ENABLE_JS)) {
             if (liquidAppSettings->value(SETTINGS_KEY_ENABLE_JS).toBool()) {
                 settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
             }
         }
 
-        // Toggle JavaScript on if enabled in application settings
+        // Toggle JavaScript on if enabled in application config
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         if (liquidAppSettings->contains(SETTINGS_KEY_SHOW_SCROLL_BARS)) {
                 settings()->setAttribute(
@@ -116,6 +116,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
                 );
         }
 #endif
+
+        // Mute audio if muted in application config
+        if (liquidAppSettings->contains(SETTINGS_KEY_MUTED_AUDIO)) {
+            page()->setAudioMuted(liquidAppSettings->value(SETTINGS_KEY_MUTED_AUDIO).toBool());
+        }
 
         // Web view zoom level
         if (liquidAppSettings->contains(SETTINGS_KEY_ZOOM)) {
@@ -198,6 +203,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         // Catch loading's end
         connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished(bool)));
 
+        // Catch mute/unmute and save to app config
+        connect(page(), &QWebEnginePage::audioMutedChanged, this, [this](const bool muted){
+            liquidAppSettings->setValue(SETTINGS_KEY_MUTED_AUDIO, muted);
+        });
+
         // Load Liquid app's starting URL
         load(url);
 
@@ -233,6 +243,15 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     toggleGeometryLockAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_GEOMETRY_LOCK_TOGGLE)));
     addAction(toggleGeometryLockAction);
     connect(toggleGeometryLockAction, SIGNAL(triggered()), this, SLOT(toggleWindowGeometryLock()));
+
+    // Connect "mute audio" shortcut
+    muteAudioAction = new QAction;
+    muteAudioAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_MUTE_AUDIO)));
+    addAction(muteAudioAction);
+    connect(muteAudioAction, &QAction::triggered, this, [this](){
+        page()->setAudioMuted(!page()->isAudioMuted());
+        updateWindowTitle(title());
+    });
 
     // Connect "go back" shortcut
     backAction = new QAction;
@@ -568,12 +587,16 @@ void LiquidAppWindow::updateWindowTitle(QString title)
         title = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
     }
 
-    if (isLoading) {
-        textIcons.append(ICON_LOADING);
-    }
     if (isWindowGeometryLocked) {
         textIcons.append(ICON_LOCKED);
     }
+    if (page()->isAudioMuted()) {
+        textIcons.append(ICON_MUTED);
+    }
+    if (isLoading) {
+        textIcons.append(ICON_LOADING);
+    }
+
     if (textIcons != "") {
         textIcons = " " + textIcons;
     }

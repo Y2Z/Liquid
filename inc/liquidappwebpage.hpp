@@ -10,7 +10,7 @@ public:
     LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent = 0);
 
 protected:
-    bool acceptNavigationRequest(const QUrl& reqUrl, QWebEnginePage::NavigationType navType, bool isMainFrame);
+    bool acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navType, const bool isMainFrame);
 
 private:
     QWebEngineProfile* liquidAppWebProfile;

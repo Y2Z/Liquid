@@ -26,14 +26,12 @@ It’s capable of making websites appear and behave more like native OS applicat
 
 ## Keyboard shortcuts
 
-#### View
 - `Ctrl + =`: Zoom in
 - `Ctrl + -`: Zoom out
 - `Ctrl + 0`: Reset zoom level
 - `Ctrl + F`: Toggle full-screen mode
-- `Ctrl + S`: Toggle scrollbar visibility
+- `Ctrl + M`: Toggle mute on/off
 - `Escape`: Exit from full-screen mode
-#### Control
 - `Ctrl + R`: Refresh the current page
 - `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry

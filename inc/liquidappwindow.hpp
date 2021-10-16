@@ -64,6 +64,7 @@ private:
     QAction* fullScreenAction;
     QAction* fullScreenAction2;
     QAction* fullScreenExitAction;
+    QAction* muteAudioAction;
     QAction* quitAction;
     QAction* quitAction2;
     QAction* reloadAction;
