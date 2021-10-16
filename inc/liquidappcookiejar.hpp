@@ -16,17 +16,17 @@ class LiquidAppCookieJar : public QNetworkCookieJar
     Q_OBJECT
 
 public:
-    LiquidAppCookieJar(QObject *parent);
+    LiquidAppCookieJar(QObject* parent);
     ~LiquidAppCookieJar();
 
-    bool removeCookie(const QNetworkCookie &cookie);
-    bool upsertCookie(const QNetworkCookie &cookie);
+    bool removeCookie(const QNetworkCookie& cookie);
+    bool upsertCookie(const QNetworkCookie& cookie);
 
-    void restoreCookies(QWebEngineCookieStore *cookieStore);
+    void restoreCookies(QWebEngineCookieStore* cookieStore);
 
 private:
-    QSettings *liquidAppSettings;
-    LiquidAppWindow *parentWindow;
+    QSettings* liquidAppSettings;
+    LiquidAppWindow* parentWindow;
 
     void save();
 };

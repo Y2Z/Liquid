@@ -16,6 +16,7 @@
 #define ICON_EDIT    "⚙"
 #define ICON_LOADING "⏳"
 #define ICON_LOCKED  "🖼"
+#define ICON_MUTED   "🔇"
 #define ICON_REMOVE  "✖"
 #define ICON_RUN     "➤"
 
@@ -27,6 +28,7 @@
 #define SETTINGS_KEY_USER_AGENT                "CustomUserAgent"
 #define SETTINGS_KEY_ICON                      "Icon"
 #define SETTINGS_KEY_ENABLE_JS                 "JavaScriptEnabled"
+#define SETTINGS_KEY_MUTED_AUDIO               "Mute"
 #define SETTINGS_KEY_NOTES                     "Notes"
 #define SETTINGS_KEY_SHOW_SCROLL_BARS          "ShowScrollBars"
 #define SETTINGS_KEY_TITLE                     "Title"
@@ -38,6 +40,7 @@
 
 /* Keyboard shortcuts */
 #define KEYBOARD_SHORTCUT_QUIT                                   "Ctrl+Q"
+#define KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_MUTE_AUDIO             "Ctrl+M"
 #define KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK        "Alt+Left"
 #define KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_BACK_2      "Backspace"
 #define KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_NAVIGATION_FORWARD     "Alt+Right"

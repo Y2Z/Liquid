@@ -8,7 +8,7 @@ LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent) 
 {
 }
 
-bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, QWebEnginePage::NavigationType navType, bool isMainFrame)
+bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navType, const bool isMainFrame)
 {
     const bool differentHost = url().host() != reqUrl.host();
     const bool keyModifierActive = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
@@ -17,7 +17,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, QWebEnginePag
     switch (navType) {
         // Open external websites using system's default browser
         case QWebEnginePage::NavigationTypeLinkClicked:
-            if ((isMainFrame && differentHost)|| keyModifierActive) {
+            if ((isMainFrame && differentHost) || keyModifierActive) {
                 QDesktopServices::openUrl(reqUrl);
                 return false;
             }
