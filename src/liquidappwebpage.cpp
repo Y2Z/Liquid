@@ -17,7 +17,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, QWebEnginePag
     switch (navType) {
         // Open external websites using system's default browser
         case QWebEnginePage::NavigationTypeLinkClicked:
-            if (differentHost || keyModifierActive) {
+            if ((isMainFrame && differentHost)|| keyModifierActive) {
                 QDesktopServices::openUrl(reqUrl);
                 return false;
             }
