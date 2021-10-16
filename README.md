@@ -1,6 +1,6 @@
 # Liquid
 
-Liquid is a tool that turns web resources into desktop applications.
+Liquid is a tool that turns web pages into desktop applications.
 
 It’s capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
 
@@ -10,7 +10,7 @@ It’s capable of making websites appear and behave more like native OS applicat
 - Fine zoom
 - Keyboard shortcuts
 - Window geometry lock
-- Option to enable or disable (third-party) Cookies
+- Option to allow or forbid (third-party) Cookies
 - Ability to inject additional CSS and JS code, disable JS
 - Customizable User-Agent string
 
@@ -37,6 +37,7 @@ It’s capable of making websites appear and behave more like native OS applicat
 - `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry
 - `Ctrl + Q`, `Ctrl + W`: Close the app
+- `Ctrl + <click>`: Open link in system’s browser
 - `Alt + Left`, `Backspace`: Go one step back
 - `Alt + Right`: Go one step forward
 
