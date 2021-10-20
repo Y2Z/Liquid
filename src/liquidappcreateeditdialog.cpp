@@ -123,17 +123,16 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     {
-        showScrollBarsCheckBox = new QCheckBox(tr("Show scroll bars"));
-        showScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
-        showScrollBarsCheckBox->setChecked(true);
+        hideScrollBarsCheckBox = new QCheckBox(tr("Hide scroll bars"));
+        hideScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
-            if (existingLiquidAppSettings->contains(SETTINGS_KEY_SHOW_SCROLL_BARS)) {
-                showScrollBarsCheckBox->setChecked(
-                    existingLiquidAppSettings->value(SETTINGS_KEY_SHOW_SCROLL_BARS).toBool()
+            if (existingLiquidAppSettings->contains(SETTINGS_KEY_HIDE_SCROLL_BARS)) {
+                hideScrollBarsCheckBox->setChecked(
+                    existingLiquidAppSettings->value(SETTINGS_KEY_HIDE_SCROLL_BARS).toBool()
                 );
             }
         }
-        advancedLayout->addWidget(showScrollBarsCheckBox);
+        advancedLayout->addWidget(hideScrollBarsCheckBox);
     }
 #endif
     {
@@ -285,7 +284,7 @@ void LiquidAppCreateEditDialog::save()
     // Show/hide scroll bars
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     {
-        tempAppSettings->setValue(SETTINGS_KEY_SHOW_SCROLL_BARS, showScrollBarsCheckBox->isChecked());
+        tempAppSettings->setValue(SETTINGS_KEY_HIDE_SCROLL_BARS, hideScrollBarsCheckBox->isChecked());
     }
 #endif
 

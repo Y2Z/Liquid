@@ -50,7 +50,7 @@ private:
     QPlainTextEdit *customCSSarea;
     QPlainTextEdit *customJSarea;
     QLineEdit *userAgentInput;
-    QCheckBox *showScrollBarsCheckBox;
+    QCheckBox *hideScrollBarsCheckBox;
     QPlainTextEdit *notesArea;
     QCheckBox *createIconCheckBox;
     QPushButton *customBackgroundButton;

@@ -108,10 +108,10 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
         // Toggle JavaScript on if enabled in application config
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-        if (liquidAppSettings->contains(SETTINGS_KEY_SHOW_SCROLL_BARS)) {
+        if (liquidAppSettings->contains(SETTINGS_KEY_HIDE_SCROLL_BARS)) {
                 settings()->setAttribute(
                     QWebEngineSettings::ShowScrollBars,
-                    liquidAppSettings->value(SETTINGS_KEY_SHOW_SCROLL_BARS).toBool()
+                    !liquidAppSettings->value(SETTINGS_KEY_HIDE_SCROLL_BARS).toBool()
                 );
         }
 #endif
