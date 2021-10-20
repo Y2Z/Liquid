@@ -1,6 +1,8 @@
+#include <QDesktopServices>
 #include <QGuiApplication>
 
-#include "config.h"
+#include "globals.h"
+
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
 

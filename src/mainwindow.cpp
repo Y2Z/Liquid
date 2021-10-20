@@ -1,17 +1,28 @@
-#include "config.h"
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
+#include <QHeaderView>
+#include <QLabel>
+#include <QMessageBox>
+#include <QProcess>
+#include <QVBoxLayout>
+
+#include "globals.h"
+
 #include "liquidappcreateeditdialog.hpp"
 #include "mainwindow.hpp"
 
 MainWindow::MainWindow() : QScrollArea()
 {
-    setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
+    setWindowTitle(LQD_PROG_TITLE);
+
+    setMinimumSize(LQD_WIN_MIN_SIZE_W, LQD_WIN_MIN_SIZE_H);
     setWidgetResizable(true);
-    setWindowTitle(CONFIG_PROG_NAME);
 
     settings = new QSettings(PROG_NAME, PROG_NAME);
-    if (settings->contains(SETTINGS_KEY_WINDOW_GEOMETRY)) {
+    if (settings->contains(LQD_CFG_KEY_WIN_GEOM)) {
         QByteArray geometry = QByteArray::fromHex(
-            settings->value(SETTINGS_KEY_WINDOW_GEOMETRY).toByteArray()
+            settings->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
         );
         restoreGeometry(geometry);
     }
@@ -37,7 +48,7 @@ MainWindow::MainWindow() : QScrollArea()
     layout->addWidget(appListTable);
 
     // Add new liquid app button
-    createNewLiquidAppButton = new QPushButton(tr(ICON_ADD));
+    createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
     createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
     QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [=]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
@@ -85,7 +96,7 @@ MainWindow::~MainWindow()
 void MainWindow::bindShortcuts()
 {
     // Connect the exit shortcut
-    quitAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_QUIT)));
+    quitAction.setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
     addAction(&quitAction);
     connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
@@ -157,7 +168,7 @@ QString MainWindow::getLiquidAppsDirPath()
 {
     QSettings *dummyLiquidAppSettings = new QSettings(QSettings::IniFormat,
                                                       QSettings::UserScope,
-                                                      CONFIG_APPS_PATH,
+                                                      QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                       "dummy597a32d8cf3b253",
                                                       nullptr);
     QFileInfo dummyLiquidAppFileInfo(dummyLiquidAppSettings->fileName());
@@ -165,10 +176,11 @@ QString MainWindow::getLiquidAppsDirPath()
     return dummyLiquidAppFileInfo.absolutePath();
 }
 
-void MainWindow::launchLiquidApp(QString liquidAppName)
+void MainWindow::launchLiquidApp(const QString liquidAppName)
 {
     const QString liquidAppFilePath(QCoreApplication::applicationFilePath());
     QProcess process;
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     process.setProgram(liquidAppFilePath);
     process.setArguments(QStringList() << QStringLiteral("%1").arg(liquidAppName));
@@ -220,7 +232,7 @@ void MainWindow::populateTable()
         QString liquidAppName = liquidAppFile.completeBaseName();
         QSettings *liquidAppSettings = new QSettings(QSettings::IniFormat,
                                                      QSettings::UserScope,
-                                                     CONFIG_APPS_PATH,
+                                                     QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                      liquidAppName,
                                                      nullptr);
 
@@ -232,9 +244,9 @@ void MainWindow::populateTable()
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
         QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
-        if (liquidAppSettings->contains(SETTINGS_KEY_ICON)) {
+        if (liquidAppSettings->contains(LQD_CFG_KEY_ICON)) {
             QByteArray byteArray = QByteArray::fromHex(
-                liquidAppSettings->value(SETTINGS_KEY_ICON).toByteArray()
+                liquidAppSettings->value(LQD_CFG_KEY_ICON).toByteArray()
             );
             QBuffer buffer(&byteArray);
             buffer.open(QIODevice::ReadOnly);
@@ -257,7 +269,7 @@ void MainWindow::populateTable()
         appItemActionButtonsWidget->setLayout(appItemLayout);
 
         // Delete button
-        QPushButton *deleteButton = new QPushButton(tr(ICON_REMOVE));
+        QPushButton *deleteButton = new QPushButton(tr(LQD_ICON_REMOVE));
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [=]() {
@@ -302,7 +314,7 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(deleteButton);
 
         // Edit button
-        QPushButton *editButton = new QPushButton(tr(ICON_EDIT));
+        QPushButton *editButton = new QPushButton(tr(LQD_ICON_EDIT));
         editButton->setCursor(Qt::PointingHandCursor);
         editButton->setProperty("class", "btnEdit");
         QObject::connect(editButton, &QPushButton::clicked, [=]() {
@@ -326,7 +338,7 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(editButton);
 
         // Launch button
-        QPushButton *runButton = new QPushButton(tr(ICON_RUN));
+        QPushButton *runButton = new QPushButton(tr(LQD_ICON_RUN));
         runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
@@ -340,7 +352,7 @@ void MainWindow::populateTable()
 
 void MainWindow::saveSettings()
 {
-    settings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(saveGeometry().toHex()));
+    settings->setValue(LQD_CFG_KEY_WIN_GEOM, QString(saveGeometry().toHex()));
     settings->sync();
 }
 

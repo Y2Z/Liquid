@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtGui/QDesktopServices>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 

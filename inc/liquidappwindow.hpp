@@ -6,11 +6,8 @@
 #include <QMenu>
 #include <QSettings>
 #include <QShortcut>
-#include <QtWebEngineWidgets/QWebEngineScript>
-#include <QtWebEngineWidgets/QWebEngineScriptCollection>
-#include <QtWebEngineWidgets/QWebEngineSettings>
-#include <QtWebEngineWidgets/QWebEngineView>
-#include <QWebEngineCookieStore>
+#include <QWebEngineSettings>
+#include <QWebEngineView>
 #include <QWebEngineFullScreenRequest>
 
 #include "liquidappwebpage.hpp"
@@ -23,7 +20,7 @@ public:
     explicit LiquidAppWindow(QString* name);
     ~LiquidAppWindow();
 
-    QSettings* liquidAppSettings;
+    QSettings* liquidAppConfig;
 
 public slots:
     void exitFullScreenMode();
