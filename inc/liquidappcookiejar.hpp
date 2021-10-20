@@ -1,12 +1,8 @@
 #pragma once
 
-#include <QDateTime>
-#include <QList>
 #include <QNetworkCookie>
 #include <QNetworkCookieJar>
 #include <QSettings>
-#include <QStringList>
-#include <QVariantList>
 #include <QWebEngineCookieStore>
 
 #include "liquidappwindow.hpp"
@@ -17,7 +13,7 @@ class LiquidAppCookieJar : public QNetworkCookieJar
 
 public:
     LiquidAppCookieJar(QObject* parent);
-    ~LiquidAppCookieJar();
+    ~LiquidAppCookieJar(void);
 
     bool removeCookie(const QNetworkCookie& cookie);
     bool upsertCookie(const QNetworkCookie& cookie);
@@ -25,8 +21,8 @@ public:
     void restoreCookies(QWebEngineCookieStore* cookieStore);
 
 private:
-    QSettings* liquidAppSettings;
+    QSettings* liquidAppConfig;
     LiquidAppWindow* parentWindow;
 
-    void save();
+    void save(void);
 };

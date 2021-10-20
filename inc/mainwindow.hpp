@@ -1,18 +1,10 @@
 #pragma once
 
 #include <QAction>
-#include <QCoreApplication>
-#include <QDir>
-#include <QFileInfo>
-#include <QHeaderView>
-#include <QLabel>
-#include <QMessageBox>
-#include <QProcess>
 #include <QPushButton>
 #include <QSettings>
 #include <QScrollArea>
 #include <QTableWidget>
-#include <QVBoxLayout>
 
 class MainWindow : public QScrollArea
 {
@@ -30,7 +22,7 @@ private:
     void bindShortcuts();
     QString getLiquidAppsDirPath();
     void flushTable();
-    void launchLiquidApp(QString liquidAppName);
+    void launchLiquidApp(const QString liquidAppName);
     void loadStyleSheet();
     void populateTable();
     void saveSettings();

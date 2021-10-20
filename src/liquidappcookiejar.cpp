@@ -1,25 +1,26 @@
-#include "config.h"
+#include "globals.h"
+
 #include "liquidappcookiejar.hpp"
 #include "liquidappwindow.hpp"
 
 LiquidAppCookieJar::LiquidAppCookieJar(QObject *parent) : QNetworkCookieJar(parent)
 {
     parentWindow = (LiquidAppWindow *)parent;
-    liquidAppSettings = parentWindow->liquidAppSettings;
+    liquidAppConfig = parentWindow->liquidAppConfig;
 }
 
-LiquidAppCookieJar::~LiquidAppCookieJar()
+LiquidAppCookieJar::~LiquidAppCookieJar(void)
 {
 }
 
 bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
 {
-    if (!liquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
         return false;
     }
 
     bool isThirdParty = !validateCookie(cookie, parentWindow->url());
-    if (isThirdParty && !liquidAppSettings->value(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES).toBool()) {
+    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
 
@@ -40,12 +41,12 @@ bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
 
 bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
 {
-    if (!liquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
         return false;
     }
 
     bool isThirdParty = !validateCookie(cookie, parentWindow->url());
-    if (isThirdParty && !liquidAppSettings->value(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES).toBool()) {
+    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
 
@@ -59,13 +60,13 @@ bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
 }
 
 void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
-    if (!liquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
         return;
     }
 
-    liquidAppSettings->beginGroup("Cookies");
-    foreach(QString cookieId, liquidAppSettings->allKeys()) {
-        QByteArray rawCookie = liquidAppSettings->value(cookieId).toByteArray();
+    liquidAppConfig->beginGroup("Cookies");
+    foreach(QString cookieId, liquidAppConfig->allKeys()) {
+        QByteArray rawCookie = liquidAppConfig->value(cookieId).toByteArray();
         QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
 
         // Construct origin URL based on the cookie itself
@@ -85,19 +86,19 @@ void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
         }
         cookieStore->setCookie(cookie, url);
     }
-    liquidAppSettings->endGroup();
+    liquidAppConfig->endGroup();
 }
 
-void LiquidAppCookieJar::save()
+void LiquidAppCookieJar::save(void)
 {
-    if (!liquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
         return;
     }
 
-    liquidAppSettings->beginGroup("Cookies");
+    liquidAppConfig->beginGroup("Cookies");
     // Remove all cookies
-    foreach(QString cookieName, liquidAppSettings->allKeys()) {
-        liquidAppSettings->remove(cookieName);
+    foreach(QString cookieName, liquidAppConfig->allKeys()) {
+        liquidAppConfig->remove(cookieName);
     }
     // Save all cookies
     foreach(QNetworkCookie cookie, allCookies()) {
@@ -105,8 +106,8 @@ void LiquidAppCookieJar::save()
                                          "_" + cookie.path().toLatin1() +
                                          "_" + cookie.name());
         QString rawCookie = QString(cookie.toRawForm(QNetworkCookie::Full));
-        liquidAppSettings->setValue(cookieId, rawCookie);
+        liquidAppConfig->setValue(cookieId, rawCookie);
     }
-    liquidAppSettings->endGroup();
-    liquidAppSettings->sync();
+    liquidAppConfig->endGroup();
+    liquidAppConfig->sync();
 }

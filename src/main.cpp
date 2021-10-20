@@ -1,8 +1,11 @@
 #include <csignal>
+
 #include <QApplication>
+#include <QDir>
 #include <QSettings>
 
-#include "config.h"
+#include "globals.h"
+
 #include "liquidappcreateeditdialog.hpp"
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
@@ -99,11 +102,11 @@ init:
         // Attempt to load Liquid app's config file
         QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
                                                    QSettings::UserScope,
-                                                   CONFIG_APPS_PATH,
+                                                   QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                    liquidAppName,
                                                    nullptr);
         // Attempt to load app settings from a config file
-        if (tempAppSettings->contains(SETTINGS_KEY_URL)) {
+        if (tempAppSettings->contains(LQD_CFG_KEY_URL)) {
             // // Allow only one instance
             sharedMemory = new QSharedMemory(getUserName() + "_Liquid_app_" + liquidAppName);
             if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {

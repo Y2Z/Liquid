@@ -33,7 +33,7 @@ SOURCES     += src/liquidappcookiejar.cpp \
                src/main.cpp \
                src/mainwindow.cpp \
 
-HEADERS     += inc/config.h \
+HEADERS     += inc/globals.h \
                inc/liquidappcookiejar.hpp \
                inc/liquidappcreateeditdialog.hpp \
                inc/liquidappwebpage.hpp \

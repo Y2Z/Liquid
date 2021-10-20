@@ -1,4 +1,6 @@
-#include "config.h"
+#include <QDir>
+
+#include "globals.h"
 
 #include "liquidappcreateeditdialog.hpp"
 #include "mainwindow.hpp"
@@ -10,13 +12,13 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     // Attempt to load liquid app's config file
     QSettings *existingLiquidAppSettings = new QSettings(QSettings::IniFormat,
                                                          QSettings::UserScope,
-                                                         CONFIG_APPS_PATH,
+                                                         QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                          liquidAppName,
                                                          nullptr);
 
     // Attempt to load app settings from a config file
     if (liquidAppName.size() > 0) {
-        isEditingExisting = existingLiquidAppSettings->contains(SETTINGS_KEY_URL);
+        isEditingExisting = existingLiquidAppSettings->contains(LQD_CFG_KEY_URL);
     } else {
         delete existingLiquidAppSettings;
     }
@@ -49,7 +51,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         addressInput = new QLineEdit;
         addressInput->setPlaceholderText(tr("URL"));
         if (isEditingExisting) {
-            addressInput->setText(existingLiquidAppSettings->value(SETTINGS_KEY_URL).toString());
+            addressInput->setText(existingLiquidAppSettings->value(LQD_CFG_KEY_URL).toString());
         }
         addressLabel->setBuddy(addressInput);
         basicLayout->addWidget(addressInput);
@@ -83,7 +85,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         titleInput = new QLineEdit;
         titleInput->setPlaceholderText(tr("Title"));
         if (isEditingExisting) {
-            titleInput->setText(existingLiquidAppSettings->value(SETTINGS_KEY_TITLE).toString());
+            titleInput->setText(existingLiquidAppSettings->value(LQD_CFG_KEY_TITLE).toString());
         }
         advancedLayout->addWidget(titleInput);
     }
@@ -91,9 +93,10 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"));
         enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
-            bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ENABLE_JS).toBool();
+            bool isChecked = existingLiquidAppSettings->value(LQD_CFG_KEY_ENABLE_JS).toBool();
             enableJavaScriptCheckBox->setChecked(isChecked);
         } else {
+            // Checked by default (when creating new Liquid app)
             enableJavaScriptCheckBox->setChecked(true);
         }
         advancedLayout->addWidget(enableJavaScriptCheckBox);
@@ -102,9 +105,10 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         allowCookiesCheckBox = new QCheckBox(tr("Allow Cookies"));
         allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
-            bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ALLOW_COOKIES).toBool();
+            bool isChecked = existingLiquidAppSettings->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool();
             allowCookiesCheckBox->setChecked(isChecked);
         } else {
+            // Checked by default (when creating new Liquid app)
             allowCookiesCheckBox->setChecked(true);
         }
         advancedLayout->addWidget(allowCookiesCheckBox);
@@ -116,7 +120,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
             allowThirdPartyCookiesCheckBox->setEnabled(false);
         }
         if (isEditingExisting) {
-            bool isChecked = existingLiquidAppSettings->value(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES).toBool();
+            bool isChecked = existingLiquidAppSettings->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool();
             allowThirdPartyCookiesCheckBox->setChecked(isChecked);
         }
         advancedLayout->addWidget(allowThirdPartyCookiesCheckBox);
@@ -126,9 +130,9 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         hideScrollBarsCheckBox = new QCheckBox(tr("Hide scroll bars"));
         hideScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
-            if (existingLiquidAppSettings->contains(SETTINGS_KEY_HIDE_SCROLL_BARS)) {
+            if (existingLiquidAppSettings->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
                 hideScrollBarsCheckBox->setChecked(
-                    existingLiquidAppSettings->value(SETTINGS_KEY_HIDE_SCROLL_BARS).toBool()
+                    existingLiquidAppSettings->value(LQD_CFG_KEY_HIDE_SCROLL_BARS).toBool()
                 );
             }
         }
@@ -139,6 +143,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         if (!isEditingExisting) {
             createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
             createIconCheckBox->setCursor(Qt::PointingHandCursor);
+            // Checked by default (when creating new Liquid app)
             createIconCheckBox->setChecked(true);
             advancedLayout->addWidget(createIconCheckBox);
         }
@@ -147,8 +152,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         customBackgroundButton = new QPushButton(tr("Set custom background color"));
         customBackgroundButton->setCursor(Qt::PointingHandCursor);
         if (isEditingExisting) {
-            if (existingLiquidAppSettings->contains(SETTINGS_KEY_BACKGROUND_COLOR)) {
-                backgroundColorName = existingLiquidAppSettings->value(SETTINGS_KEY_BACKGROUND_COLOR).toString();
+            if (existingLiquidAppSettings->contains(LQD_CFG_KEY_BACKGROUND_COLOR)) {
+                backgroundColorName = existingLiquidAppSettings->value(LQD_CFG_KEY_BACKGROUND_COLOR).toString();
                 backgroundColorName = QColor(backgroundColorName).name();
 
                 customBackgroundButton->setText(tr("Custom background color: %1").arg(backgroundColorName));
@@ -158,26 +163,26 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         advancedLayout->addWidget(customBackgroundButton);
     }
     {
-        customCSSarea = new QPlainTextEdit();
-        customCSSarea->setPlaceholderText(tr("Additional CSS"));
+        additionalCssTextArea = new QPlainTextEdit();
+        additionalCssTextArea->setPlaceholderText(tr("Additional CSS"));
         if (isEditingExisting) {
-            customCSSarea->setPlainText(existingLiquidAppSettings->value(SETTINGS_KEY_CUSTOM_CSS).toString());
+            additionalCssTextArea->setPlainText(existingLiquidAppSettings->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString());
         }
-        advancedLayout->addWidget(customCSSarea);
+        advancedLayout->addWidget(additionalCssTextArea);
     }
     {
-        customJSarea = new QPlainTextEdit();
-        customJSarea->setPlaceholderText(tr("Additonal JavaScript code"));
+        additionalJsTextArea = new QPlainTextEdit();
+        additionalJsTextArea->setPlaceholderText(tr("Additonal JavaScript code"));
         if (isEditingExisting) {
-            customJSarea->setPlainText(existingLiquidAppSettings->value(SETTINGS_KEY_CUSTOM_JS).toString());
+            additionalJsTextArea->setPlainText(existingLiquidAppSettings->value(LQD_CFG_KEY_ADDITIONAL_JS).toString());
         }
-        advancedLayout->addWidget(customJSarea);
+        advancedLayout->addWidget(additionalJsTextArea);
     }
     {
         userAgentInput = new QLineEdit;
         userAgentInput->setPlaceholderText(tr("Custom user-agent string"));
         if (isEditingExisting) {
-            userAgentInput->setText(existingLiquidAppSettings->value(SETTINGS_KEY_USER_AGENT).toString());
+            userAgentInput->setText(existingLiquidAppSettings->value(LQD_CFG_KEY_USER_AGENT).toString());
         }
         advancedLayout->addWidget(userAgentInput);
     }
@@ -185,7 +190,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         notesArea = new QPlainTextEdit();
         notesArea->setPlaceholderText(tr("Notes"));
         if (isEditingExisting) {
-            notesArea->setPlainText(existingLiquidAppSettings->value(SETTINGS_KEY_NOTES).toString());
+            notesArea->setPlainText(existingLiquidAppSettings->value(LQD_CFG_KEY_NOTES).toString());
         }
         advancedLayout->addWidget(notesArea);
     }
@@ -236,7 +241,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     });
 }
 
-LiquidAppCreateEditDialog::~LiquidAppCreateEditDialog()
+LiquidAppCreateEditDialog::~LiquidAppCreateEditDialog(void)
 {
 }
 
@@ -254,7 +259,7 @@ void LiquidAppCreateEditDialog::save()
     appName = appName.replace(QDir::separator(), "_");
     QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
                                                QSettings::UserScope,
-                                               CONFIG_APPS_PATH,
+                                               QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                appName,
                                                nullptr);
 
@@ -263,103 +268,103 @@ void LiquidAppCreateEditDialog::save()
     // Starting URL
     {
         QUrl url(QUrl::fromUserInput(addressInput->text()));
-        tempAppSettings->setValue(SETTINGS_KEY_URL, url.toString());
+        tempAppSettings->setValue(LQD_CFG_KEY_URL, url.toString());
     }
 
     // Enable JS
     {
-        tempAppSettings->setValue(SETTINGS_KEY_ENABLE_JS, enableJavaScriptCheckBox->isChecked());
+        tempAppSettings->setValue(LQD_CFG_KEY_ENABLE_JS, enableJavaScriptCheckBox->isChecked());
     }
 
     // Allow cookies
     {
-        tempAppSettings->setValue(SETTINGS_KEY_ALLOW_COOKIES, allowCookiesCheckBox->isChecked());
+        tempAppSettings->setValue(LQD_CFG_KEY_ALLOW_COOKIES, allowCookiesCheckBox->isChecked());
     }
 
     // Allow third-party cookies
     {
-        tempAppSettings->setValue(SETTINGS_KEY_ALLOW_THIRD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
+        tempAppSettings->setValue(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
     }
 
-    // Show/hide scroll bars
+    // Hide scroll bars
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     {
-        tempAppSettings->setValue(SETTINGS_KEY_HIDE_SCROLL_BARS, hideScrollBarsCheckBox->isChecked());
+        tempAppSettings->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, hideScrollBarsCheckBox->isChecked());
     }
 #endif
 
-    // Custom Liquid app window title
+    // Custom window title
     {
         if (isEditingExisting) {
-            if (tempAppSettings->contains(SETTINGS_KEY_TITLE) && titleInput->text().size() == 0) {
-                 tempAppSettings->remove(SETTINGS_KEY_TITLE);
+            if (tempAppSettings->contains(LQD_CFG_KEY_TITLE) && titleInput->text().size() == 0) {
+                 tempAppSettings->remove(LQD_CFG_KEY_TITLE);
             } else {
-                if (tempAppSettings->value(SETTINGS_KEY_TITLE).toString().size() > 0
+                if (tempAppSettings->value(LQD_CFG_KEY_TITLE).toString().size() > 0
                     || titleInput->text().size() > 0
                 ) {
-                    tempAppSettings->setValue(SETTINGS_KEY_TITLE, titleInput->text());
+                    tempAppSettings->setValue(LQD_CFG_KEY_TITLE, titleInput->text());
                 }
             }
         } else {
             if (titleInput->text() != "") {
-                tempAppSettings->setValue(SETTINGS_KEY_TITLE, titleInput->text());
+                tempAppSettings->setValue(LQD_CFG_KEY_TITLE, titleInput->text());
             }
         }
     }
 
-    // Custom CSS textarea
+    // Custom CSS
     {
         if (isEditingExisting) {
-            if (tempAppSettings->contains(SETTINGS_KEY_CUSTOM_CSS) && customCSSarea->toPlainText().size() == 0) {
-                 tempAppSettings->remove(SETTINGS_KEY_CUSTOM_CSS);
+            if (tempAppSettings->contains(LQD_CFG_KEY_ADDITIONAL_CSS) && additionalCssTextArea->toPlainText().size() == 0) {
+                 tempAppSettings->remove(LQD_CFG_KEY_ADDITIONAL_CSS);
             } else {
-                if (tempAppSettings->value(SETTINGS_KEY_CUSTOM_CSS).toString().size() > 0
-                    || customCSSarea->toPlainText().size() > 0
+                if (tempAppSettings->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString().size() > 0
+                    || additionalCssTextArea->toPlainText().size() > 0
                 ) {
-                    tempAppSettings->setValue(SETTINGS_KEY_CUSTOM_CSS, customCSSarea->toPlainText());
+                    tempAppSettings->setValue(LQD_CFG_KEY_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
                 }
             }
         } else {
-            if (customCSSarea->toPlainText() != "") {
-                tempAppSettings->setValue(SETTINGS_KEY_CUSTOM_CSS, customCSSarea->toPlainText());
+            if (additionalCssTextArea->toPlainText() != "") {
+                tempAppSettings->setValue(LQD_CFG_KEY_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
             }
         }
     }
 
-    // Custom JS textarea
+    // Custom JS
     {
         if (isEditingExisting) {
-            if (tempAppSettings->contains(SETTINGS_KEY_CUSTOM_JS) && customJSarea->toPlainText().size() == 0) {
-                 tempAppSettings->remove(SETTINGS_KEY_CUSTOM_JS);
+            if (tempAppSettings->contains(LQD_CFG_KEY_ADDITIONAL_JS) && additionalJsTextArea->toPlainText().size() == 0) {
+                 tempAppSettings->remove(LQD_CFG_KEY_ADDITIONAL_JS);
             } else {
-                if (tempAppSettings->value(SETTINGS_KEY_CUSTOM_JS).toString().size() > 0
-                    || customJSarea->toPlainText().size() > 0
+                if (tempAppSettings->value(LQD_CFG_KEY_ADDITIONAL_JS).toString().size() > 0
+                    || additionalJsTextArea->toPlainText().size() > 0
                 ) {
-                    tempAppSettings->setValue(SETTINGS_KEY_CUSTOM_JS, customJSarea->toPlainText());
+                    tempAppSettings->setValue(LQD_CFG_KEY_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
                 }
             }
         } else {
-            if (customJSarea->toPlainText() != "") {
-                tempAppSettings->setValue(SETTINGS_KEY_CUSTOM_JS, customJSarea->toPlainText());
+            if (additionalJsTextArea->toPlainText() != "") {
+                tempAppSettings->setValue(LQD_CFG_KEY_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
             }
         }
     }
 
-    // Custom user-agent text input
+    // Custom user-agent
     {
         if (isEditingExisting) {
-            if (tempAppSettings->contains(SETTINGS_KEY_USER_AGENT) && userAgentInput->text().size() == 0) {
-                 tempAppSettings->remove(SETTINGS_KEY_USER_AGENT);
+            if (tempAppSettings->contains(LQD_CFG_KEY_USER_AGENT) && userAgentInput->text().size() == 0) {
+                 tempAppSettings->remove(LQD_CFG_KEY_USER_AGENT);
             } else {
-                if (tempAppSettings->value(SETTINGS_KEY_USER_AGENT).toString().size() > 0
+                if (tempAppSettings->value(LQD_CFG_KEY_USER_AGENT).toString().size() > 0
                     || userAgentInput->text().size() > 0
                 ) {
-                    tempAppSettings->setValue(SETTINGS_KEY_USER_AGENT, userAgentInput->text());
+                    tempAppSettings->setValue(LQD_CFG_KEY_USER_AGENT, userAgentInput->text());
                 }
             }
         } else {
             if (userAgentInput->text() != "") {
-                tempAppSettings->setValue(SETTINGS_KEY_USER_AGENT, userAgentInput->text());
+                tempAppSettings->setValue(LQD_CFG_KEY_USER_AGENT, userAgentInput->text());
             }
         }
     }
@@ -367,23 +372,23 @@ void LiquidAppCreateEditDialog::save()
     // Notes
     {
         if (isEditingExisting) {
-            if (tempAppSettings->contains(SETTINGS_KEY_NOTES) && notesArea->toPlainText().size() == 0) {
-                 tempAppSettings->remove(SETTINGS_KEY_NOTES);
+            if (tempAppSettings->contains(LQD_CFG_KEY_NOTES) && notesArea->toPlainText().size() == 0) {
+                 tempAppSettings->remove(LQD_CFG_KEY_NOTES);
             } else {
-                if (tempAppSettings->value(SETTINGS_KEY_NOTES).toString().size() > 0
+                if (tempAppSettings->value(LQD_CFG_KEY_NOTES).toString().size() > 0
                     || notesArea->toPlainText().size() > 0
                 ) {
-                    tempAppSettings->setValue(SETTINGS_KEY_NOTES, notesArea->toPlainText());
+                    tempAppSettings->setValue(LQD_CFG_KEY_NOTES, notesArea->toPlainText());
                 }
             }
         } else {
             if (notesArea->toPlainText() != "") {
-                tempAppSettings->setValue(SETTINGS_KEY_NOTES, notesArea->toPlainText());
+                tempAppSettings->setValue(LQD_CFG_KEY_NOTES, notesArea->toPlainText());
             }
         }
     }
 
-    // Create desktop icon checkbox
+    // Create desktop icon
     {
         // TODO: make it possible to remove and create desktop icons for existing Liquid apps
         if (!isEditingExisting) {
@@ -394,10 +399,10 @@ void LiquidAppCreateEditDialog::save()
         }
     }
 
-    // Custom background color button
+    // Custom background color
     {
         if (backgroundColorName.size() > 0) {
-            tempAppSettings->setValue(SETTINGS_KEY_BACKGROUND_COLOR, backgroundColorName);
+            tempAppSettings->setValue(LQD_CFG_KEY_BACKGROUND_COLOR, backgroundColorName);
         }
     }
 
@@ -406,15 +411,15 @@ void LiquidAppCreateEditDialog::save()
     accept();
 }
 
-QString LiquidAppCreateEditDialog::getName()
+QString LiquidAppCreateEditDialog::getName(void)
 {
     return nameInput->text();
 }
 
-void LiquidAppCreateEditDialog::bindShortcuts()
+void LiquidAppCreateEditDialog::bindShortcuts(void)
 {
     // Connect the exit keyboard shortcut
-    quitAction.setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_QUIT)));
+    quitAction.setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
     addAction(&quitAction);
     connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
