@@ -10,20 +10,18 @@
 
 LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 {
+    liquidAppName = name;
+
     setMinimumSize(CONFIG_LIQUID_APP_WIN_MINSIZE_W, CONFIG_LIQUID_APP_WIN_MINSIZE_H);
 
     // Disable context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
-
-    isLoading = true;
 
     liquidAppSettings = new QSettings(QSettings::IniFormat,
                                       QSettings::UserScope,
                                       CONFIG_APPS_PATH,
                                       *name,
                                       nullptr);
-
-    liquidAppName = name;
 
     // Default starting web settings for all Liquid apps
     QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
@@ -57,19 +55,20 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     setWebSettingsToDefault(liquidAppWebProfile->settings());
 
     if (!liquidAppWebProfile->isOffTheRecord()) {
-        qDebug() << "Web profile is not off-the-record!";
+        qDebug().noquote() << "Web profile is not off-the-record!";
     }
 
     liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
-
     setPage(liquidAppWebPage);
 
-    // Set custom window title
+    // Set window title
     liquidAppWindowTitle = *liquidAppName;
     if (liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
         liquidAppWindowTitle = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
+        // Make sure the window title never gets changed
+        liquidAppWindowTitleIsReadOnly = true;
     }
-    updateWindowTitle(liquidAppWindowTitle);
+    updateWindowTitle();
 
     QUrl url(liquidAppSettings->value(SETTINGS_KEY_URL).toString());
     if (url.isValid()) {
@@ -131,7 +130,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         if (liquidAppSettings->contains(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED)) {
             if (liquidAppSettings->value(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED).toBool()) {
                 toggleWindowGeometryLock();
-                isWindowGeometryLocked = true;
+                windowGeometryIsLocked = true;
             }
         }
 
@@ -142,15 +141,14 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
         // Custom user-defined CSS (does not require JavascriptEnabled in order to work)
         if (liquidAppSettings->contains(SETTINGS_KEY_CUSTOM_CSS)) {
-            QString b64data = liquidAppSettings->value(SETTINGS_KEY_CUSTOM_CSS).toString().toUtf8().toBase64();
-            QString cssDataURI = "data:text/css;charset=utf-8;base64," + b64data;
-            // This will likely not work if JS is disabled for this Liquid app
-            QString js = QString("(function(){"\
-                                 "    const styleEl = document.createElement('style');"\
-                                 "    const cssTextNode = document.createTextNode('@import url(%1)');"\
-                                 "    styleEl.appendChild(cssTextNode);"\
-                                 "    document.head.appendChild(styleEl);"\
-                                 "})();").arg(cssDataURI);
+            const QString b64data = liquidAppSettings->value(SETTINGS_KEY_CUSTOM_CSS).toString().toUtf8().toBase64();
+            const QString cssDataURI = "data:text/css;charset=utf-8;base64," + b64data;
+            const QString js = QString("(()=>{"\
+                                            "const styleEl = document.createElement('style');"\
+                                            "const cssTextNode = document.createTextNode('@import url(%1)');"\
+                                            "styleEl.appendChild(cssTextNode);"\
+                                            "document.head.appendChild(styleEl)"\
+                                        "})()").arg(cssDataURI);
             QWebEngineScript script;
             script.setInjectionPoint(QWebEngineScript::DocumentReady);
             script.setRunsOnSubFrames(false);
@@ -200,8 +198,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         // Update Liquid application's icon using the one provided by the website
         connect(page(), SIGNAL(iconChanged(QIcon)), this, SLOT(onIconChanged(QIcon)));
 
+        // Catch loading's start
+        connect(this, &QWebEngineView::loadStarted, this, &LiquidAppWindow::loadStarted);
+
         // Catch loading's end
-        connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished(bool)));
+        connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished()));
 
         // Catch mute/unmute and save to app config
         connect(page(), &QWebEnginePage::audioMutedChanged, this, [this](const bool muted){
@@ -275,35 +276,35 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     reloadAction = new QAction;
     reloadAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD)));
     addAction(reloadAction);
-    connect(reloadAction, SIGNAL(triggered()), this, SLOT(refresh()));
-    // Connect "alternative reload" shortcut
+    connect(reloadAction, SIGNAL(triggered()), this, SLOT(reload()));
+    // Connect "alternative reload" shortcut (there can be only one QKeySequence per QAction)
     reloadAction2 = new QAction;
     reloadAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RELOAD_2)));
     addAction(reloadAction2);
-    connect(reloadAction2, SIGNAL(triggered()), this, SLOT(refresh()));
+    connect(reloadAction2, SIGNAL(triggered()), this, SLOT(reload()));
 
-    // Connect "reset" shortcut
-    resetAction = new QAction;
-    resetAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RESET)));
-    addAction(resetAction);
-    connect(resetAction, SIGNAL(triggered()), this, SLOT(reset()));
+    // Connect "hard reload" shortcut
+    hardReloadAction = new QAction;
+    hardReloadAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_PAGE_RESET)));
+    addAction(hardReloadAction);
+    connect(hardReloadAction, SIGNAL(triggered()), this, SLOT(hardReload()));
 
-    // Connect "fullscreen" shortcut
-    fullScreenAction = new QAction;
-    fullScreenAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE)));
-    addAction(fullScreenAction);
-    connect(fullScreenAction, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
-    // Connect "alternative fullscreen" shortcut
-    fullScreenAction2 = new QAction;
-    fullScreenAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE_2)));
-    addAction(fullScreenAction2);
-    connect(fullScreenAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
+    // Connect "toggle fulls-creen" shortcut
+    toggleFullScreenModeAction = new QAction;
+    toggleFullScreenModeAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE)));
+    addAction(toggleFullScreenModeAction);
+    connect(toggleFullScreenModeAction, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
+    // Connect "alternative toggle full-screen" shortcut (there can be only one QKeySequence per QAction)
+    toggleFullScreenModeAction2 = new QAction;
+    toggleFullScreenModeAction2->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_TOGGLE_2)));
+    addAction(toggleFullScreenModeAction2);
+    connect(toggleFullScreenModeAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
 
-    // Connect "fullscreen" exit shortcut
-    fullScreenExitAction = new QAction;
-    fullScreenExitAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_EXIT)));
-    addAction(fullScreenExitAction);
-    connect(fullScreenExitAction, SIGNAL(triggered()), this, SLOT(exitFullScreen()));
+    // Connect "stop loading"/"exit full-screen mode" shortcut
+    stopLoadingOrExitFullScreenModeAction = new QAction;
+    stopLoadingOrExitFullScreenModeAction->setShortcut(QKeySequence(tr(KEYBOARD_SHORTCUT_LIQUID_APP_WINDOW_FULLSCREEN_EXIT)));
+    addAction(stopLoadingOrExitFullScreenModeAction);
+    connect(stopLoadingOrExitFullScreenModeAction, SIGNAL(triggered()), this, SLOT(stopLoadingOrExitFullScreenMode()));
 
     // Connect "zoom in" shortcut
     zoomInAction = new QAction;
@@ -339,7 +340,7 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     QApplication::instance()->installEventFilter(this);
 }
 
-void LiquidAppWindow::closeEvent(QCloseEvent *event)
+void LiquidAppWindow::closeEvent(QCloseEvent* event)
 {
     if (!isFullScreen()) {
         liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY, QString(liquidAppWindowGeometry.toHex()));
@@ -350,12 +351,12 @@ void LiquidAppWindow::closeEvent(QCloseEvent *event)
     deleteLater();
 }
 
-bool LiquidAppWindow::eventFilter(QObject *watched, QEvent *event)
+bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 {
     if (watched->parent() == this) {
         switch (event->type()) {
             case QEvent::Wheel:
-                if (handleWheelEvent(static_cast<QWheelEvent *>(event))) {
+                if (handleWheelEvent(static_cast<QWheelEvent*>(event))) {
                     return true;
                 }
                 break;
@@ -368,12 +369,13 @@ bool LiquidAppWindow::eventFilter(QObject *watched, QEvent *event)
     return QWebEngineView::eventFilter(watched, event);
 }
 
-void LiquidAppWindow::exitFullScreen()
+void LiquidAppWindow::exitFullScreenMode()
 {
+    // Exit from full-screen mode
     setWindowState(windowState() & ~Qt::WindowFullScreen);
 
-    if (isWindowGeometryLocked) {
-        // Pause here to wait for any kind of window resize animation to finish
+    if (windowGeometryIsLocked) {
+        // Pause here to wait for any kind of window resize animations to finish
         {
             QTime proceedAfter = QTime::currentTime().addMSecs(200);
             while (QTime::currentTime() < proceedAfter) {
@@ -383,6 +385,15 @@ void LiquidAppWindow::exitFullScreen()
 
         setMinimumSize(width(), height());
         setMaximumSize(width(), height());
+    }
+}
+
+void LiquidAppWindow::stopLoadingOrExitFullScreenMode()
+{
+    if (pageIsLoading) {
+        triggerPageAction(QWebEnginePage::Stop);
+    } else {
+        exitFullScreenMode();
     }
 }
 
@@ -397,17 +408,18 @@ bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
     return false;
 }
 
-void LiquidAppWindow::loadFinished(bool ok)
+void LiquidAppWindow::loadFinished()
 {
-    if (ok) {
-        isLoading = false;
+    pageIsLoading = false;
 
-        // Set window title
-        if (!liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-            // TODO: deal with absent <TITLE> returning page's URL when title() is called
-            updateWindowTitle(title());
-        }
-    }
+    updateWindowTitle(title());
+}
+
+void LiquidAppWindow::loadStarted()
+{
+    pageIsLoading = true;
+
+    updateWindowTitle(title());
 }
 
 void LiquidAppWindow::moveEvent(QMoveEvent *event)
@@ -496,36 +508,35 @@ void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
     }
 }
 
-void LiquidAppWindow::refresh()
+void LiquidAppWindow::hardReload()
 {
-    isLoading = true;
+    // TODO: if JS enabled, stop all currently running JS (destroy web workers, promises, etc)
 
-    QString titleBeforeRefresh = title();
-
-    if (!liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-        updateWindowTitle(titleBeforeRefresh);
-    }
-
-    reload();
-}
-
-void LiquidAppWindow::reset()
-{
-    isLoading = true;
-
-    // Synchronously wipe all document contents
-    page()->runJavaScript("document.getElementsByTagName('html')[0].remove();", QWebEngineScript::ApplicationWorld);
-
-    // Ensure that while it's being reset, the window title remains to be set to this Liquid application's name
-    QString js = QString("const titleEl = document.createElement('title');"\
-                         "titleEl.innerText='%1';"\
-                         "document.appendChild(titleEl);").arg((*liquidAppName).replace("'", "\\'"));
+    // Synchronously wipe all document contents (page's setContent() and setHtml() are aynchrnonous, can't use them here)
+    const QString js = QString("(()=>{"\
+                                   "let e=document.firstElementChild;"\
+                                   "if(e){"\
+                                       "e.remove()"\
+                                   "}"\
+                               "})()");
     page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
 
-    if (!liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
+    // Ensure that while this Liquid app is being reset, the window title remains to be set to this Liquid application's name
+    // to mimic the same experience that happens when the user first launches this Liquid app
+    if (!liquidAppWindowTitleIsReadOnly) {
         liquidAppWindowTitle = *liquidAppName;
+
+        const QString js = QString("(()=>{"\
+                                       "let e=document.createElement('title');"\
+                                       "e.innerText='%1';"\
+                                       "document.appendChild(e)"\
+                                   "})()").arg((liquidAppWindowTitle).replace("'", "\\'"));
+        page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
     }
-    updateWindowTitle(liquidAppWindowTitle);
+
+    updateWindowTitle(title());
+
+    // TODO: reset localStorage / Cookies in case they're disabled?
 
     QUrl url(liquidAppSettings->value(SETTINGS_KEY_URL).toString(), QUrl::StrictMode);
     setUrl(url);
@@ -541,13 +552,13 @@ void LiquidAppWindow::resizeEvent(QResizeEvent *event)
     QWebEngineView::resizeEvent(event);
 }
 
-void LiquidAppWindow::toggleFullScreen()
+void LiquidAppWindow::toggleFullScreenMode()
 {
     if (isFullScreen()) {
-        exitFullScreen();
+        exitFullScreenMode();
     } else {
         // Make it temporarily possible to resize the window if geometry is locked
-        if (isWindowGeometryLocked) {
+        if (windowGeometryIsLocked) {
             setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
             setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         }
@@ -560,19 +571,19 @@ void LiquidAppWindow::toggleWindowGeometryLock()
 {
     // Prevent toggling window geometry lock while in full-screen mode
     if (!isFullScreen()) {
-        if (isWindowGeometryLocked) {
+        if (windowGeometryIsLocked) {
             // Open up resizing restrictions
             setMinimumSize(CONFIG_WIN_MINSIZE_W, CONFIG_WIN_MINSIZE_H);
             setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-            isWindowGeometryLocked = false;
+            windowGeometryIsLocked = false;
         } else {
             // Lock down resizing
             setMinimumSize(width(), height());
             setMaximumSize(width(), height());
-            isWindowGeometryLocked = true;
+            windowGeometryIsLocked = true;
         }
 
-        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED, isWindowGeometryLocked);
+        liquidAppSettings->setValue(SETTINGS_KEY_WINDOW_GEOMETRY_LOCKED, windowGeometryIsLocked);
         liquidAppSettings->sync();
     }
 
@@ -583,17 +594,21 @@ void LiquidAppWindow::updateWindowTitle(QString title)
 {
     QString textIcons;
 
-    if (liquidAppSettings->contains(SETTINGS_KEY_TITLE)) {
-        title = liquidAppSettings->value(SETTINGS_KEY_TITLE).toString();
+    if (!liquidAppWindowTitleIsReadOnly) {
+        if (title.size() > 0) {
+            liquidAppWindowTitle = title;
+        } else {
+            liquidAppWindowTitle = *liquidAppName;
+        }
     }
 
-    if (isWindowGeometryLocked) {
+    if (windowGeometryIsLocked) {
         textIcons.append(ICON_LOCKED);
     }
     if (page()->isAudioMuted()) {
         textIcons.append(ICON_MUTED);
     }
-    if (isLoading) {
+    if (pageIsLoading) {
         textIcons.append(ICON_LOADING);
     }
 
@@ -601,7 +616,7 @@ void LiquidAppWindow::updateWindowTitle(QString title)
         textIcons = " " + textIcons;
     }
 
-    setWindowTitle(title + textIcons);
+    setWindowTitle(liquidAppWindowTitle + textIcons);
 }
 
 void LiquidAppWindow::zoomBy(qreal factor)

@@ -1,6 +1,9 @@
 bin/
 .directory
 
+# Chromium
+VideoDecodeStats
+
 # C++ objects and libs
 *.slo
 *.lo
