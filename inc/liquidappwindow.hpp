@@ -26,14 +26,15 @@ public:
     QSettings* liquidAppSettings;
 
 public slots:
-    void exitFullScreen();
-    void loadFinished(bool ok);
+    void exitFullScreenMode();
+    void hardReload();
+    void loadFinished();
+    void loadStarted();
     void onIconChanged(QIcon icon);
-    void refresh();
-    void reset();
-    void toggleFullScreen();
+    void stopLoadingOrExitFullScreenMode();
+    void toggleFullScreenMode();
     void toggleWindowGeometryLock();
-    void updateWindowTitle(QString title);
+    void updateWindowTitle(QString title = "");
     void zoomIn();
     void zoomOut();
     void zoomReset();
@@ -49,33 +50,36 @@ protected:
 
 private:
     QString* liquidAppName;
+
+    QString liquidAppWindowTitle;
+
     LiquidAppWebPage* liquidAppWebPage;
     QWebEngineProfile* liquidAppWebProfile;
     QByteArray liquidAppWindowGeometry;
-    QString liquidAppWindowTitle;
 
-    bool isLoading = false;
-    bool isWindowGeometryLocked = false;
+    bool liquidAppWindowTitleIsReadOnly = false;
+    bool pageIsLoading = false;
+    bool windowGeometryIsLocked = false;
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts' actions
     QAction* backAction;
     QAction* backAction2;
     QAction* forwardAction;
-    QAction* fullScreenAction;
-    QAction* fullScreenAction2;
-    QAction* fullScreenExitAction;
+    QAction* hardReloadAction;
     QAction* muteAudioAction;
     QAction* quitAction;
     QAction* quitAction2;
     QAction* reloadAction;
     QAction* reloadAction2;
-    QAction* resetAction;
+    QAction* stopLoadingOrExitFullScreenModeAction;
+    QAction* toggleFullScreenModeAction;
+    QAction* toggleFullScreenModeAction2;
     QAction* toggleGeometryLockAction;
     QAction* zoomInAction;
     QAction* zoomOutAction;
     QAction* zoomResetAction;
 
-    // Context menu
+    // Context menu and its actions
     QMenu* contextMenu;
     QAction* contextMenuCopyUrlAction;
     QAction* contextMenuReloadAction;
