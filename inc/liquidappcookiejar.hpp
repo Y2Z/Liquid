@@ -12,7 +12,7 @@ class LiquidAppCookieJar : public QNetworkCookieJar
     Q_OBJECT
 
 public:
-    LiquidAppCookieJar(QObject* parent);
+    LiquidAppCookieJar(QObject* parent = Q_NULLPTR);
     ~LiquidAppCookieJar(void);
 
     bool removeCookie(const QNetworkCookie& cookie);
@@ -22,7 +22,7 @@ public:
 
 private:
     QSettings* liquidAppConfig;
-    LiquidAppWindow* parentWindow;
+    LiquidAppWindow* liquidAppWindow;
 
     void save(void);
 };

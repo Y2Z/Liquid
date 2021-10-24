@@ -16,7 +16,7 @@ class QPushButton;
 class LiquidAppCreateEditDialog : public QDialog
 {
 public:
-    LiquidAppCreateEditDialog(QWidget* parent = nullptr, QString liquidAppName = "");
+    LiquidAppCreateEditDialog(QWidget* parent = Q_NULLPTR, QString liquidAppName = "");
     ~LiquidAppCreateEditDialog(void);
 
     QString getName(void);

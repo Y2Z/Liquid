@@ -4,10 +4,10 @@
 #include "globals.h"
 
 #include "liquidappwebpage.hpp"
-#include "liquidappwindow.hpp"
 
 LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent) : QWebEnginePage(profile, parent)
 {
+    liquidAppWindow = (LiquidAppWindow*)parent;
 }
 
 bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame)
@@ -23,6 +23,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
             // isMainFrame is the only thing that indicates that it was the user who clicked the link, not some JS code (e.g. to redirect / pop some window up)
             if (isMainFrame && (differentHost || keyModifierActive)) {
                 QDesktopServices::openUrl(reqUrl);
+                liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
             }
             break;
@@ -30,6 +31,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
         // Prevent form submissions to other hosts
         case QWebEnginePage::NavigationTypeFormSubmitted:
             if (differentHost) {
+                liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
             }
             break;

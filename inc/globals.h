@@ -14,6 +14,7 @@
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
 #define LQD_ICON_EDIT    "⚙"
+#define LQD_ICON_ERROR   "❌"
 #define LQD_ICON_LOADING "⏳"
 #define LQD_ICON_LOCKED  "🖼"
 #define LQD_ICON_MUTED   "🔇"
