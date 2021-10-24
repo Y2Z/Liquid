@@ -5,8 +5,8 @@
 
 LiquidAppCookieJar::LiquidAppCookieJar(QObject *parent) : QNetworkCookieJar(parent)
 {
-    parentWindow = (LiquidAppWindow *)parent;
-    liquidAppConfig = parentWindow->liquidAppConfig;
+    liquidAppWindow = (LiquidAppWindow *)parent;
+    liquidAppConfig = liquidAppWindow->liquidAppConfig;
 }
 
 LiquidAppCookieJar::~LiquidAppCookieJar(void)
@@ -19,7 +19,7 @@ bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
         return false;
     }
 
-    bool isThirdParty = !validateCookie(cookie, parentWindow->url());
+    bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
     if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
@@ -45,7 +45,7 @@ bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
         return false;
     }
 
-    bool isThirdParty = !validateCookie(cookie, parentWindow->url());
+    bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
     if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }

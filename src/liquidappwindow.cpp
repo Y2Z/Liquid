@@ -72,7 +72,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         // Make sure the window title never gets changed
         liquidAppWindowTitleIsReadOnly = true;
     }
-    updateWindowTitle();
+    updateWindowTitle(*liquidAppName);
 
     QUrl url(liquidAppConfig->value(LQD_CFG_KEY_URL).toString());
     if (url.isValid()) {
@@ -207,7 +207,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         connect(this, &QWebEngineView::loadStarted, this, &LiquidAppWindow::loadStarted);
 
         // Catch loading's end
-        connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished()));
+        connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished(bool)));
 
         // Catch mute/unmute and save to app config
         connect(page(), &QWebEnginePage::audioMutedChanged, this, [this](const bool muted){
@@ -393,6 +393,11 @@ void LiquidAppWindow::exitFullScreenMode()
     }
 }
 
+void LiquidAppWindow::setForgiveNextPageLoadError(const bool ok)
+{
+    forgiveNextPageLoadError = ok;
+}
+
 void LiquidAppWindow::stopLoadingOrExitFullScreenMode()
 {
     if (pageIsLoading) {
@@ -413,9 +418,22 @@ bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
     return false;
 }
 
-void LiquidAppWindow::loadFinished()
+void LiquidAppWindow::loadFinished(bool ok)
 {
     pageIsLoading = false;
+    if (ok) {
+        pageHasError = false;
+    } else {
+        if (forgiveNextPageLoadError) {
+            pageHasError = false;
+        } else {
+            pageHasError = true;
+        }
+    }
+    // Unset forgiveNextPageLoadError
+    if (forgiveNextPageLoadError) {
+        forgiveNextPageLoadError = false;
+    }
 
     updateWindowTitle(title());
 }
@@ -423,6 +441,7 @@ void LiquidAppWindow::loadFinished()
 void LiquidAppWindow::loadStarted()
 {
     pageIsLoading = true;
+    pageHasError = false;
 
     updateWindowTitle(title());
 }
@@ -597,7 +616,7 @@ void LiquidAppWindow::toggleWindowGeometryLock()
     updateWindowTitle(title());
 }
 
-void LiquidAppWindow::updateWindowTitle(QString title)
+void LiquidAppWindow::updateWindowTitle(const QString title)
 {
     QString textIcons;
 
@@ -617,6 +636,10 @@ void LiquidAppWindow::updateWindowTitle(QString title)
     }
     if (pageIsLoading) {
         textIcons.append(LQD_ICON_LOADING);
+    } else {
+        if (pageHasError) {
+            textIcons.append(LQD_ICON_ERROR);
+        }
     }
 
     if (textIcons != "") {

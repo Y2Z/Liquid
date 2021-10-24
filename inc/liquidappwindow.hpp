@@ -12,6 +12,8 @@
 
 #include "liquidappwebpage.hpp"
 
+class LiquidAppWebPage;
+
 class LiquidAppWindow : public QWebEngineView
 {
     Q_OBJECT
@@ -20,18 +22,20 @@ public:
     explicit LiquidAppWindow(QString* name);
     ~LiquidAppWindow();
 
+    void setForgiveNextPageLoadError(const bool ok);
+
     QSettings* liquidAppConfig;
 
 public slots:
     void exitFullScreenMode();
     void hardReload();
-    void loadFinished();
+    void loadFinished(bool ok);
     void loadStarted();
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode();
     void toggleFullScreenMode();
     void toggleWindowGeometryLock();
-    void updateWindowTitle(QString title = "");
+    void updateWindowTitle(const QString title);
     void zoomIn();
     void zoomOut();
     void zoomReset();
@@ -55,6 +59,8 @@ private:
     QByteArray liquidAppWindowGeometry;
 
     bool liquidAppWindowTitleIsReadOnly = false;
+    bool forgiveNextPageLoadError = false;
+    bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
 
