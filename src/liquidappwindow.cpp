@@ -214,13 +214,13 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
             liquidAppConfig->setValue(LQD_CFG_KEY_MUTE_AUDIO, muted);
         });
 
-        // Load Liquid app's starting URL
-        load(url);
-
         // Reveal Liquid app's window and bring it to front
         show();
         raise();
         activateWindow();
+
+        // Load Liquid app's starting URL
+        load(url);
     } else {
         qDebug() << "Invalid Liquid application URL:" << url;
     }
