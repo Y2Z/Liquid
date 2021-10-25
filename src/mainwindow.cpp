@@ -80,12 +80,12 @@ MainWindow::MainWindow() : QScrollArea()
     // Connect keyboard shortcuts
     bindShortcuts();
 
-    // Fill the table
-    populateTable();
-
     show();
     raise();
     activateWindow();
+
+    // Fill the table
+    populateTable();
 }
 
 MainWindow::~MainWindow()
