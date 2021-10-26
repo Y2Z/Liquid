@@ -6,7 +6,6 @@
 #include <QMenu>
 #include <QSettings>
 #include <QShortcut>
-#include <QWebEngineSettings>
 #include <QWebEngineView>
 #include <QWebEngineFullScreenRequest>
 
@@ -92,5 +91,4 @@ private:
 
     void bindKeyboardShortcuts(void);
     void setupContextMenu(void);
-    void setWebSettingsToDefault(QWebEngineSettings* webSettings);
 };
