@@ -5,6 +5,7 @@
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
+#include <QWebEngineSettings>
 
 #include "globals.h"
 
@@ -27,36 +28,13 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
                                     *name,
                                     nullptr);
 
-    // Default starting web settings for all Liquid apps
+    // These default settings affect everything (including sub-frames)
     QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
-    globalWebSettings->setAttribute(QWebEngineSettings::AutoLoadImages, true);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
-    globalWebSettings->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, false);
-#endif
-    globalWebSettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
-    globalWebSettings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
-    globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
-    globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-    globalWebSettings->setAttribute(QWebEngineSettings::JavascriptCanPaste, false);
-#endif
-    globalWebSettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
-    globalWebSettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
-    globalWebSettings->setAttribute(QWebEngineSettings::PdfViewerEnabled, false);
-#endif
-    globalWebSettings->setAttribute(QWebEngineSettings::PluginsEnabled, false);
-    globalWebSettings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, true);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    globalWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
-#endif
+    LiquidAppWebPage::setWebSettingsToDefault(globalWebSettings);
 
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
     liquidAppWebProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
-
-    // Make this profile's web settings equal to default web settings
-    setWebSettingsToDefault(liquidAppWebProfile->settings());
 
     if (!liquidAppWebProfile->isOffTheRecord()) {
         qDebug().noquote() << "Web profile is not off-the-record!";
@@ -497,39 +475,6 @@ void LiquidAppWindow::setupContextMenu(void)
     connect(contextMenuCloseAction, SIGNAL(triggered()), this, SLOT(close()));
 
     setContextMenuPolicy(Qt::DefaultContextMenu);
-}
-
-void LiquidAppWindow::setWebSettingsToDefault(QWebEngineSettings *webSettings)
-{
-    QWebEngineSettings *defaultWebSettings = QWebEngineSettings::defaultSettings();
-
-    static QList<QWebEngineSettings::WebAttribute> webAttributeKeys = {
-        QWebEngineSettings::AutoLoadImages,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 12, 0)
-        QWebEngineSettings::DnsPrefetchEnabled,
-#endif
-        QWebEngineSettings::FullScreenSupportEnabled,
-        QWebEngineSettings::HyperlinkAuditingEnabled,
-        QWebEngineSettings::JavascriptCanAccessClipboard,
-        QWebEngineSettings::JavascriptCanOpenWindows,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        QWebEngineSettings::JavascriptCanPaste,
-#endif
-        QWebEngineSettings::JavascriptEnabled,
-        QWebEngineSettings::LocalStorageEnabled,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
-        QWebEngineSettings::PdfViewerEnabled,
-#endif
-        QWebEngineSettings::PluginsEnabled,
-        QWebEngineSettings::ScrollAnimatorEnabled,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-        QWebEngineSettings::ShowScrollBars,
-#endif
-    };
-
-    for (int i = 0; i < webAttributeKeys.size(); i++) {
-        webSettings->setAttribute(webAttributeKeys.at(i), defaultWebSettings->testAttribute(webAttributeKeys.at(i)));
-    }
 }
 
 void LiquidAppWindow::hardReload()
