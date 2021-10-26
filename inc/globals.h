@@ -47,9 +47,9 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 
 /* Keyboard shortcuts (all windows and dialog boxes) */
 #define LQD_KBD_SEQ_MUTE_AUDIO           "Ctrl+M"
-#define LQD_KBD_SEQ_GO_BACK              "Alt+Left"
+#define LQD_KBD_SEQ_GO_BACK              "Ctrl+Left"
 #define LQD_KBD_SEQ_GO_BACK_2            "Backspace"
-#define LQD_KBD_SEQ_GO_FORWARD           "Alt+Right"
+#define LQD_KBD_SEQ_GO_FORWARD           "Ctrl+Right"
 #define LQD_KBD_SEQ_RELOAD               "Ctrl+R"
 #define LQD_KBD_SEQ_RELOAD_2             "F5"
 #define LQD_KBD_SEQ_HARD_RELOAD          "Ctrl+Shift+R"
