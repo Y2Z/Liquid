@@ -37,8 +37,8 @@ It’s capable of making websites appear and behave more like native OS applicat
 - `Ctrl + L`: Lock/unlock window geometry
 - `Ctrl + Q`, `Ctrl + W`: Close the app
 - `Ctrl + <click>`: Open link using system’s browser
-- `Alt + Left`, `Backspace`: Go one step back
-- `Alt + Right`: Go one step forward
+- `Ctrl + Left`, `Backspace`: Go one step back
+- `Ctrl + Right`: Go one step forward
 
 
 ## Build
