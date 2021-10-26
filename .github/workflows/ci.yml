@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - 'dist/'
+      - 'docs/'
       - 'sample-apps/'
       - 'LICENSE'
       - 'README.md'
@@ -34,22 +35,22 @@ jobs:
       run: |
         sudo apt-get update && \
         sudo apt-get install qt5-default qtwebengine5-dev
-      if: matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04'
+      if: contains(matrix.os, 'ubuntu')
 
     - name: Resolve dependencies (macOS and Windows)
       uses: jurplel/install-qt-action@v2
       with:
           modules: 'qtwebengine'
-      if: matrix.os != 'ubuntu-18.04' && matrix.os != 'ubuntu-20.04'
+      if: contains(matrix.os, 'macos') || contains(matrix.os, 'windows')
 
     - name: Build (Ubuntu and macOS)
       run: |
         qmake
         make -j
-      if: matrix.os != 'windows-2016' && matrix.os != 'windows-2019'
+      if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
 
     - name: Build (Windows)
       run: |
         qmake
         nmake
-      if: matrix.os == 'windows-2016' || matrix.os == 'windows-2019'
+      if: contains(matrix.os, 'windows')

@@ -201,13 +201,13 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
 
         // Update Liquid application's icon using the one provided by the website
-        connect(page(), SIGNAL(iconChanged(QIcon)), this, SLOT(onIconChanged(QIcon)));
+        connect(page(), &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
 
         // Catch loading's start
-        connect(this, &QWebEngineView::loadStarted, this, &LiquidAppWindow::loadStarted);
+        connect(page(), &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
 
         // Catch loading's end
-        connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished(bool)));
+        connect(page(), &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
 
         // Catch mute/unmute and save to app config
         connect(page(), &QWebEnginePage::audioMutedChanged, this, [this](const bool muted){

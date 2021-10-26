@@ -31,7 +31,7 @@ It’s capable of making websites appear and behave more like native OS applicat
 - `Ctrl + 0`: Reset zoom level
 - `Ctrl + F`: Toggle full-screen mode
 - `Ctrl + M`: Toggle mute on/off
-- `Escape`: Exit from full-screen mode
+- `Escape`: Stop loading / exit from full-screen mode
 - `Ctrl + R`: Refresh the current page
 - `Ctrl + Shift + R`: Reload the app
 - `Ctrl + L`: Lock/unlock window geometry
