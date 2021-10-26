@@ -3,6 +3,11 @@ name: CI
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'dist/'
+      - 'sample-apps/'
+      - 'LICENSE'
+      - 'README.md'
 
 jobs:
   build:
