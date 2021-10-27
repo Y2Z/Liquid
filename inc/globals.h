@@ -29,6 +29,7 @@ Names must be given in a way that would let them answer to questions:
 e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 */
 #define LQD_CFG_KEY_ADDITIONAL_CSS          "AdditionalCSS" // text
+#define LQD_CFG_KEY_ADDITIONAL_DOMAINS      "AdditionalDomains" // text, whitespace-separated items
 #define LQD_CFG_KEY_ADDITIONAL_JS           "AdditionalJS" // text
 #define LQD_CFG_KEY_ALLOW_COOKIES           "AllowCookies" // boolean, defults to FALSE
 #define LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE

@@ -14,9 +14,20 @@ LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent) 
     setWebSettingsToDefault(profile->settings());
 }
 
+void LiquidAppWebPage::addAllowedDomain(QString domain) {
+    // TODO: check if already there
+    allowedDomainsList->append(domain);
+}
+
+void LiquidAppWebPage::addAllowedDomains(QStringList domainsList) {
+    allowedDomainsList->append(domainsList);
+
+    // TODO: make unique
+}
+
 bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame)
 {
-    const bool isDifferentHost = url().host() != reqUrl.host();
+    bool isDomainAllowed = allowedDomainsList->contains(reqUrl.host());
     const bool keyModifierActive = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
 
     // Top-level window
@@ -25,7 +36,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
         case QWebEnginePage::NavigationTypeLinkClicked:
             // QWebEnginePage::NavigationTypeLinkClicked is the same type for both JS-induced clicks and actual physical clicks made by the user (go figure...)
             // isMainFrame is the only thing that indicates that it was the user who clicked the link, not some JS code (e.g. to redirect / pop some window up)
-            if (isMainFrame && (isDifferentHost || keyModifierActive)) {
+            if (isMainFrame && (!isDomainAllowed || keyModifierActive)) {
                 QDesktopServices::openUrl(reqUrl);
                 liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
@@ -38,7 +49,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
 #endif
         // Prevent form submissions to other hosts
         case QWebEnginePage::NavigationTypeFormSubmitted:
-            if (isDifferentHost) {
+            if (!isDomainAllowed) {
                 liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
             }
