@@ -24,7 +24,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
     liquidAppConfig = new QSettings(QSettings::IniFormat,
                                     QSettings::UserScope,
-                                     QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
+                                    QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                     *name,
                                     nullptr);
 
@@ -63,6 +63,17 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         }
         page()->setBackgroundColor(backgroundColor);
 
+        // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
+        {
+            liquidAppWebPage->addAllowedDomain(url.host());
+
+            if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
+                liquidAppWebPage->addAllowedDomains(
+                    liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_DOMAINS).toString().split(" ")
+                );
+            }
+        }
+
         // Deal with Cookies
         {
             LiquidAppCookieJar *liquidAppCookieJar = new LiquidAppCookieJar(this);
@@ -89,8 +100,8 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
                 );
         }
 
-        // Toggle JavaScript on if enabled in application config
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        // Hide scroll bars
         if (liquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
                 settings()->setAttribute(
                     QWebEngineSettings::ShowScrollBars,

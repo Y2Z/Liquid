@@ -1,17 +1,12 @@
 #pragma once
 
 #include <QAction>
+#include <QColorDialog>
 #include <QDialog>
+#include <QListView>
 #include <QPlainTextEdit>
 #include <QtGui>
 #include <QtWidgets>
-#include <QColorDialog>
-
-class QCheckBox;
-class QGroupBox;
-class QLabel;
-class QLineEdit;
-class QPushButton;
 
 class LiquidAppCreateEditDialog : public QDialog
 {
@@ -33,6 +28,7 @@ private:
     bool isEditingExisting = false;
 
     QAction quitAction;
+
     QLabel* nameLabel;
     QLabel* addressLabel;
     QLineEdit* nameInput;
@@ -42,15 +38,16 @@ private:
     QPushButton* saveButton;
     QWidget* advanced;
     QLineEdit* titleInput;
-    QCheckBox* privateModeCheckBox;
+    QCheckBox* enableJavaScriptCheckBox;
     QCheckBox* allowCookiesCheckBox;
     QCheckBox* allowThirdPartyCookiesCheckBox;
-    QCheckBox* enableJavaScriptCheckBox;
+    QCheckBox* hideScrollBarsCheckBox;
+    QPushButton* customBackgroundButton;
+    QListView* additionalDomainsListView;
+    QStandardItemModel* additionalDomainsModel;
     QPlainTextEdit* additionalCssTextArea;
     QPlainTextEdit* additionalJsTextArea;
     QLineEdit* userAgentInput;
-    QCheckBox* hideScrollBarsCheckBox;
     QPlainTextEdit* notesArea;
     QCheckBox* createIconCheckBox;
-    QPushButton* customBackgroundButton;
 };
