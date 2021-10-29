@@ -52,6 +52,29 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     }
     updateWindowTitle(*liquidAppName);
 
+    // Pre-fill list of all possible zoom factors to snap to
+    {
+        for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP && z > 0; z -= LQD_ZOOM_LVL_STEP) {
+            if (z >= LQD_ZOOM_LVL_MIN) {
+                zoomFactors.prepend(z);
+            } else {
+                zoomFactors.prepend(LQD_ZOOM_LVL_MIN);
+            }
+        }
+
+        if (LQD_ZOOM_LVL_MIN <= 1 && LQD_ZOOM_LVL_MAX >= 1) {
+            zoomFactors.append(1.0);
+        }
+
+        for (qreal z = 1.0 + LQD_ZOOM_LVL_STEP; z <= LQD_ZOOM_LVL_MAX + LQD_ZOOM_LVL_STEP; z += LQD_ZOOM_LVL_STEP) {
+            if (z <= LQD_ZOOM_LVL_MAX) {
+                zoomFactors.append(z);
+            } else {
+                zoomFactors.append(LQD_ZOOM_LVL_MAX);
+            }
+        }
+    }
+
     QUrl url(liquidAppConfig->value(LQD_CFG_KEY_URL).toString());
     if (url.isValid()) {
         // Set the page's background color behind the document's body
@@ -117,7 +140,9 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
         // Web view zoom level
         if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-            setZoomFactor(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+            attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+        } else {
+            attemptToSetZoomFactorTo(1.0);
         }
 
         // Lock the app's window's geometry if it was locked when it was last closed
@@ -221,14 +246,25 @@ LiquidAppWindow::~LiquidAppWindow()
     delete liquidAppWebProfile;
 }
 
-void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
+void LiquidAppWindow::attemptToSetZoomFactorTo(const qreal desiredZoomFactor)
 {
-    (void)event;
+    int i = 0;
+    const int ilen = zoomFactors.size();
 
-    contextMenuBackAction->setEnabled(history()->canGoBack());
-    contextMenuForwardAction->setEnabled(history()->canGoForward());
+    for (; i < ilen; i++) {
+        if (qFuzzyCompare(zoomFactors[i], desiredZoomFactor)) {
+            setZoomFactor(zoomFactors[i]);
+            return;
+        }
+    }
 
-    contextMenu->exec(QCursor::pos());
+    // Attempt to determine closest zoom level to snap to
+    for (i = 0; i < ilen; i++) {
+        if ((i == 0 || zoomFactors[i - 1] < desiredZoomFactor) && (i == ilen - 1 || zoomFactors[i + 1] > desiredZoomFactor)) {
+            setZoomFactor(zoomFactors[i]);
+            return;
+        }
+    }
 }
 
 void LiquidAppWindow::bindKeyboardShortcuts(void)
@@ -343,6 +379,16 @@ void LiquidAppWindow::closeEvent(QCloseEvent* event)
 
     event->accept();
     deleteLater();
+}
+
+void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
+{
+    (void)event;
+
+    contextMenuBackAction->setEnabled(history()->canGoBack());
+    contextMenuForwardAction->setEnabled(history()->canGoForward());
+
+    contextMenu->exec(QCursor::pos());
 }
 
 bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
@@ -605,49 +651,17 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
     setWindowTitle(liquidAppWindowTitle + textIcons);
 }
 
-void LiquidAppWindow::zoomBy(qreal factor)
-{
-    const qreal currentZoomFactor = zoomFactor();
-    qreal newZoomFactor = currentZoomFactor + factor;
-    bool shouldChangeZoomLevel = true;
-
-    if (factor == 0) {
-        // Reset zoom to 100%
-        if (currentZoomFactor == 1) {
-            shouldChangeZoomLevel = false;
-        } else {
-            newZoomFactor = 1;
-        }
-    } else {
-        if (newZoomFactor < LQD_ZOOM_LVL_MIN || newZoomFactor > LQD_ZOOM_LVL_MAX) {
-            shouldChangeZoomLevel = false;
-        } else {
-            // Make sure that zoomFactor of 1 (100% zoom level) never gets skipped over
-            if ((currentZoomFactor < 1 && newZoomFactor > 1) || (currentZoomFactor > 1 && newZoomFactor < 1)) {
-                newZoomFactor = 1;
-            }
-        }
-    }
-
-    if (shouldChangeZoomLevel) {
-        setZoomFactor(newZoomFactor);
-
-        liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, newZoomFactor);
-        liquidAppConfig->sync();
-    }
-}
-
 void LiquidAppWindow::zoomIn()
 {
-    zoomBy(LQD_ZOOM_LVL_STEP);
+    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP);
 }
 
 void LiquidAppWindow::zoomOut()
 {
-    zoomBy(-LQD_ZOOM_LVL_STEP);
+    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP);
 }
 
 void LiquidAppWindow::zoomReset()
 {
-    zoomBy(0);
+    attemptToSetZoomFactorTo(1.0);
 }

@@ -40,12 +40,12 @@ public slots:
     void zoomReset();
 
 protected:
+    void attemptToSetZoomFactorTo(const qreal desiredZoomFactor);
     void closeEvent(QCloseEvent* event) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
     bool handleWheelEvent(QWheelEvent* event);
     void moveEvent(QMoveEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    void zoomBy(qreal factor);
     void contextMenuEvent(QContextMenuEvent* event);
 
 private:
@@ -62,6 +62,7 @@ private:
     bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
+    QList<qreal> zoomFactors;
 
     // Keyboard shortcuts' actions
     QAction* backAction;
