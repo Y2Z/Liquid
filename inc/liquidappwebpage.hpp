@@ -10,12 +10,12 @@ class LiquidAppWindow;
 class LiquidAppWebPage : public QWebEnginePage
 {
 public:
-    LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent = Q_NULLPTR);
+    LiquidAppWebPage(QWebEngineProfile* profile, LiquidAppWindow* parent = Q_NULLPTR);
 
     static void setWebSettingsToDefault(QWebEngineSettings* webSettings);
 
-    void addAllowedDomain(QString domain);
-    void addAllowedDomains(QStringList domainList);
+    void addAllowedDomain(const QString domain);
+    void addAllowedDomains(const QStringList domainList);
 
 protected:
     bool acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame);

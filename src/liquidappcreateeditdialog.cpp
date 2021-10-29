@@ -5,7 +5,7 @@
 #include "liquidappcreateeditdialog.hpp"
 #include "mainwindow.hpp"
 
-LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString liquidAppName) : QDialog(parent)
+LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
 {
     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 
@@ -30,7 +30,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
 
     advanced = new QWidget;
 
-    QVBoxLayout *basicLayout = new QVBoxLayout;
+    QVBoxLayout* basicLayout = new QVBoxLayout;
     basicLayout->setSpacing(0);
     basicLayout->setMargin(0);
     {
@@ -61,7 +61,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         basicLayout->addWidget(addressInput);
     }
 
-    QHBoxLayout *basicButtonsLayout = new QHBoxLayout;
+    QHBoxLayout* basicButtonsLayout = new QHBoxLayout;
     basicButtonsLayout->setSpacing(0);
     basicButtonsLayout->setMargin(0);
     {
@@ -266,7 +266,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
     }
     advanced->setLayout(advancedLayout);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout;
+    QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->setSpacing(0);
     mainLayout->setMargin(4);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
@@ -332,7 +332,7 @@ void LiquidAppCreateEditDialog::save()
     // Replace directory separators (slashes) with underscores
     // to ensure no sub-directories would get created
     appName = appName.replace(QDir::separator(), "_");
-    QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
+    QSettings* tempAppSettings = new QSettings(QSettings::IniFormat,
                                                QSettings::UserScope,
                                                QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                appName,
