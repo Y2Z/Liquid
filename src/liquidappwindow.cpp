@@ -162,6 +162,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
             liquidAppWebPage->scripts().insert(script);
         }
 
+        // Reveal Liquid app's window and bring it to front
+        show();
+        raise();
+        activateWindow();
+
         // Connect keyboard shortcuts
         bindKeyboardShortcuts();
 
@@ -202,11 +207,6 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         connect(page(), &QWebEnginePage::audioMutedChanged, this, [this](const bool muted){
             liquidAppConfig->setValue(LQD_CFG_KEY_MUTE_AUDIO, muted);
         });
-
-        // Reveal Liquid app's window and bring it to front
-        show();
-        raise();
-        activateWindow();
 
         // Load Liquid app's starting URL
         load(url);

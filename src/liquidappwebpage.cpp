@@ -6,29 +6,28 @@
 
 #include "liquidappwebpage.hpp"
 
-LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, QObject* parent) : QWebEnginePage(profile, parent)
+LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, LiquidAppWindow* parent) : QWebEnginePage(profile, parent)
 {
-    liquidAppWindow = (LiquidAppWindow*)parent;
+    liquidAppWindow = parent;
 
     // Set this profile's web settings to default
     setWebSettingsToDefault(profile->settings());
 }
 
-void LiquidAppWebPage::addAllowedDomain(QString domain) {
+void LiquidAppWebPage::addAllowedDomain(const QString domain) {
     // TODO: check if already there
     allowedDomainsList->append(domain);
 }
 
-void LiquidAppWebPage::addAllowedDomains(QStringList domainsList) {
+void LiquidAppWebPage::addAllowedDomains(const QStringList domainsList) {
     allowedDomainsList->append(domainsList);
-
     // TODO: make unique
 }
 
 bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame)
 {
-    bool isDomainAllowed = allowedDomainsList->contains(reqUrl.host());
-    const bool keyModifierActive = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+    const bool isDomainAllowed = allowedDomainsList->contains(reqUrl.host());
+    const bool isKeyModifierActive = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
 
     // Top-level window
     switch (navReqType) {
@@ -36,7 +35,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
         case QWebEnginePage::NavigationTypeLinkClicked:
             // QWebEnginePage::NavigationTypeLinkClicked is the same type for both JS-induced clicks and actual physical clicks made by the user (go figure...)
             // isMainFrame is the only thing that indicates that it was the user who clicked the link, not some JS code (e.g. to redirect / pop some window up)
-            if (isMainFrame && (!isDomainAllowed || keyModifierActive)) {
+            if (isMainFrame && (!isDomainAllowed || isKeyModifierActive)) {
                 QDesktopServices::openUrl(reqUrl);
                 liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
