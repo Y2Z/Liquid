@@ -23,7 +23,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
         delete existingLiquidAppSettings;
     }
 
-    setWindowTitle(tr((isEditingExisting) ? "Edit existing Liquid app" : "Create new Liquid app"));
+    setWindowTitle(tr((isEditingExisting) ? "Editing existing Liquid app" : "Creating new Liquid app"));
     setWindowFlags(Qt::Window);
 
     backgroundColorName = QColor(Qt::white).name();
@@ -275,15 +275,20 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget *parent, QString li
 
     setLayout(mainLayout);
 
-    // Connect keyboard shortcuts
-    bindShortcuts();
-
     if (isEditingExisting) {
         // Force advanced section to be visible in edit mode
         advancedButton->toggle();
     } else {
         advanced->hide();
     }
+
+    // Reveal and bring to front
+    show();
+    raise();
+    activateWindow();
+
+    // Connect keyboard shortcuts
+    bindShortcuts();
 
     // Connect signals to slots
     connect(advancedButton, SIGNAL(toggled(bool)), advanced, SLOT(setVisible(bool)));
@@ -508,7 +513,8 @@ QString LiquidAppCreateEditDialog::getName(void)
 void LiquidAppCreateEditDialog::bindShortcuts(void)
 {
     // Connect the exit keyboard shortcut
-    quitAction.setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
-    addAction(&quitAction);
-    connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    quitAction = new QAction();
+    quitAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
+    addAction(quitAction);
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }

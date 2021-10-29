@@ -27,7 +27,7 @@ private:
 
     bool isEditingExisting = false;
 
-    QAction quitAction;
+    QAction* quitAction;
 
     QLabel* nameLabel;
     QLabel* addressLabel;

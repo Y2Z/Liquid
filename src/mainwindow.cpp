@@ -52,7 +52,6 @@ MainWindow::MainWindow() : QScrollArea()
     createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
     QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [=]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
-        liquidAppCreateEditDialog.show();
         switch (liquidAppCreateEditDialog.exec()) {
             case QDialog::Accepted:
                 // Give some time to the filesystem before scanning for the newly created app
@@ -319,9 +318,7 @@ void MainWindow::populateTable()
         editButton->setProperty("class", "btnEdit");
         QObject::connect(editButton, &QPushButton::clicked, [=]() {
             LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, liquidAppName);
-            liquidAppCreateEditDialog.show();
-            switch (liquidAppCreateEditDialog.exec())
-            {
+            switch (liquidAppCreateEditDialog.exec()) {
                 case QDialog::Accepted:
                     // Give some time to the filesystem before scanning for the newly created app
                     {
