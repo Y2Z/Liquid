@@ -10,10 +10,10 @@
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
 
-static QSharedMemory *sharedMemory = nullptr;
+static QSharedMemory* sharedMemory = nullptr;
 
-LiquidAppWindow *liquidAppWindow;
-MainWindow *mainWindow;
+LiquidAppWindow* liquidAppWindow;
+MainWindow* mainWindow;
 
 QString getUserName()
 {
