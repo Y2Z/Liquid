@@ -607,22 +607,34 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
 
 void LiquidAppWindow::zoomBy(qreal factor)
 {
-    qreal newZoomFactor = zoomFactor() + factor;
+    const qreal currentZoomFactor = zoomFactor();
+    qreal newZoomFactor = currentZoomFactor + factor;
+    bool shouldChangeZoomLevel = true;
 
-    if (factor) {
-        if (newZoomFactor < LQD_ZOOM_LVL_MIN) {
-            newZoomFactor = LQD_ZOOM_LVL_MIN;
-        } else if (newZoomFactor > LQD_ZOOM_LVL_MAX) {
-            newZoomFactor = LQD_ZOOM_LVL_MAX;
+    if (factor == 0) {
+        // Reset zoom to 100%
+        if (currentZoomFactor == 1) {
+            shouldChangeZoomLevel = false;
+        } else {
+            newZoomFactor = 1;
         }
     } else {
-        newZoomFactor = 1;
+        if (newZoomFactor < LQD_ZOOM_LVL_MIN || newZoomFactor > LQD_ZOOM_LVL_MAX) {
+            shouldChangeZoomLevel = false;
+        } else {
+            // Make sure that zoomFactor of 1 (100% zoom level) never gets skipped over
+            if ((currentZoomFactor < 1 && newZoomFactor > 1) || (currentZoomFactor > 1 && newZoomFactor < 1)) {
+                newZoomFactor = 1;
+            }
+        }
     }
 
-    setZoomFactor(newZoomFactor);
+    if (shouldChangeZoomLevel) {
+        setZoomFactor(newZoomFactor);
 
-    liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, newZoomFactor);
-    liquidAppConfig->sync();
+        liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, newZoomFactor);
+        liquidAppConfig->sync();
+    }
 }
 
 void LiquidAppWindow::zoomIn()
