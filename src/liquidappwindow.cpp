@@ -43,14 +43,8 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
     setPage(liquidAppWebPage);
 
-    // Set window title
+    // Set default window title
     liquidAppWindowTitle = *liquidAppName;
-    if (liquidAppConfig->contains(LQD_CFG_KEY_TITLE)) {
-        liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_TITLE).toString();
-        // Make sure the window title never gets changed
-        liquidAppWindowTitleIsReadOnly = true;
-    }
-    updateWindowTitle(*liquidAppName);
 
     // Pre-fill list of all possible zoom factors to snap to
     {
@@ -75,164 +69,49 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         }
     }
 
-    QUrl url(liquidAppConfig->value(LQD_CFG_KEY_URL).toString());
-    if (url.isValid()) {
-        // Set the page's background color behind the document's body
-        QColor backgroundColor;
-        if (liquidAppConfig->contains(LQD_CFG_KEY_BACKGROUND_COLOR)) {
-            backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_BACKGROUND_COLOR).toString());
-        } else {
-            backgroundColor = Qt::black;
-        }
-        page()->setBackgroundColor(backgroundColor);
+    const QUrl startingUrl(liquidAppConfig->value(LQD_CFG_KEY_URL).toString());
 
-        // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
-        {
-            liquidAppWebPage->addAllowedDomain(url.host());
-
-            if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
-                liquidAppWebPage->addAllowedDomains(
-                    liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_DOMAINS).toString().split(" ")
-                );
-            }
-        }
-
-        // Deal with Cookies
-        {
-            LiquidAppCookieJar *liquidAppCookieJar = new LiquidAppCookieJar(this);
-            QWebEngineCookieStore *cookieStore = page()->profile()->cookieStore();
-
-            connect(cookieStore, &QWebEngineCookieStore::cookieAdded, liquidAppCookieJar, &LiquidAppCookieJar::upsertCookie);
-            connect(cookieStore, &QWebEngineCookieStore::cookieRemoved, liquidAppCookieJar, &LiquidAppCookieJar::removeCookie);
-
-            liquidAppCookieJar->restoreCookies(cookieStore);
-        }
-
-        // Restore window geometry
-        if (liquidAppConfig->contains(LQD_CFG_KEY_WIN_GEOM)) {
-            restoreGeometry(QByteArray::fromHex(
-                liquidAppConfig->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
-            ));
-        }
-
-        // Toggle JavaScript on if enabled in application config
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ENABLE_JS)) {
-                settings()->setAttribute(
-                    QWebEngineSettings::JavascriptEnabled,
-                    liquidAppConfig->value(LQD_CFG_KEY_ENABLE_JS).toBool()
-                );
-        }
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-        // Hide scroll bars
-        if (liquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
-                settings()->setAttribute(
-                    QWebEngineSettings::ShowScrollBars,
-                    !liquidAppConfig->value(LQD_CFG_KEY_HIDE_SCROLL_BARS).toBool()
-                );
-        }
-#endif
-
-        // Mute audio if muted in application config
-        if (liquidAppConfig->contains(LQD_CFG_KEY_MUTE_AUDIO)) {
-            page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_MUTE_AUDIO).toBool());
-        }
-
-        // Web view zoom level
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-            attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
-        } else {
-            attemptToSetZoomFactorTo(1.0);
-        }
-
-        // Lock the app's window's geometry if it was locked when it was last closed
-        if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
-            if (liquidAppConfig->value(LQD_CFG_KEY_LOCK_WIN_GEOM).toBool()) {
-                toggleWindowGeometryLock();
-                windowGeometryIsLocked = true;
-            }
-        }
-
-        // Custom user-agent string
-        if (liquidAppConfig->contains(LQD_CFG_KEY_USER_AGENT)) {
-            liquidAppWebProfile->setHttpUserAgent(liquidAppConfig->value(LQD_CFG_KEY_USER_AGENT).toString());
-        }
-
-        // Additional user-defined CSS (does't require JavaScript enabled in order to work)
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_CSS)) {
-            const QString b64data = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString().toUtf8().toBase64();
-            const QString cssDataURI = "data:text/css;charset=utf-8;base64," + b64data;
-            const QString js = QString("(()=>{"\
-                                           "const styleEl = document.createElement('style');"\
-                                           "const cssTextNode = document.createTextNode('@import url(%1)');"\
-                                           "styleEl.appendChild(cssTextNode);"\
-                                           "document.head.appendChild(styleEl)"\
-                                       "})()").arg(cssDataURI);
-            QWebEngineScript script;
-            script.setInjectionPoint(QWebEngineScript::DocumentReady);
-            script.setRunsOnSubFrames(false);
-            script.setSourceCode(js);
-            script.setWorldId(QWebEngineScript::ApplicationWorld);
-            liquidAppWebPage->scripts().insert(script);
-        }
-
-        // Additional user-defined JS (does't require JavaScript enabled in order to work)
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_JS)) {
-            QString js = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_JS).toString();
-            QWebEngineScript script;
-            script.setInjectionPoint(QWebEngineScript::DocumentReady);
-            script.setRunsOnSubFrames(false);
-            script.setSourceCode(js);
-            script.setWorldId(QWebEngineScript::ApplicationWorld);
-            liquidAppWebPage->scripts().insert(script);
-        }
-
-        // Reveal Liquid app's window and bring it to front
-        show();
-        raise();
-        activateWindow();
-
-        // Connect keyboard shortcuts
-        bindKeyboardShortcuts();
-
-        // Initialize context menu
-        setupContextMenu();
-
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ICON)) {
-            QIcon liquidAppIcon;
-            QByteArray byteArray = QByteArray::fromHex(
-                liquidAppConfig->value(LQD_CFG_KEY_ICON).toByteArray()
-            );
-            QBuffer buffer(&byteArray);
-            buffer.open(QIODevice::ReadOnly);
-            QDataStream in(&buffer);
-            in >> liquidAppIcon;
-            buffer.close();
-            window()->setWindowIcon(liquidAppIcon);
-        }
-
-        // Allow page-level fullscreen happen
-        connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
-            request.accept();
-        });
-
-        // Trigger window title update if <title> changes
-        connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
-
-        // Update Liquid application's icon using the one provided by the website
-        connect(page(), &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
-
-        // Catch loading's start
-        connect(page(), &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
-
-        // Catch loading's end
-        connect(page(), &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
-
-        // Load Liquid app's starting URL
-        load(url);
-    } else {
-        qDebug() << "Invalid Liquid application URL:" << url;
+    if (!startingUrl.isValid()) {
+        qDebug().noquote() << "Invalid Liquid application URL:" << startingUrl;
+        return;
     }
+
+    liquidAppWebPage->addAllowedDomain(startingUrl.host());
+
+    loadLiquidAppConfig();
+
+    updateWindowTitle(*liquidAppName);
+
+    // Reveal Liquid app's window and bring it to front
+    show();
+    raise();
+    activateWindow();
+
+    // Connect keyboard shortcuts
+    bindKeyboardShortcuts();
+
+    // Initialize context menu
+    setupContextMenu();
+
+    // Allow page-level fullscreen happen
+    connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
+        request.accept();
+    });
+
+    // Trigger window title update if <title> changes
+    connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
+
+    // Update Liquid app's icon using the one provided by the website
+    connect(page(), &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
+
+    // Catch loading's start
+    connect(page(), &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
+
+    // Catch loading's end
+    connect(page(), &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
+
+    // Load Liquid app's starting URL
+    load(startingUrl);
 }
 
 LiquidAppWindow::~LiquidAppWindow()
@@ -485,6 +364,141 @@ void LiquidAppWindow::loadFinished(bool ok)
     }
 
     updateWindowTitle(title());
+}
+
+void LiquidAppWindow::loadLiquidAppConfig(void)
+{
+    if (liquidAppConfig->contains(LQD_CFG_KEY_TITLE)) {
+        liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_TITLE).toString();
+        // Make sure the window title never gets changed
+        liquidAppWindowTitleIsReadOnly = true;
+    }
+
+    // Set the page's background color behind the document's body
+    {
+        QColor backgroundColor;
+
+        if (liquidAppConfig->contains(LQD_CFG_KEY_BACKGROUND_COLOR)) {
+            backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_BACKGROUND_COLOR).toString());
+        } else {
+            backgroundColor = Qt::black;
+        }
+
+        page()->setBackgroundColor(backgroundColor);
+    }
+
+    // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
+        liquidAppWebPage->addAllowedDomains(
+            liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_DOMAINS).toString().split(" ")
+        );
+    }
+
+    // Deal with Cookies
+    {
+        LiquidAppCookieJar *liquidAppCookieJar = new LiquidAppCookieJar(this);
+        QWebEngineCookieStore *cookieStore = page()->profile()->cookieStore();
+
+        connect(cookieStore, &QWebEngineCookieStore::cookieAdded, liquidAppCookieJar, &LiquidAppCookieJar::upsertCookie);
+        connect(cookieStore, &QWebEngineCookieStore::cookieRemoved, liquidAppCookieJar, &LiquidAppCookieJar::removeCookie);
+
+        liquidAppCookieJar->restoreCookies(cookieStore);
+    }
+
+    // Restore window geometry
+    if (liquidAppConfig->contains(LQD_CFG_KEY_WIN_GEOM)) {
+        restoreGeometry(QByteArray::fromHex(
+            liquidAppConfig->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
+        ));
+    }
+
+    // Toggle JavaScript on if enabled in application config
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ENABLE_JS)) {
+        settings()->setAttribute(
+            QWebEngineSettings::JavascriptEnabled,
+            liquidAppConfig->value(LQD_CFG_KEY_ENABLE_JS).toBool()
+        );
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    // Hide scroll bars
+    if (liquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
+        settings()->setAttribute(
+            QWebEngineSettings::ShowScrollBars,
+            !liquidAppConfig->value(LQD_CFG_KEY_HIDE_SCROLL_BARS).toBool()
+        );
+    }
+#endif
+
+    // Mute audio if muted in application config
+    if (liquidAppConfig->contains(LQD_CFG_KEY_MUTE_AUDIO)) {
+        page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_MUTE_AUDIO).toBool());
+    }
+
+    // Web view zoom level
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
+        attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+    } else {
+        attemptToSetZoomFactorTo(1.0);
+    }
+
+    // Lock the app's window's geometry if it was locked when it was last closed
+    if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
+        if (liquidAppConfig->value(LQD_CFG_KEY_LOCK_WIN_GEOM).toBool()) {
+            toggleWindowGeometryLock();
+            windowGeometryIsLocked = true;
+        }
+    }
+
+    // Custom user-agent string
+    if (liquidAppConfig->contains(LQD_CFG_KEY_USER_AGENT)) {
+        liquidAppWebProfile->setHttpUserAgent(liquidAppConfig->value(LQD_CFG_KEY_USER_AGENT).toString());
+    }
+
+    // Additional user-defined CSS (does't require JavaScript enabled in order to work)
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_CSS)) {
+        const QString b64data = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString().toUtf8().toBase64();
+        const QString cssDataURI = "data:text/css;charset=utf-8;base64," + b64data;
+        const QString js = QString("(()=>{"\
+                                       "const styleEl = document.createElement('style');"\
+                                       "const cssTextNode = document.createTextNode('@import url(%1)');"\
+                                       "styleEl.appendChild(cssTextNode);"\
+                                       "document.head.appendChild(styleEl)"\
+                                   "})()").arg(cssDataURI);
+        QWebEngineScript script;
+        script.setInjectionPoint(QWebEngineScript::DocumentReady);
+        script.setRunsOnSubFrames(false);
+        script.setSourceCode(js);
+        script.setWorldId(QWebEngineScript::ApplicationWorld);
+        liquidAppWebPage->scripts().insert(script);
+    }
+
+    // Additional user-defined JS (does't require JavaScript enabled in order to work)
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_JS)) {
+        QString js = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_JS).toString();
+        QWebEngineScript script;
+        script.setInjectionPoint(QWebEngineScript::DocumentReady);
+        script.setRunsOnSubFrames(false);
+        script.setSourceCode(js);
+        script.setWorldId(QWebEngineScript::ApplicationWorld);
+        liquidAppWebPage->scripts().insert(script);
+    }
+
+#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+    // Set window icon
+    if (liquidAppConfig->contains(LQD_CFG_KEY_ICON)) {
+        QIcon liquidAppIcon;
+        QByteArray byteArray = QByteArray::fromHex(
+            liquidAppConfig->value(LQD_CFG_KEY_ICON).toByteArray()
+        );
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::ReadOnly);
+        QDataStream in(&buffer);
+        in >> liquidAppIcon;
+        buffer.close();
+        window()->setWindowIcon(liquidAppIcon);
+    }
+#endif
 }
 
 void LiquidAppWindow::loadStarted()
