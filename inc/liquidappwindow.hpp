@@ -91,6 +91,7 @@ private:
     QAction* contextMenuCloseAction;
 
     void bindKeyboardShortcuts(void);
+    void loadLiquidAppConfig(void);
     void saveLiquidAppConfig(void);
     void setupContextMenu(void);
 };
