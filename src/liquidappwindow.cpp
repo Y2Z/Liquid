@@ -546,6 +546,39 @@ void LiquidAppWindow::resizeEvent(QResizeEvent *event)
     QWebEngineView::resizeEvent(event);
 }
 
+void LiquidAppWindow::saveLiquidAppConfig(void)
+{
+    if (qFuzzyCompare(zoomFactor(), 1.0)) {
+        if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_ZOOM_LVL);
+        }
+    } else {
+        liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, zoomFactor());
+    }
+
+    if (page()->isAudioMuted()) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_MUTE_AUDIO, true);
+    } else {
+        if (liquidAppConfig->contains(LQD_CFG_KEY_MUTE_AUDIO)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_MUTE_AUDIO);
+        }
+    }
+
+    if (!isFullScreen()) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_WIN_GEOM, QString(liquidAppWindowGeometry.toHex()));
+    }
+
+    if (windowGeometryIsLocked) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_LOCK_WIN_GEOM, true);
+    } else {
+        if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_LOCK_WIN_GEOM);
+        }
+    }
+
+    liquidAppConfig->sync();
+}
+
 void LiquidAppWindow::setupContextMenu(void)
 {
     contextMenu = new QMenu;
@@ -571,39 +604,6 @@ void LiquidAppWindow::setupContextMenu(void)
     connect(contextMenuCloseAction, SIGNAL(triggered()), this, SLOT(close()));
 
     setContextMenuPolicy(Qt::DefaultContextMenu);
-}
-
-void LiquidAppWindow::saveLiquidAppConfig(void)
-{
-    if (qFuzzyCompare(zoomFactor(), 1.0)) {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_ZOOM_LVL);
-        }
-    } else {
-        liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, zoomFactor());
-    }
-
-    if (page()->isAudioMuted()) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_MUTE_AUDIO, true);
-    } else {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_ADDITIONAL_DOMAINS);
-        }
-    }
-
-    if (!isFullScreen()) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_WIN_GEOM, QString(liquidAppWindowGeometry.toHex()));
-    }
-
-    if (windowGeometryIsLocked) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_LOCK_WIN_GEOM, true);
-    } else {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_LOCK_WIN_GEOM);
-        }
-    }
-
-    liquidAppConfig->sync();
 }
 
 void LiquidAppWindow::setForgiveNextPageLoadError(const bool ok)
