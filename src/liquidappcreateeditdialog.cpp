@@ -60,6 +60,19 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         addressLabel->setBuddy(addressInput);
         basicLayout->addWidget(addressInput);
     }
+    {
+        if (!isEditingExisting) {
+            basicLayout->addWidget(separator);
+            createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
+            createIconCheckBox->setCursor(Qt::PointingHandCursor);
+            basicLayout->addWidget(createIconCheckBox);
+        }
+    }
+    {
+        if (!isEditingExisting) {
+            // TODO: add "Run this app once created" checkbox here
+        }
+    }
 
     QHBoxLayout* basicButtonsLayout = new QHBoxLayout;
     basicButtonsLayout->setSpacing(0);
@@ -154,15 +167,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         advancedLayout->addWidget(hideScrollBarsCheckBox);
     }
 #endif
-    {
-        if (!isEditingExisting) {
-            createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
-            createIconCheckBox->setCursor(Qt::PointingHandCursor);
-            // Checked by default (when creating new Liquid app)
-            createIconCheckBox->setChecked(true);
-            advancedLayout->addWidget(createIconCheckBox);
-        }
-    }
     {
         customBackgroundButton = new QPushButton(tr("Set custom background color"));
         customBackgroundButton->setCursor(Qt::PointingHandCursor);
