@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QBuffer>
+#include <QDesktopWidget>
 #include <QDir>
 #include <QClipboard>
 #include <QNetworkProxy>
@@ -450,6 +451,12 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         restoreGeometry(QByteArray::fromHex(
             liquidAppConfig->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
         ));
+    } else {
+        const QDesktopWidget widget;
+        const QRect currentScreenSize = widget.availableGeometry(widget.primaryScreen());
+        const int currentScreenWidth = currentScreenSize.width();
+        const int currentScreenHeight = currentScreenSize.height();
+        setGeometry(currentScreenWidth / 4, currentScreenHeight / 4, currentScreenWidth / 2, currentScreenHeight / 2);
     }
 
     // Toggle JavaScript on if enabled in application config
