@@ -2,6 +2,7 @@
 #include <QBuffer>
 #include <QDir>
 #include <QClipboard>
+#include <QNetworkProxy>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
@@ -114,7 +115,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     load(startingUrl);
 }
 
-LiquidAppWindow::~LiquidAppWindow()
+LiquidAppWindow::~LiquidAppWindow(void)
 {
     saveLiquidAppConfig();
 
@@ -280,7 +281,7 @@ bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
     return QWebEngineView::eventFilter(watched, event);
 }
 
-void LiquidAppWindow::exitFullScreenMode()
+void LiquidAppWindow::exitFullScreenMode(void)
 {
     // Exit from full-screen mode
     setWindowState(windowState() & ~Qt::WindowFullScreen);
@@ -310,7 +311,7 @@ bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
     return false;
 }
 
-void LiquidAppWindow::hardReload()
+void LiquidAppWindow::hardReload(void)
 {
     // TODO: if JS enabled, stop all currently running JS (destroy web workers, promises, etc)
 
@@ -372,6 +373,45 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_TITLE).toString();
         // Make sure the window title never gets changed
         liquidAppWindowTitleIsReadOnly = true;
+    }
+
+    // Set up network proxy
+    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_TYPE)) {
+        const QString proxyType = liquidAppConfig->value(LQD_CFG_KEY_PROXY_TYPE).toString();
+
+        if (proxyType == "no" || proxyType == "http" || proxyType == "socks") {
+            proxy = new QNetworkProxy;
+
+            if (proxyType == "no") {
+                proxy->setType(QNetworkProxy::NoProxy);
+            } else {
+                if (proxyType == "http") {
+                    proxy->setType(QNetworkProxy::HttpProxy);
+                } else if (proxyType == "socks") {
+                    proxy->setType(QNetworkProxy::Socks5Proxy);
+                }
+
+                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOSTNAME)) {
+                    proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOSTNAME).toString());
+                }
+
+                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
+                    proxy->setPort(liquidAppConfig->value(LQD_CFG_KEY_PROXY_PORT).toInt());
+                }
+
+                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USE_AUTH) && liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH).toBool()) {
+                    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
+                        proxy->setUser(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
+                    }
+
+                    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_PASSWORD)) {
+                        proxy->setPassword(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_PASSWORD).toString());
+                    }
+                }
+            }
+
+            QNetworkProxy::setApplicationProxy(*proxy);
+        }
     }
 
     // Set the page's background color behind the document's body
@@ -501,7 +541,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 #endif
 }
 
-void LiquidAppWindow::loadStarted()
+void LiquidAppWindow::loadStarted(void)
 {
     pageIsLoading = true;
     pageHasError = false;
@@ -611,7 +651,7 @@ void LiquidAppWindow::setForgiveNextPageLoadError(const bool ok)
     forgiveNextPageLoadError = ok;
 }
 
-void LiquidAppWindow::stopLoadingOrExitFullScreenMode()
+void LiquidAppWindow::stopLoadingOrExitFullScreenMode(void)
 {
     if (pageIsLoading) {
         triggerPageAction(QWebEnginePage::Stop);
@@ -620,7 +660,7 @@ void LiquidAppWindow::stopLoadingOrExitFullScreenMode()
     }
 }
 
-void LiquidAppWindow::toggleFullScreenMode()
+void LiquidAppWindow::toggleFullScreenMode(void)
 {
     if (isFullScreen()) {
         exitFullScreenMode();
@@ -635,7 +675,7 @@ void LiquidAppWindow::toggleFullScreenMode()
     }
 }
 
-void LiquidAppWindow::toggleWindowGeometryLock()
+void LiquidAppWindow::toggleWindowGeometryLock(void)
 {
     // Prevent toggling window geometry lock while in full-screen mode
     if (!isFullScreen()) {
@@ -690,17 +730,17 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
     setWindowTitle(liquidAppWindowTitle + textIcons);
 }
 
-void LiquidAppWindow::zoomIn()
+void LiquidAppWindow::zoomIn(void)
 {
     attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP);
 }
 
-void LiquidAppWindow::zoomOut()
+void LiquidAppWindow::zoomOut(void)
 {
     attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP);
 }
 
-void LiquidAppWindow::zoomReset()
+void LiquidAppWindow::zoomReset(void)
 {
     attemptToSetZoomFactorTo(1.0);
 }

@@ -34,15 +34,21 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_ALLOW_COOKIES           "AllowCookies" // boolean, defults to FALSE
 #define LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_BACKGROUND_COLOR        "BackgroundColor" // text
-#define LQD_CFG_KEY_USER_AGENT              "UserAgent" // text
 #define LQD_CFG_KEY_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_HIDE_SCROLL_BARS        "HideScrollBars" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_ICON                    "Icon" // text
 #define LQD_CFG_KEY_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NOTES                   "Notes" // text
+#define LQD_CFG_KEY_PROXY_TYPE              "ProxyType" // text, values: "default", "no", "http", "socks"
+#define LQD_CFG_KEY_PROXY_HOSTNAME          "Proxy/Hostname" // text
+#define LQD_CFG_KEY_PROXY_PORT              "Proxy/Port" // number
+#define LQD_CFG_KEY_PROXY_USE_AUTH          "Proxy/UseAuthentication" // defaults to FALSE
+#define LQD_CFG_KEY_PROXY_USER_NAME         "Proxy/UserName" // text
+#define LQD_CFG_KEY_PROXY_USER_PASSWORD     "Proxy/UserPassword" // text
 #define LQD_CFG_KEY_TITLE                   "Title" // text
 #define LQD_CFG_KEY_URL                     "URL" // text, required
+#define LQD_CFG_KEY_USER_AGENT              "UserAgent" // text
 #define LQD_CFG_KEY_WIN_GEOM                "WindowGeometry" // text
 #define LQD_CFG_KEY_ZOOM_LVL                "ZoomLevel" // number, defaults to 1
 

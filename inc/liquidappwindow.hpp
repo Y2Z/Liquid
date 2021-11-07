@@ -4,6 +4,7 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QMenu>
+#include <QNetworkProxy>
 #include <QSettings>
 #include <QShortcut>
 #include <QWebEngineView>
@@ -19,25 +20,25 @@ class LiquidAppWindow : public QWebEngineView
 
 public:
     explicit LiquidAppWindow(QString* name);
-    ~LiquidAppWindow();
+    ~LiquidAppWindow(void);
 
     void setForgiveNextPageLoadError(const bool ok);
 
     QSettings* liquidAppConfig;
 
 public slots:
-    void exitFullScreenMode();
-    void hardReload();
+    void exitFullScreenMode(void);
+    void hardReload(void);
     void loadFinished(bool ok);
-    void loadStarted();
+    void loadStarted(void);
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode();
-    void toggleFullScreenMode();
-    void toggleWindowGeometryLock();
+    void toggleFullScreenMode(void);
+    void toggleWindowGeometryLock(void);
     void updateWindowTitle(const QString title);
-    void zoomIn();
-    void zoomOut();
-    void zoomReset();
+    void zoomIn(void);
+    void zoomOut(void);
+    void zoomReset(void);
 
 protected:
     void attemptToSetZoomFactorTo(const qreal desiredZoomFactor);
@@ -53,8 +54,8 @@ private:
 
     QString liquidAppWindowTitle;
 
-    LiquidAppWebPage* liquidAppWebPage;
-    QWebEngineProfile* liquidAppWebProfile;
+    LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
+    QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     QByteArray liquidAppWindowGeometry;
 
     bool liquidAppWindowTitleIsReadOnly = false;
@@ -63,6 +64,8 @@ private:
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
     QList<qreal> zoomFactors;
+
+    QNetworkProxy* proxy = Q_NULLPTR;
 
     // Keyboard shortcuts' actions
     QAction* backAction;
