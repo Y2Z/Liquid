@@ -3,8 +3,11 @@
 #include <QAction>
 #include <QColorDialog>
 #include <QDialog>
+#include <QGridLayout>
+#include <QLabel>
 #include <QListView>
 #include <QPlainTextEdit>
+#include <QTabWidget>
 #include <QtGui>
 #include <QtWidgets>
 
@@ -19,35 +22,71 @@ public:
 public slots:
     void save();
 
-protected:
-    QString backgroundColorName;
-
 private:
     void bindShortcuts(void);
 
-    bool isEditingExisting = false;
-
     QAction* quitAction;
 
-    QLabel* nameLabel;
-    QLabel* addressLabel;
+    bool isEditingExisting = false;
+
+    QString backgroundColorName;
+
+    QVBoxLayout* mainLayout;
+
+    QGridLayout* basicLayout;
+    QLabel* nameInputLabel;
     QLineEdit* nameInput;
+    QLabel* addressInputLabel;
     QLineEdit* addressInput;
+    QCheckBox* createIconCheckBox;
+
+    QHBoxLayout* buttonsLayout;
     QPushButton* advancedButton;
     QPushButton* cancelButton;
     QPushButton* saveButton;
-    QWidget* advanced;
+
+    QWidget* advancedWidget;
+    QVBoxLayout* advancedLayout;
+
+    QTabWidget* tabWidget;
+
+    // General tab
+    QWidget* generalTabWidget;
+    QVBoxLayout* generalTabWidgetLayout;
     QLineEdit* titleInput;
-    QCheckBox* enableJavaScriptCheckBox;
-    QCheckBox* allowCookiesCheckBox;
-    QCheckBox* allowThirdPartyCookiesCheckBox;
-    QCheckBox* hideScrollBarsCheckBox;
-    QPushButton* customBackgroundButton;
+    QLabel* additionalDomainsListLabel;
     QListView* additionalDomainsListView;
     QStandardItemModel* additionalDomainsModel;
-    QPlainTextEdit* additionalCssTextArea;
-    QPlainTextEdit* additionalJsTextArea;
     QLineEdit* userAgentInput;
     QPlainTextEdit* notesArea;
-    QCheckBox* createIconCheckBox;
+
+    // Appearance tab
+    QWidget* appearanceTabWidget;
+    QVBoxLayout* appearanceTabWidgetLayout;
+    QPushButton* customBackgroundColorButton;
+    QPlainTextEdit* additionalCssTextArea;
+    QCheckBox* hideScrollBarsCheckBox;
+
+    // JavaScript tab
+    QWidget* jsTabWidget;
+    QVBoxLayout* jsTabWidgetLayout;
+    QCheckBox* enableJavaScriptCheckBox;
+    QLabel* additionalJsLabel;
+    QPlainTextEdit* additionalJsTextArea;
+
+    // Cookies tab
+    QWidget* cookiesTabWidget;
+    QVBoxLayout* cookiesTabWidgetLayout;
+    QCheckBox* allowCookiesCheckBox;
+    QCheckBox* allowThirdPartyCookiesCheckBox;
+
+    // Network tab
+    QWidget* networkTabWidget;
+    QVBoxLayout* networkTabWidgetLayout;
+    QRadioButton* proxyModeSystemRadioButton;
+    QRadioButton* proxyModeDirectRadioButton;
+    QRadioButton* proxyModeCustomRadioButton;
+    QComboBox* useSocksSelectBox;
+    QLineEdit* proxyHostnameInput;
+    QSpinBox* proxyPortInput;
 };
