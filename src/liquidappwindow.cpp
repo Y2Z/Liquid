@@ -85,9 +85,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     updateWindowTitle(*liquidAppName);
 
     // Reveal Liquid app's window and bring it to front
-    show();
-    raise();
-    activateWindow();
+    {
+        show();
+        raise();
+        activateWindow();
+    }
 
     // Connect keyboard shortcuts
     bindKeyboardShortcuts();
@@ -351,6 +353,7 @@ void LiquidAppWindow::hardReload(void)
 void LiquidAppWindow::loadFinished(bool ok)
 {
     pageIsLoading = false;
+
     if (ok) {
         pageHasError = false;
     } else {
@@ -360,6 +363,7 @@ void LiquidAppWindow::loadFinished(bool ok)
             pageHasError = true;
         }
     }
+
     // Unset forgiveNextPageLoadError
     if (forgiveNextPageLoadError) {
         forgiveNextPageLoadError = false;
@@ -376,43 +380,37 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         liquidAppWindowTitleIsReadOnly = true;
     }
 
-    // Set up network proxy
-    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_TYPE)) {
-        const QString proxyType = liquidAppConfig->value(LQD_CFG_KEY_PROXY_TYPE).toString();
+    // Apply network proxy configuration
+    if (liquidAppConfig->contains(LQD_CFG_KEY_USE_PROXY)) {
+        proxy = new QNetworkProxy;
 
-        if (proxyType == "no" || proxyType == "http" || proxyType == "socks") {
-            proxy = new QNetworkProxy;
+        if (liquidAppConfig->value(LQD_CFG_KEY_USE_PROXY, false).toBool()) {
+            const bool isSocks = liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_SOCKS).toBool();
 
-            if (proxyType == "no") {
-                proxy->setType(QNetworkProxy::NoProxy);
-            } else {
-                if (proxyType == "http") {
-                    proxy->setType(QNetworkProxy::HttpProxy);
-                } else if (proxyType == "socks") {
-                    proxy->setType(QNetworkProxy::Socks5Proxy);
-                }
+            proxy->setType((isSocks) ? QNetworkProxy::Socks5Proxy : QNetworkProxy::HttpProxy);
 
-                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOSTNAME)) {
-                    proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOSTNAME).toString());
-                }
-
-                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
-                    proxy->setPort(liquidAppConfig->value(LQD_CFG_KEY_PROXY_PORT).toInt());
-                }
-
-                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USE_AUTH) && liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH).toBool()) {
-                    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
-                        proxy->setUser(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
-                    }
-
-                    if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_PASSWORD)) {
-                        proxy->setPassword(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_PASSWORD).toString());
-                    }
-                }
+            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOSTNAME)) {
+                proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOSTNAME).toString());
             }
 
-            QNetworkProxy::setApplicationProxy(*proxy);
+            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
+                proxy->setPort(liquidAppConfig->value(LQD_CFG_KEY_PROXY_PORT).toInt());
+            }
+
+            if (liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH, false).toBool()) {
+                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
+                    proxy->setUser(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
+                }
+
+                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_PASSWORD)) {
+                    proxy->setPassword(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_PASSWORD).toString());
+                }
+            }
+        } else {
+            proxy->setType(QNetworkProxy::NoProxy);
         }
+
+        QNetworkProxy::setApplicationProxy(*proxy);
     }
 
     // Set the page's background color behind the document's body
