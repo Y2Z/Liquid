@@ -2,6 +2,7 @@
 
 <RCC version="1.0">
     <qresource>
+        <file>images/checkers.svg</file>
         <file>images/liquid.svg</file>
         <file>styles/liquid.qss</file>
     </qresource>
