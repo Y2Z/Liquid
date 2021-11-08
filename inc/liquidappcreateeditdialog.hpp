@@ -24,31 +24,22 @@ public slots:
 
 private:
     void bindShortcuts(void);
+    static QString colorToRgba(const QColor* color);
+    static QFrame* separator(void);
 
     QAction* quitAction;
 
-    bool isEditingExisting = false;
+    bool editingExisting = false;
 
-    QString backgroundColorName;
+    QColor backgroundColor;
 
-    QVBoxLayout* mainLayout;
-
-    QGridLayout* basicLayout;
-    QLabel* nameInputLabel;
     QLineEdit* nameInput;
-    QLabel* addressInputLabel;
     QLineEdit* addressInput;
     QCheckBox* createIconCheckBox;
 
-    QHBoxLayout* buttonsLayout;
     QPushButton* advancedButton;
     QPushButton* cancelButton;
     QPushButton* saveButton;
-
-    QWidget* advancedWidget;
-    QVBoxLayout* advancedLayout;
-
-    QTabWidget* tabWidget;
 
     // General tab
     QWidget* generalTabWidget;
@@ -63,6 +54,7 @@ private:
     // Appearance tab
     QWidget* appearanceTabWidget;
     QVBoxLayout* appearanceTabWidgetLayout;
+    QCheckBox* useCustomBackgroundCheckBox;
     QPushButton* customBackgroundColorButton;
     QPlainTextEdit* additionalCssTextArea;
     QCheckBox* hideScrollBarsCheckBox;

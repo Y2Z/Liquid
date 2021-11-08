@@ -10,6 +10,7 @@
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5
 #define LQD_ZOOM_LVL_STEP      0.1
+#define LQD_DEFAULT_BG_COLOR   Qt::white
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -33,7 +34,7 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_ADDITIONAL_JS           "AdditionalJS" // text
 #define LQD_CFG_KEY_ALLOW_COOKIES           "AllowCookies" // boolean, defults to FALSE
 #define LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE
-#define LQD_CFG_KEY_BACKGROUND_COLOR        "BackgroundColor" // text
+#define LQD_CFG_KEY_CUSTOM_BG_COLOR         "CustomBackgroundColor" // text
 #define LQD_CFG_KEY_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_HIDE_SCROLL_BARS        "HideScrollBars" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_ICON                    "Icon" // text
@@ -47,9 +48,10 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_PROXY_USER_NAME         "Proxy/UserName" // text
 #define LQD_CFG_KEY_PROXY_USER_PASSWORD     "Proxy/UserPassword" // text
 #define LQD_CFG_KEY_TITLE                   "Title" // text
-#define LQD_CFG_KEY_URL                     "URL" // text, required
 #define LQD_CFG_KEY_USE_PROXY               "UseProxy" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_USE_CUSTOM_BG           "UseCustomBackground" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_USER_AGENT              "UserAgent" // text
+#define LQD_CFG_KEY_URL                     "URL" // text, required
 #define LQD_CFG_KEY_WIN_GEOM                "WindowGeometry" // text
 #define LQD_CFG_KEY_ZOOM_LVL                "ZoomLevel" // number, defaults to 1
 

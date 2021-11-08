@@ -17,12 +17,13 @@
 
 LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 {
-    liquidAppName = name;
-
+    // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
     // Disable context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
+
+    liquidAppName = name;
 
     liquidAppConfig = new QSettings(QSettings::IniFormat,
                                     QSettings::UserScope,
@@ -336,7 +337,7 @@ void LiquidAppWindow::hardReload(void)
                                        "let e=document.createElement('title');"\
                                        "e.innerText='%1';"\
                                        "document.appendChild(e)"\
-                                   "})()").arg((liquidAppWindowTitle).replace("'", "\\'"));
+                                   "})()").arg(liquidAppWindowTitle.replace("'", "\\'"));
         page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
     }
 
@@ -415,15 +416,18 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
     // Set the page's background color behind the document's body
     {
-        QColor backgroundColor;
+        if (liquidAppConfig->value(LQD_CFG_KEY_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_CUSTOM_BG_COLOR)) {
+            const QColor backgroundColor = QColor(QRgba64::fromRgba64(liquidAppConfig->value(LQD_CFG_KEY_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
 
-        if (liquidAppConfig->contains(LQD_CFG_KEY_BACKGROUND_COLOR)) {
-            backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_BACKGROUND_COLOR).toString());
+            if (backgroundColor.alpha() < 255) {
+                // Make window background transparent
+                setAttribute(Qt::WA_TranslucentBackground);
+            }
+
+            page()->setBackgroundColor(backgroundColor);
         } else {
-            backgroundColor = Qt::black;
+            page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);
         }
-
-        page()->setBackgroundColor(backgroundColor);
     }
 
     // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
@@ -502,14 +506,13 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
     // Additional user-defined CSS (does't require JavaScript enabled in order to work)
     if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_CSS)) {
-        const QString b64data = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString().toUtf8().toBase64();
-        const QString cssDataURI = "data:text/css;charset=utf-8;base64," + b64data;
+        QString additionalCss = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString();
         const QString js = QString("(()=>{"\
                                        "const styleEl = document.createElement('style');"\
-                                       "const cssTextNode = document.createTextNode('@import url(%1)');"\
+                                       "const cssTextNode = document.createTextNode('%1');"\
                                        "styleEl.appendChild(cssTextNode);"\
                                        "document.head.appendChild(styleEl)"\
-                                   "})()").arg(cssDataURI);
+                                   "})()").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
         QWebEngineScript script;
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
