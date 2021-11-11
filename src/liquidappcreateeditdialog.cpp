@@ -894,7 +894,9 @@ void LiquidAppCreateEditDialog::save()
                 additionalDomains += additionalDomainsModel->data(additionalDomainsModel->index(i, 0)).toString();
             }
 
-            tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_DOMAINS, additionalDomains);
+            if (additionalDomains.size() > 0) {
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_DOMAINS, additionalDomains);
+            }
         }
     }
 
