@@ -50,6 +50,8 @@ protected:
     void contextMenuEvent(QContextMenuEvent* event);
 
 private:
+    static void mSleep(const int ms);
+
     QString* liquidAppName;
 
     QString liquidAppWindowTitle;

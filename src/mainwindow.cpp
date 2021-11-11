@@ -29,10 +29,10 @@ MainWindow::MainWindow() : QScrollArea()
 
     loadStyleSheet();
 
-    QWidget *widget = new QWidget();
+    QWidget* widget = new QWidget();
     setWidget(widget);
 
-    QVBoxLayout *layout = new QVBoxLayout();
+    QVBoxLayout* layout = new QVBoxLayout();
     layout->setSpacing(0);
     layout->setMargin(0);
 
@@ -50,6 +50,7 @@ MainWindow::MainWindow() : QScrollArea()
     // Add new liquid app button
     createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
     createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
+    createNewLiquidAppButton->setFlat(true);
     QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [=]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
         switch (liquidAppCreateEditDialog.exec()) {

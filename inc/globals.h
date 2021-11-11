@@ -3,6 +3,9 @@
 /* Various globals */
 #define LQD_PROG_TITLE         "Liquid"
 #define LQD_APPS_DIR_NAME      "apps"
+#define LQD_DEFAULT_BG_COLOR   Qt::white
+#define LQD_DEFAULT_PROXY_HOST "0.0.0.0"
+#define LQD_DEFAULT_PROXY_PORT 8080
 #define LQD_WIN_MIN_SIZE_W     200
 #define LQD_WIN_MIN_SIZE_H     400
 #define LQD_APP_WIN_MIN_SIZE_W 160
@@ -10,7 +13,6 @@
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5
 #define LQD_ZOOM_LVL_STEP      0.1
-#define LQD_DEFAULT_BG_COLOR   Qt::white
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -41,7 +43,7 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NOTES                   "Notes" // text
-#define LQD_CFG_KEY_PROXY_HOSTNAME          "Proxy/Hostname" // text
+#define LQD_CFG_KEY_PROXY_HOST              "Proxy/Host" // text
 #define LQD_CFG_KEY_PROXY_PORT              "Proxy/Port" // number
 #define LQD_CFG_KEY_PROXY_USE_AUTH          "Proxy/UseAuthentication" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_PROXY_USE_SOCKS         "Proxy/UseSocks" // boolean, defaults to FALSE
