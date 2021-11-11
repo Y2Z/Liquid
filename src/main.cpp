@@ -1,5 +1,4 @@
 #include <csignal>
-#include <stdlib.h>
 
 #include <QApplication>
 #include <QDir>
