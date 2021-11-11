@@ -21,7 +21,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
     // Disable context menu
-    setContextMenuPolicy(Qt::PreventContextMenu);
+    setContextMenuPolicy(Qt::PreventContextMenu); // ???
 
     liquidAppName = name;
 
@@ -407,6 +407,13 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         }
 
         QNetworkProxy::setApplicationProxy(*proxy);
+    }
+
+    // Remove window manager's frame
+    {
+        if (liquidAppConfig->value(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, false).toBool()) {
+            setWindowFlags(Qt::FramelessWindowHint);
+        }
     }
 
     // Set the page's background color behind the document's body

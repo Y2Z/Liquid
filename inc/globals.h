@@ -49,6 +49,7 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_PROXY_USE_SOCKS         "Proxy/UseSocks" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_PROXY_USER_NAME         "Proxy/UserName" // text
 #define LQD_CFG_KEY_PROXY_USER_PASSWORD     "Proxy/UserPassword" // text
+#define LQD_CFG_KEY_REMOVE_WINDOW_FRAME     "RemoveWindowFrame" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_TITLE                   "Title" // text
 #define LQD_CFG_KEY_USE_PROXY               "UseProxy" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_USE_CUSTOM_BG           "UseCustomBackground" // boolean, defaults to FALSE

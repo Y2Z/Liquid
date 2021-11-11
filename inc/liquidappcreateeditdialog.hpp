@@ -51,10 +51,11 @@ private:
     // Appearance tab
     QWidget* appearanceTabWidget;
     QVBoxLayout* appearanceTabWidgetLayout;
+    QCheckBox* hideScrollBarsCheckBox;
+    QCheckBox* removeWindowFrameCheckBox;
     QCheckBox* useCustomBackgroundCheckBox;
     QPushButton* customBackgroundColorButton;
     QPlainTextEdit* additionalCssTextArea;
-    QCheckBox* hideScrollBarsCheckBox;
 
     // JavaScript tab
     QWidget* jsTabWidget;

@@ -132,7 +132,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         }
 
         {
-            saveButton = new QPushButton(tr((editingExisting) ? "Save" : "Create"));
+            saveButton = new QPushButton(tr((editingExisting) ? "Save" : "Add"));
             saveButton->setCursor(Qt::PointingHandCursor);
             saveButton->setDefault(true);
             buttonsLayout->addWidget(saveButton);
@@ -315,6 +315,24 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             appearanceTabWidgetLayout->addWidget(hideScrollBarsCheckBox);
         }
         #endif
+
+        // Remove window frame
+        {
+            appearanceTabWidgetLayout->addWidget(separator());
+
+            removeWindowFrameCheckBox = new QCheckBox(tr("Remove window frame"));
+            removeWindowFrameCheckBox->setCursor(Qt::PointingHandCursor);
+
+            if (editingExisting) {
+                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_REMOVE_WINDOW_FRAME)) {
+                    removeWindowFrameCheckBox->setChecked(
+                        existingLiquidAppConfig->value(LQD_CFG_KEY_REMOVE_WINDOW_FRAME).toBool()
+                    );
+                }
+            }
+
+            appearanceTabWidgetLayout->addWidget(removeWindowFrameCheckBox);
+        }
 
         // Custom background color
         {
@@ -745,12 +763,41 @@ void LiquidAppCreateEditDialog::save()
         tempLiquidAppConfig->setValue(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
     }
 
-    // Hide scroll bars
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    // Hide scroll bars
     {
-        tempLiquidAppConfig->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, hideScrollBarsCheckBox->isChecked());
+        if (editingExisting) {
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS) && !hideScrollBarsCheckBox->isChecked()) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_HIDE_SCROLL_BARS);
+            } else {
+                if (hideScrollBarsCheckBox->isChecked()) {
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, true);
+                }
+            }
+        } else {
+            if (hideScrollBarsCheckBox->isChecked()) {
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, true);
+            }
+        }
     }
 #endif
+
+    // Remove window frame
+    {
+        if (editingExisting) {
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_REMOVE_WINDOW_FRAME) && !removeWindowFrameCheckBox->isChecked()) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_REMOVE_WINDOW_FRAME);
+            } else {
+                if (removeWindowFrameCheckBox->isChecked()) {
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, true);
+                }
+            }
+        } else {
+            if (removeWindowFrameCheckBox->isChecked()) {
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, true);
+            }
+        }
+    }
 
     // Custom window title
     {
