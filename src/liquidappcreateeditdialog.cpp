@@ -625,6 +625,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                     QObject::connect(proxyModeCustomRadioButton, &QRadioButton::toggled, [=](){
                         const bool customProxyModeActive = proxyModeCustomRadioButton->isChecked();
+
                         useSocksSelectBox->setEnabled(customProxyModeActive);
                         proxyHostInput->setEnabled(customProxyModeActive);
                         proxyPortInput->setEnabled(customProxyModeActive);
@@ -653,7 +654,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         proxyModeSystemRadioButton->setChecked(true);
                     }
 
-                    if (existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH, false).toBool()) {
+                    if (editingExisting && existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH, false).toBool()) {
                         proxyUseAuthCheckBox->setChecked(true);
                     }
 
