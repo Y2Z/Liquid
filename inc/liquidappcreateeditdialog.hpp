@@ -37,19 +37,13 @@ private:
     QLineEdit* addressInput;
     QCheckBox* createIconCheckBox;
 
-    QPushButton* advancedButton;
-    QPushButton* cancelButton;
-    QPushButton* saveButton;
-
     // General tab
-    QWidget* generalTabWidget;
     QVBoxLayout* generalTabWidgetLayout;
     QLineEdit* titleInput;
-    QLabel* additionalDomainsListLabel;
     QListView* additionalDomainsListView;
     QStandardItemModel* additionalDomainsModel;
     QLineEdit* userAgentInput;
-    QPlainTextEdit* notesArea;
+    QPlainTextEdit* notesTextArea;
 
     // Appearance tab
     QWidget* appearanceTabWidget;
@@ -79,6 +73,9 @@ private:
     QRadioButton* proxyModeDirectRadioButton;
     QRadioButton* proxyModeCustomRadioButton;
     QComboBox* useSocksSelectBox;
-    QLineEdit* proxyHostnameInput;
+    QLineEdit* proxyHostInput;
     QSpinBox* proxyPortInput;
+    QCheckBox* proxyUseAuthCheckBox;
+    QLineEdit* proxyUsernameInput;
+    QLineEdit* proxyPasswordInput;
 };

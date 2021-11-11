@@ -292,12 +292,7 @@ void LiquidAppWindow::exitFullScreenMode(void)
 
     if (windowGeometryIsLocked) {
         // Pause here to wait for any kind of window resize animations to finish
-        {
-            QTime proceedAfter = QTime::currentTime().addMSecs(200);
-            while (QTime::currentTime() < proceedAfter) {
-                QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-            }
-        }
+        mSleep(200);
 
         setMinimumSize(width(), height());
         setMaximumSize(width(), height());
@@ -390,8 +385,8 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
             proxy->setType((isSocks) ? QNetworkProxy::Socks5Proxy : QNetworkProxy::HttpProxy);
 
-            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOSTNAME)) {
-                proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOSTNAME).toString());
+            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOST)) {
+                proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOST).toString());
             }
 
             if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
@@ -557,6 +552,15 @@ void LiquidAppWindow::loadStarted(void)
     updateWindowTitle(title());
 }
 
+void LiquidAppWindow::mSleep(const int ms)
+{
+    QTime proceedAfter = QTime::currentTime().addMSecs(ms);
+
+    while (QTime::currentTime() < proceedAfter) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, ms / 4);
+    }
+}
+
 void LiquidAppWindow::moveEvent(QMoveEvent *event)
 {
     // Remember window position
@@ -584,10 +588,13 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
     }
 }
 
-void LiquidAppWindow::resizeEvent(QResizeEvent *event)
+void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
     // Remember window size (unless in full-screen mode)
     if (!isFullScreen()) {
+        // Pause here to wait for any kind of window resize animations to finish
+        mSleep(200);
+
         liquidAppWindowGeometry = saveGeometry();
     }
 
