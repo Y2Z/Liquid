@@ -55,7 +55,7 @@ MainWindow::MainWindow() : QScrollArea()
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
         switch (liquidAppCreateEditDialog.exec()) {
             case QDialog::Accepted:
-                // Give some time to the filesystem before scanning for the newly created app
+                // Give some time to the filesystem before scanning for the newly created Liquid App
                 {
                     QTime proceedAfter = QTime::currentTime().addMSecs(100);
                     while (QTime::currentTime() < proceedAfter) {
@@ -64,6 +64,10 @@ MainWindow::MainWindow() : QScrollArea()
                 }
                 flushTable();
                 populateTable();
+
+                if (liquidAppCreateEditDialog.isPlanningToRun()) {
+                    runLiquidApp(liquidAppCreateEditDialog.getName());
+                }
             break;
         }
     });
@@ -71,10 +75,10 @@ MainWindow::MainWindow() : QScrollArea()
 
     widget->setLayout(layout);
 
-    // Launch the liquid app upon double-click on its row in the table
+    // Run the liquid app upon double-click on its row in the table
     QObject::connect(appListTable, &QTableWidget::cellDoubleClicked, [=](int r, int c) {
         (void)(c);
-        launchLiquidApp(appListTable->item(r, 0)->text());
+        runLiquidApp(appListTable->item(r, 0)->text());
     });
 
     // Connect keyboard shortcuts
@@ -96,9 +100,10 @@ MainWindow::~MainWindow()
 void MainWindow::bindShortcuts()
 {
     // Connect the exit shortcut
-    quitAction.setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
-    addAction(&quitAction);
-    connect(&quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    quitAction = new QAction();
+    quitAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT)));
+    addAction(quitAction);
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -176,7 +181,7 @@ QString MainWindow::getLiquidAppsDirPath()
     return dummyLiquidAppFileInfo.absolutePath();
 }
 
-void MainWindow::launchLiquidApp(const QString liquidAppName)
+void MainWindow::runLiquidApp(const QString liquidAppName)
 {
     const QString liquidAppFilePath(QCoreApplication::applicationFilePath());
     QProcess process;
@@ -269,11 +274,11 @@ void MainWindow::populateTable()
         appItemActionButtonsWidget->setLayout(appItemLayout);
 
         // Delete button
-        QPushButton *deleteButton = new QPushButton(tr(LQD_ICON_REMOVE));
+        QPushButton *deleteButton = new QPushButton(tr(LQD_ICON_DELETE));
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [=]() {
-            const QString text = QString("Are you sure you want to remove Liquid app “%1”?").arg(liquidAppName);
+            const QString text = QString("Are you sure you want to delete Liquid app “%1”?").arg(liquidAppName);
             const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
                 removeDesktopFile(liquidAppName);
@@ -333,13 +338,13 @@ void MainWindow::populateTable()
         });
         appItemLayout->addWidget(editButton);
 
-        // Launch button
+        // Run button
         QPushButton *runButton = new QPushButton(tr(LQD_ICON_RUN));
         runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
         QObject::connect(runButton, &QPushButton::clicked, [=]() {
-            launchLiquidApp(liquidAppName);
+            runLiquidApp(liquidAppName);
         });
 
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);

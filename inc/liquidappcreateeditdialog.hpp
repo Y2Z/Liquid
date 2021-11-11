@@ -18,6 +18,8 @@ public:
     ~LiquidAppCreateEditDialog(void);
 
     QString getName(void);
+    bool isPlanningToRun(void);
+    void setPlanningToRun(const bool maybe);
 
 public slots:
     void save();
@@ -36,6 +38,7 @@ private:
     QLineEdit* nameInput;
     QLineEdit* addressInput;
     QCheckBox* createIconCheckBox;
+    QCheckBox* planningToRunCheckBox;
 
     // General tab
     QVBoxLayout* generalTabWidgetLayout;

@@ -29,7 +29,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     if (editingExisting) {
         setWindowTitle(tr("Editing existing Liquid app “%1”").arg(liquidAppName));
     } else {
-        setWindowTitle(tr("Creating new Liquid app"));
+        setWindowTitle(tr("Adding new Liquid app"));
     }
 
     backgroundColor = QColor(Qt::black);
@@ -81,20 +81,25 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         basicLayout->addWidget(addressInput, 1, 1);
     }
 
-    // "Create desktop icon" checkbox
-    {
-        if (!editingExisting) {
+    // Extra checkboxes visible only in "Create" mode
+    if (!editingExisting) {
+        QHBoxLayout* extraCheckboxesLayout = new QHBoxLayout();
+
+        // "Create desktop icon" checkbox
+        {
             createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
             createIconCheckBox->setCursor(Qt::PointingHandCursor);
-            basicLayout->addWidget(createIconCheckBox, 2, 1);
+            extraCheckboxesLayout->addWidget(createIconCheckBox);
         }
-    }
 
-    // "Run after creation" checkbox
-    {
-        if (!editingExisting) {
-            // TODO
+        // "Run after creation" checkbox
+        {
+            planningToRunCheckBox = new QCheckBox(tr("Run after creation"));
+            planningToRunCheckBox->setCursor(Qt::PointingHandCursor);
+            extraCheckboxesLayout->addWidget(planningToRunCheckBox, 0, Qt::AlignRight);
         }
+
+        basicLayout->addLayout(extraCheckboxesLayout, 2, 1);
     }
 
     QPushButton* advancedButton;
@@ -712,10 +717,10 @@ void LiquidAppCreateEditDialog::save()
     // to ensure no sub-directories would get created
     appName = appName.replace(QDir::separator(), "_");
     QSettings* tempLiquidAppConfig = new QSettings(QSettings::IniFormat,
-                                               QSettings::UserScope,
-                                               QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                               appName,
-                                               nullptr);
+                                                   QSettings::UserScope,
+                                                   QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
+                                                   appName,
+                                                   nullptr);
 
     // TODO: check if the given Liquid app name is already in use
 
@@ -1046,6 +1051,11 @@ QString LiquidAppCreateEditDialog::colorToRgba(const QColor* color)
         .arg(color->alphaF());
 }
 
+bool LiquidAppCreateEditDialog::isPlanningToRun(void)
+{
+    return planningToRunCheckBox->isChecked();
+}
+
 QString LiquidAppCreateEditDialog::getName(void)
 {
     return nameInput->text();
@@ -1059,4 +1069,9 @@ QFrame* LiquidAppCreateEditDialog::separator(void)
     separatorFrame->setFrameShadow(QFrame::Sunken);
 
     return separatorFrame;
+}
+
+void LiquidAppCreateEditDialog::setPlanningToRun(const bool maybe)
+{
+    planningToRunCheckBox->setChecked(maybe);
 }

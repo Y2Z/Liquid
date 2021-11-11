@@ -21,7 +21,7 @@
 #define LQD_ICON_LOADING "⏳"
 #define LQD_ICON_LOCKED  "🖼"
 #define LQD_ICON_MUTED   "🔇"
-#define LQD_ICON_REMOVE  "✖"
+#define LQD_ICON_DELETE  "✖"
 #define LQD_ICON_RUN     "➤"
 
 /*

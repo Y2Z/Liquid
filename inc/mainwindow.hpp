@@ -22,14 +22,14 @@ private:
     void bindShortcuts();
     QString getLiquidAppsDirPath();
     void flushTable();
-    void launchLiquidApp(const QString liquidAppName);
+    static QByteArray generateRandomByteArray(const int byteLength);
     void loadStyleSheet();
     void populateTable();
+    void runLiquidApp(const QString liquidAppName);
     void saveSettings();
-    static QByteArray generateRandomByteArray(const int byteLength);
 
-    QTableWidget *appListTable;
-    QPushButton *createNewLiquidAppButton;
-    QSettings *settings;
-    QAction quitAction;
+    QTableWidget* appListTable;
+    QPushButton* createNewLiquidAppButton;
+    QAction* quitAction;
+    QSettings* settings;
 };

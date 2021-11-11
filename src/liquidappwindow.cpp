@@ -323,8 +323,8 @@ void LiquidAppWindow::hardReload(void)
                                "})()");
     page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
 
-    // Ensure that while this Liquid app is being reset, the window title remains to be set to this Liquid application's name
-    // to mimic the same experience that happens when the user first launches this Liquid app
+    // Ensure that while this Liquid App is being reset, the window title remains to be set to this Liquid App's name
+    // to mimic the same experience that happens when the user initially runs this Liquid app
     if (!liquidAppWindowTitleIsReadOnly) {
         liquidAppWindowTitle = *liquidAppName;
 
