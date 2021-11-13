@@ -8,6 +8,7 @@
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
+#include <QtCore/qmath.h>
 
 #include "globals.h"
 
@@ -20,8 +21,8 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
-    // Disable context menu
-    setContextMenuPolicy(Qt::PreventContextMenu); // ???
+    // Disable default QWebEngineView's context menu
+    setContextMenuPolicy(Qt::PreventContextMenu);
 
     liquidAppName = name;
 
@@ -98,7 +99,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Initialize context menu
     setupContextMenu();
 
-    // Allow page-level fullscreen happen
+    // Allow page-level full screen happen
     connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
         request.accept();
     });
@@ -200,18 +201,18 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(hardReloadAction);
     connect(hardReloadAction, SIGNAL(triggered()), this, SLOT(hardReload()));
 
-    // Connect "toggle fulls-creen" shortcut
+    // Connect "toggle full screen" shortcut
     toggleFullScreenModeAction = new QAction;
     toggleFullScreenModeAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TOGGLE_FS_MODE)));
     addAction(toggleFullScreenModeAction);
     connect(toggleFullScreenModeAction, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
-    // Connect "alternative toggle full-screen" shortcut (there can be only one QKeySequence per QAction)
+    // Connect "alternative toggle full screen" shortcut (there can be only one QKeySequence per QAction)
     toggleFullScreenModeAction2 = new QAction;
     toggleFullScreenModeAction2->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TOGGLE_FS_MODE_2)));
     addAction(toggleFullScreenModeAction2);
     connect(toggleFullScreenModeAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
 
-    // Connect "stop loading"/"exit full-screen mode" shortcut
+    // Connect "stop loading" / "exit full screen mode" shortcut
     stopLoadingOrExitFullScreenModeAction = new QAction;
     stopLoadingOrExitFullScreenModeAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_STOP_OR_EXIT_FS_MODE)));
     addAction(stopLoadingOrExitFullScreenModeAction);
@@ -246,6 +247,18 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     quitAction2->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_QUIT_2)));
     addAction(quitAction2);
     connect(quitAction2, SIGNAL(triggered()), this, SLOT(close()));
+
+    // Connect "take snapshot" shortcut
+    takeSnapshotAction = new QAction;
+    takeSnapshotAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TAKE_SNAPSHOT)));
+    addAction(takeSnapshotAction);
+    connect(takeSnapshotAction, SIGNAL(triggered()), this, SLOT(takeSnapshotSlot()));
+
+    // Connect "take full page snapshot" shortcut
+    takeSnapshotFullPageAction = new QAction;
+    takeSnapshotFullPageAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TAKE_SNAPSHOT_FULL)));
+    addAction(takeSnapshotFullPageAction);
+    connect(takeSnapshotFullPageAction, SIGNAL(triggered()), this, SLOT(takeSnapshotFullPageSlot()));
 
     // Make it possible to intercept zoom events
     QApplication::instance()->installEventFilter(this);
@@ -287,7 +300,7 @@ bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 
 void LiquidAppWindow::exitFullScreenMode(void)
 {
-    // Exit from full-screen mode
+    // Exit from full screen mode
     setWindowState(windowState() & ~Qt::WindowFullScreen);
 
     if (windowGeometryIsLocked) {
@@ -597,7 +610,7 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
-    // Remember window size (unless in full-screen mode)
+    // Remember window size (unless in full screen mode)
     if (!isFullScreen()) {
         // Pause here to wait for any kind of window resize animations to finish
         mSleep(200);
@@ -682,6 +695,109 @@ void LiquidAppWindow::stopLoadingOrExitFullScreenMode(void)
     }
 }
 
+void LiquidAppWindow::takeSnapshotSlot(void)
+{
+    takeSnapshot(false);
+}
+void LiquidAppWindow::takeSnapshotFullPageSlot(void)
+{
+    takeSnapshot(true);
+}
+
+void LiquidAppWindow::takeSnapshot(const bool fullPage)
+{
+    QImage* image;
+
+    // TODO: add camera flash visual effect
+    // TODO: add shutter sound
+
+    if (fullPage) {
+        image = new QImage((page()->contentsSize() / QPaintDevice::devicePixelRatio()).toSize(), QImage::Format_ARGB32);
+    } else {
+        image = new QImage(contentsRect().size(), QImage::Format_ARGB32);
+    }
+
+    image->fill(Qt::transparent);
+
+    QPainter* painter = new QPainter(image);
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setRenderHint(QPainter::TextAntialiasing);
+    painter->setRenderHint(QPainter::SmoothPixmapTransform);
+    painter->setRenderHint(QPainter::HighQualityAntialiasing);
+    painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
+
+    if (fullPage) {
+        // NOTE: we cannot just resize the view to contents to get a full page snapshot done (responsive websites may produce different result);
+        //       instead, the best way seems to be to scroll through the page region-by-region, and compose the final image out of those chunks
+        //       (this seems to be the best way to go, until QWebEngineView provides a way to render parts that aren't in the viewport)
+
+        // Remember initial scroll position to be able to come back to it after the whole page is captured
+        const QPointF initScrollPos = page()->scrollPosition() / QPaintDevice::devicePixelRatio();
+
+        // Calculate how many zones we're going to have to scroll to
+        QPoint* zoneResolution = new QPoint(qCeil(qreal(image->width()) / width()), qCeil(qreal(image->height()) / height()));
+
+        // Calculate non-overlapping rectangles that we're gonna scroll to and capture one-by-one
+        QList<QRect*> zones;
+        {
+            for (int iy = 0; iy < zoneResolution->y(); iy++) {
+                for (int ix = 0; ix < zoneResolution->x(); ix++) {
+                    zones.append(new QRect(
+                        ix * width(),
+                        iy * height(),
+                        (ix + 1 != zoneResolution->x()) ? width() : (image->width() - ix * width()),
+                        (iy + 1 != zoneResolution->y()) ? height() : (image->height() - iy * height())
+                    ));
+                }
+            }
+        }
+
+        static const QString js = "window.scrollTo(%1, %2);";
+
+        for (int iz = 0; iz < zoneResolution->x() * zoneResolution->y(); iz++) {
+            QRect* zone = zones[iz];
+            page()->runJavaScript(QString(js).arg(zone->x()).arg(zone->y()), QWebEngineScript::ApplicationWorld);
+
+            // Give a bit of time to QWebEngineView to catch up with the scroll offset change that was made by runJavaScript()
+            mSleep(25);
+
+            QRegion region(width() - zone->width(), height() - zone->height(), zone->width(), zone->height());
+            render(painter, QPoint(zone->x(), zone->y()), region);
+
+            delete zone;
+        }
+
+        // Scroll the web view back to where it was before we started taking full page snapshot
+        page()->runJavaScript(QString(js).arg(initScrollPos.x()).arg(initScrollPos.y()), QWebEngineScript::ApplicationWorld);
+    } else {
+        render(painter);
+    }
+
+    // TODO: add option to take snapshots in SVG format (kinda like html2canvas, but vector)
+
+    painter->end();
+    delete painter;
+
+    {
+        const QString path = QDir::homePath() + QDir::separator() + "Pictures";
+        QDir dir(path);
+        if (!dir.exists()) {
+            dir.mkdir(".");
+        }
+
+        const QString fileName = QString("%1 of Liquid App %2 taken on %3 at %4.png")
+                                    .arg(tr(fullPage ? "Full page snapshot" : "Snapshot"))
+                                    .arg(*liquidAppName)
+                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateFormat()))
+                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().timeFormat()));
+        image->save(path + QDir::separator() + fileName, "PNG");
+    }
+
+    // TODO: add EXIF?
+
+    delete image;
+}
+
 void LiquidAppWindow::toggleFullScreenMode(void)
 {
     if (isFullScreen()) {
@@ -692,14 +808,14 @@ void LiquidAppWindow::toggleFullScreenMode(void)
             setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
             setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         }
-        // Enter the full-screen mode
+        // Enter the full screen mode
         setWindowState(windowState() | Qt::WindowFullScreen);
     }
 }
 
 void LiquidAppWindow::toggleWindowGeometryLock(void)
 {
-    // Prevent toggling window geometry lock while in full-screen mode
+    // Prevent toggling window geometry lock while in full screen mode
     if (!isFullScreen()) {
         if (windowGeometryIsLocked) {
             // Open up resizing restrictions
