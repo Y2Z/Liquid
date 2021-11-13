@@ -32,7 +32,9 @@ public slots:
     void loadFinished(bool ok);
     void loadStarted(void);
     void onIconChanged(QIcon icon);
-    void stopLoadingOrExitFullScreenMode();
+    void stopLoadingOrExitFullScreenMode(void);
+    void takeSnapshotSlot(void);
+    void takeSnapshotFullPageSlot(void);
     void toggleFullScreenMode(void);
     void toggleWindowGeometryLock(void);
     void updateWindowTitle(const QString title);
@@ -51,6 +53,7 @@ protected:
 
 private:
     static void mSleep(const int ms);
+    void takeSnapshot(const bool fullPage);
 
     QString* liquidAppName;
 
@@ -80,6 +83,8 @@ private:
     QAction* reloadAction;
     QAction* reloadAction2;
     QAction* stopLoadingOrExitFullScreenModeAction;
+    QAction* takeSnapshotAction;
+    QAction* takeSnapshotFullPageAction;
     QAction* toggleFullScreenModeAction;
     QAction* toggleFullScreenModeAction2;
     QAction* toggleGeometryLockAction;

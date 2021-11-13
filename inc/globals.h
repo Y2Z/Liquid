@@ -70,6 +70,8 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_KBD_SEQ_TOGGLE_FS_MODE_2     "F11"
 #define LQD_KBD_SEQ_STOP_OR_EXIT_FS_MODE "Escape"
 #define LQD_KBD_SEQ_TOGGLE_WIN_GEOM_LOCK "Ctrl+L"
+#define LQD_KBD_SEQ_TAKE_SNAPSHOT        "Ctrl+T"
+#define LQD_KBD_SEQ_TAKE_SNAPSHOT_FULL   "Ctrl+Shift+T"
 #define LQD_KBD_SEQ_QUIT                 "Ctrl+Q"
 #define LQD_KBD_SEQ_QUIT_2               "Ctrl+W"
 #define LQD_KBD_SEQ_ZOOM_LVL_INC         "Ctrl+="
