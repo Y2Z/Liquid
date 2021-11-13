@@ -4,11 +4,12 @@
 #include <QDir>
 #include <QClipboard>
 #include <QNetworkProxy>
+#include <QtCore/qmath.h>
+#include <QTimer>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
-#include <QtCore/qmath.h>
 
 #include "globals.h"
 
@@ -50,6 +51,8 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Set default window title
     liquidAppWindowTitle = *liquidAppName;
 
+    updateWindowTitle(*liquidAppName);
+
     // Pre-fill list of all possible zoom factors to snap to
     {
         for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP && z > 0; z -= LQD_ZOOM_LVL_STEP) {
@@ -84,14 +87,10 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
     loadLiquidAppConfig();
 
-    updateWindowTitle(*liquidAppName);
-
     // Reveal Liquid app's window and bring it to front
-    {
-        show();
-        raise();
-        activateWindow();
-    }
+    show();
+    raise();
+    activateWindow();
 
     // Connect keyboard shortcuts
     bindKeyboardShortcuts();
@@ -499,14 +498,19 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_MUTE_AUDIO).toBool());
     }
 
-    // Web view zoom level
+    // Restore web view zoom level
     if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
         attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
-    } else {
-        attemptToSetZoomFactorTo(1.0);
+
+        // There's a bug in Qt, using QTimer seems to be the only solution
+        QTimer::singleShot(1000, [&](){
+            if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
+                attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+            }
+        });
     }
 
-    // Lock the app's window's geometry if it was locked when it was last closed
+    // Lock for the app's window's geometry
     if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
         if (liquidAppConfig->value(LQD_CFG_KEY_LOCK_WIN_GEOM).toBool()) {
             toggleWindowGeometryLock();
