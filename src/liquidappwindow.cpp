@@ -709,41 +709,46 @@ void LiquidAppWindow::takeSnapshotFullPageSlot(void)
 
 void LiquidAppWindow::takeSnapshot(const bool fullPage)
 {
+    const QImage::Format format = QImage::Format_ARGB32;
     QImage* image;
 
     // TODO: add camera flash visual effect
     // TODO: add shutter sound
 
-    // TODO: hide mainFrame's scrollbars before taking snapshot
+    // TODO: hide scrollbars before taking snapshot
+
+    const int ratio = QPaintDevice::devicePixelRatio();
 
     if (fullPage) {
-        image = new QImage((page()->contentsSize() / QPaintDevice::devicePixelRatio()).toSize(), QImage::Format_ARGB32);
+        image = new QImage(page()->contentsSize().toSize(), format);
     } else {
-        image = new QImage(contentsRect().size(), QImage::Format_ARGB32);
+        image = new QImage(contentsRect().size() * ratio, format);
     }
+
+    image->setDevicePixelRatio(ratio);
 
     image->fill(Qt::transparent);
 
     QPainter* painter = new QPainter(image);
-    painter->setRenderHint(QPainter::Antialiasing);
-    painter->setRenderHint(QPainter::TextAntialiasing);
-    painter->setRenderHint(QPainter::SmoothPixmapTransform);
-    painter->setRenderHint(QPainter::HighQualityAntialiasing);
+    // painter->setRenderHint(QPainter::Antialiasing);
+    // painter->setRenderHint(QPainter::TextAntialiasing);
+    // painter->setRenderHint(QPainter::SmoothPixmapTransform);
+    // painter->setRenderHint(QPainter::HighQualityAntialiasing);
     painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
 
     if (fullPage) {
-        QSize originalWindowSize = size();
+        const QSize originalWindowSize = size();
 
         setAttribute(Qt::WA_DontShowOnScreen, true);
         show();
 
         // Remember initial scroll position to be able to come back to it after the whole page is captured
-        const QPointF initScrollPos = page()->scrollPosition() / QPaintDevice::devicePixelRatio();
+        const QPointF initScrollPos = page()->scrollPosition() / ratio;
 
-        const QSize desiredWindowSize = (page()->contentsSize()  / QPaintDevice::devicePixelRatio()).toSize();
+        const QSize desiredWindowSize = page()->contentsSize().toSize() / ratio;
         resize(desiredWindowSize);
 
-        // Render QWidget contents into QPainter
+        // Render contents of QWidget into QPainter
         render(painter);
 
         // Restore the window back to be exactly how it was
@@ -761,7 +766,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
             page()->runJavaScript(QString(js).arg(initScrollPos.x()).arg(initScrollPos.y()), QWebEngineScript::ApplicationWorld);
         }
     } else {
-        // Render QWidget contents into QPainter
+        // Render contents of QWidget into QPainter
         render(painter);
     }
 
@@ -770,6 +775,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     painter->end();
     delete painter;
 
+    // Save image to disk
     {
         const QString path = QDir::homePath() + QDir::separator() + "Pictures";
         QDir dir(path);
@@ -777,12 +783,13 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
             dir.mkdir(".");
         }
 
-        const QString fileName = QString("%1 of Liquid App %2 taken on %3 at %4.png")
-                                    .arg(tr(fullPage ? "Full page snapshot" : "Snapshot"))
+        const QString fileName = QString("%1 %2snapshot (%3).%4")
                                     .arg(*liquidAppName)
-                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateFormat()))
-                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().timeFormat()));
-        image->save(path + QDir::separator() + fileName, "PNG");
+                                    .arg(tr(fullPage ? "full page " : ""))
+                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat()))
+                                    .arg("png");
+        image->scaled(image->width() / ratio, image->height() / ratio, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                .save(path + QDir::separator() + fileName, "PNG");
     }
 
     // TODO: add EXIF?
