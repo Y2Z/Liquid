@@ -17,7 +17,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                                                        QSettings::UserScope,
                                                        QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                        liquidAppName,
-                                                       nullptr);
+                                                       Q_NULLPTR);
 
     // Check to see if Liquid app by this name already has config file
     if (liquidAppName.size() > 0) {
@@ -738,7 +738,7 @@ void LiquidAppCreateEditDialog::save()
                                                    QSettings::UserScope,
                                                    QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                    appName,
-                                                   nullptr);
+                                                   Q_NULLPTR);
 
     // TODO: check if the given Liquid app name is already in use
 

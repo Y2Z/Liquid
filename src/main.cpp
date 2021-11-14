@@ -30,19 +30,19 @@ static void onSignalHandler(int signum)
 {
     if (sharedMemory) {
         delete sharedMemory;
-        sharedMemory = nullptr;
+        sharedMemory = Q_NULLPTR;
     }
 
     if (liquidAppWindow) {
         liquidAppWindow->close();
         delete liquidAppWindow;
-        liquidAppWindow = nullptr;
+        liquidAppWindow = Q_NULLPTR;
     }
 
     if (mainWindow) {
         mainWindow->close();
         delete mainWindow;
-        mainWindow = nullptr;
+        mainWindow = Q_NULLPTR;
     }
 
     qDebug() << "Terminated with signal" << signum;
