@@ -175,7 +175,7 @@ QString MainWindow::getLiquidAppsDirPath()
                                                       QSettings::UserScope,
                                                       QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                       "dummy597a32d8cf3b253",
-                                                      nullptr);
+                                                      Q_NULLPTR);
     QFileInfo dummyLiquidAppFileInfo(dummyLiquidAppSettings->fileName());
 
     return dummyLiquidAppFileInfo.absolutePath();
@@ -210,7 +210,7 @@ void MainWindow::loadStyleSheet()
                                         QSettings::UserScope,
                                         PROG_NAME,
                                         PROG_NAME,
-                                        nullptr);
+                                        Q_NULLPTR);
     QFileInfo settingsFileInfo(settings->fileName());
     QFile customStyleFile(settingsFileInfo.absolutePath() + QDir::separator() + PROG_NAME ".qss");
     if (customStyleFile.open(QFile::ReadOnly)) {
@@ -239,7 +239,7 @@ void MainWindow::populateTable()
                                                      QSettings::UserScope,
                                                      QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                      liquidAppName,
-                                                     nullptr);
+                                                     Q_NULLPTR);
 
         //////////////////
         // First column //

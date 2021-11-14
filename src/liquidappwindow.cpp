@@ -4,7 +4,6 @@
 #include <QDir>
 #include <QClipboard>
 #include <QNetworkProxy>
-#include <QtCore/qmath.h>
 #include <QTimer>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
@@ -31,7 +30,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
                                     QSettings::UserScope,
                                     QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                     *name,
-                                    nullptr);
+                                    Q_NULLPTR);
 
     // These default settings affect everything (including sub-frames)
     QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
@@ -715,6 +714,8 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     // TODO: add camera flash visual effect
     // TODO: add shutter sound
 
+    // TODO: hide mainFrame's scrollbars before taking snapshot
+
     if (fullPage) {
         image = new QImage((page()->contentsSize() / QPaintDevice::devicePixelRatio()).toSize(), QImage::Format_ARGB32);
     } else {
@@ -731,49 +732,36 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
 
     if (fullPage) {
-        // NOTE: we cannot just resize the view to contents to get a full page snapshot done (responsive websites may produce different result);
-        //       instead, the best way seems to be to scroll through the page region-by-region, and compose the final image out of those chunks
-        //       (this seems to be the best way to go, until QWebEngineView provides a way to render parts that aren't in the viewport)
+        QSize originalWindowSize = size();
+
+        setAttribute(Qt::WA_DontShowOnScreen, true);
+        show();
 
         // Remember initial scroll position to be able to come back to it after the whole page is captured
         const QPointF initScrollPos = page()->scrollPosition() / QPaintDevice::devicePixelRatio();
 
-        // Calculate how many zones we're going to have to scroll to
-        QPoint* zoneResolution = new QPoint(qCeil(qreal(image->width()) / width()), qCeil(qreal(image->height()) / height()));
+        const QSize desiredWindowSize = (page()->contentsSize()  / QPaintDevice::devicePixelRatio()).toSize();
+        resize(desiredWindowSize);
 
-        // Calculate non-overlapping rectangles that we're gonna scroll to and capture one-by-one
-        QList<QRect*> zones;
+        // Render QWidget contents into QPainter
+        render(painter);
+
+        // Restore the window back to be exactly how it was
         {
-            for (int iy = 0; iy < zoneResolution->y(); iy++) {
-                for (int ix = 0; ix < zoneResolution->x(); ix++) {
-                    zones.append(new QRect(
-                        ix * width(),
-                        iy * height(),
-                        (ix + 1 != zoneResolution->x()) ? width() : (image->width() - ix * width()),
-                        (iy + 1 != zoneResolution->y()) ? height() : (image->height() - iy * height())
-                    ));
-                }
-            }
+            // Resize back to what it was
+            resize(originalWindowSize);
+
+            // Reveal the window
+            hide();
+            setAttribute(Qt::WA_DontShowOnScreen, false);
+            show();
+
+            // Scroll the web view back to where it was before we started taking full page snapshot
+            static const QString js = "window.scrollTo(%1, %2);";
+            page()->runJavaScript(QString(js).arg(initScrollPos.x()).arg(initScrollPos.y()), QWebEngineScript::ApplicationWorld);
         }
-
-        static const QString js = "window.scrollTo(%1, %2);";
-
-        for (int iz = 0; iz < zoneResolution->x() * zoneResolution->y(); iz++) {
-            QRect* zone = zones[iz];
-            page()->runJavaScript(QString(js).arg(zone->x()).arg(zone->y()), QWebEngineScript::ApplicationWorld);
-
-            // Give a bit of time to QWebEngineView to catch up with the scroll offset change that was made by runJavaScript()
-            mSleep(25);
-
-            QRegion region(width() - zone->width(), height() - zone->height(), zone->width(), zone->height());
-            render(painter, QPoint(zone->x(), zone->y()), region);
-
-            delete zone;
-        }
-
-        // Scroll the web view back to where it was before we started taking full page snapshot
-        page()->runJavaScript(QString(js).arg(initScrollPos.x()).arg(initScrollPos.y()), QWebEngineScript::ApplicationWorld);
     } else {
+        // Render QWidget contents into QPainter
         render(painter);
     }
 
