@@ -738,6 +738,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 
     if (fullPage) {
         const QSize originalWindowSize = size();
+        const bool wasFullScreen = isFullScreen();
 
         setAttribute(Qt::WA_DontShowOnScreen, true);
         show();
@@ -760,6 +761,10 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
             hide();
             setAttribute(Qt::WA_DontShowOnScreen, false);
             show();
+
+            if (wasFullScreen) {
+                toggleFullScreenMode();
+            }
 
             // Scroll the web view back to where it was before we started taking full page snapshot
             static const QString js = "window.scrollTo(%1, %2);";
