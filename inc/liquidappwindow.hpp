@@ -54,6 +54,7 @@ protected:
 private:
     static void mSleep(const int ms);
     void takeSnapshot(const bool fullPage);
+    const QString colorToRgba(const QColor color);
 
     QString* liquidAppName;
 
