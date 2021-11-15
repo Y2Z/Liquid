@@ -268,6 +268,15 @@ void LiquidAppWindow::closeEvent(QCloseEvent* event)
     deleteLater();
 }
 
+const QString LiquidAppWindow::colorToRgba(const QColor color)
+{
+    return QString("rgba(%1, %2, %3, %4)")
+            .arg(color.red())
+            .arg(color.green())
+            .arg(color.blue())
+            .arg(color.alphaF());
+}
+
 void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 {
     (void)event;
@@ -709,97 +718,120 @@ void LiquidAppWindow::takeSnapshotFullPageSlot(void)
 
 void LiquidAppWindow::takeSnapshot(const bool fullPage)
 {
-    const QImage::Format format = QImage::Format_ARGB32;
-    QImage* image;
-
-    // TODO: add camera flash visual effect
-    // TODO: add shutter sound
-
-    // TODO: hide scrollbars before taking snapshot
+    const bool vector = false;
 
     const int ratio = QPaintDevice::devicePixelRatio();
+    const QSize snapshotSize = (fullPage) ? (page()->contentsSize().toSize() / ratio) : contentsRect().size();
 
-    if (fullPage) {
-        image = new QImage(page()->contentsSize().toSize(), format);
-    } else {
-        image = new QImage(contentsRect().size() * ratio, format);
-    }
-
-    image->setDevicePixelRatio(ratio);
-
-    image->fill(Qt::transparent);
-
-    QPainter* painter = new QPainter(image);
-    // painter->setRenderHint(QPainter::Antialiasing);
-    // painter->setRenderHint(QPainter::TextAntialiasing);
-    // painter->setRenderHint(QPainter::SmoothPixmapTransform);
-    // painter->setRenderHint(QPainter::HighQualityAntialiasing);
-    painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
-
-    if (fullPage) {
-        const QSize originalWindowSize = size();
-        const bool wasFullScreen = isFullScreen();
-
-        setAttribute(Qt::WA_DontShowOnScreen, true);
-        show();
-
-        // Remember initial scroll position to be able to come back to it after the whole page is captured
-        const QPointF initScrollPos = page()->scrollPosition() / ratio;
-
-        const QSize desiredWindowSize = page()->contentsSize().toSize() / ratio;
-        resize(desiredWindowSize);
-
-        // Render contents of QWidget into QPainter
-        render(painter);
-
-        // Restore the window back to be exactly how it was
-        {
-            // Resize back to what it was
-            resize(originalWindowSize);
-
-            // Reveal the window
-            hide();
-            setAttribute(Qt::WA_DontShowOnScreen, false);
-            show();
-
-            if (wasFullScreen) {
-                toggleFullScreenMode();
-            }
-
-            // Scroll the web view back to where it was before we started taking full page snapshot
-            static const QString js = "window.scrollTo(%1, %2);";
-            page()->runJavaScript(QString(js).arg(initScrollPos.x()).arg(initScrollPos.y()), QWebEngineScript::ApplicationWorld);
-        }
-    } else {
-        // Render contents of QWidget into QPainter
-        render(painter);
-    }
-
-    // TODO: add option to take snapshots in SVG format (kinda like html2canvas, but vector)
-
-    painter->end();
-    delete painter;
-
-    // Save image to disk
+    // Ensure the target directory exists
+    const QString path = QDir::homePath() + QDir::separator() + "Pictures";
     {
-        const QString path = QDir::homePath() + QDir::separator() + "Pictures";
         QDir dir(path);
         if (!dir.exists()) {
             dir.mkdir(".");
         }
+    }
+    // Compose snapshot file name
+    const QString fileName = QString("%1 %2 (%3)")
+                                .arg(*liquidAppName)
+                                .arg(tr((fullPage) ? "full page snapshot" : "snapshot"))
+                                .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat()));
 
-        const QString fileName = QString("%1 %2snapshot (%3).%4")
-                                    .arg(*liquidAppName)
-                                    .arg(tr(fullPage ? "full page " : ""))
-                                    .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat()))
-                                    .arg("png");
-        image->scaled(image->width() / ratio, image->height() / ratio, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
-                .save(path + QDir::separator() + fileName, "PNG");
+    if (vector) {
+        QFile jsFile(":/js/html2svg.js");
+        jsFile.open(QIODevice::ReadOnly);
+        auto data = jsFile.readAll();
+        const QString js = QString(data)
+                            .arg(snapshotSize.width())
+                            .arg(snapshotSize.height())
+                            .arg(colorToRgba(page()->backgroundColor()))
+                            .arg(fullPage);
+
+        qDebug().noquote() << js;
+
+        page()->runJavaScript(QString("(()=>{%1})()").arg(js), QWebEngineScript::ApplicationWorld, [path, fileName](const QVariant& res){
+            qDebug().noquote() << res.toString();
+
+            // Save vector image to disk
+            {
+                QFile file(path + QDir::separator() + fileName + ".svg");
+                if (file.open(QIODevice::ReadWrite)) {
+                    QTextStream stream(&file);
+                    stream << res.toString() << endl;
+                }
+            }
+        });
+    } else {
+        const QImage::Format format = QImage::Format_ARGB32;
+        QImage* image = new QImage(snapshotSize * ratio, format);
+        image->setDevicePixelRatio(ratio);
+        image->fill(Qt::transparent);
+
+        // TODO: hide scrollbars before taking snapshot
+
+        QPainter* painter = new QPainter(image);
+        // TODO: make fonts appear less blurry (potentially use painter->scale(ratio, ratio)
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->setRenderHint(QPainter::TextAntialiasing);
+        painter->setRenderHint(QPainter::SmoothPixmapTransform);
+        painter->setRenderHint(QPainter::HighQualityAntialiasing);
+        painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
+
+        if (fullPage) {
+            const QSize origWindowSize = size();
+            const bool wasFullScreen = isFullScreen();
+            // Remember initial scroll position to be able to come back to it after the whole page is captured
+            const QPointF origScrollPos = page()->scrollPosition() / ratio;
+
+            // Resize the window to fit all of its content
+            {
+                setAttribute(Qt::WA_DontShowOnScreen, true);
+                show();
+
+                resize(snapshotSize);
+            }
+
+            // Render contents of QWidget into QPainter
+            render(painter);
+
+            // Restore the window back to be exactly how it was
+            {
+                // Resize back to what it was
+                resize(origWindowSize);
+
+                // Reveal the window
+                hide();
+                setAttribute(Qt::WA_DontShowOnScreen, false);
+                show();
+
+                // Restore window's full screen mode
+                if (wasFullScreen && !isFullScreen()) {
+                    toggleFullScreenMode();
+                }
+
+                // Scroll the web view back to where it was before we started taking full page snapshot
+                static const QString js = "window.scrollTo(%1, %2);";
+                page()->runJavaScript(QString(js).arg(origScrollPos.x()).arg(origScrollPos.y()), QWebEngineScript::ApplicationWorld);
+            }
+        } else {
+            // Render contents of QWidget into QPainter
+            render(painter);
+        }
+
+        painter->end();
+        delete painter;
+
+        // Save raster image to disk
+        image->scaled(snapshotSize.width(), snapshotSize.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                .save(path + QDir::separator() + fileName + ".png", "PNG");
+
+        // TODO: add EXIF?
+
+        delete image;
     }
 
-    // TODO: add EXIF?
-
-    delete image;
+    // TODO: add camera flash visual effect
+    // TODO: add shutter sound
 }
 
 void LiquidAppWindow::toggleFullScreenMode(void)
