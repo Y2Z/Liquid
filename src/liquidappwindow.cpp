@@ -47,6 +47,8 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
 
     if (!liquidAppWebProfile->isOffTheRecord()) {
         qDebug().noquote() << "Web profile is not off-the-record!";
+        // Privacy is paramount for this program, separate apps need to be completely siloed
+        exit(EXIT_FAILURE);
     }
 
     liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
