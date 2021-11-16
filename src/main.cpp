@@ -1,6 +1,7 @@
 #include <csignal>
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QDir>
 #include <QSettings>
 
@@ -52,7 +53,7 @@ static void onSignalHandler(int signum)
 
 int main(int argc, char **argv)
 {
-    int ret = 0;
+    int ret = EXIT_SUCCESS;
 
 #if defined(__GNUC__) && defined(Q_OS_LINUX)
     // Handle any further termination signals to ensure
@@ -79,12 +80,19 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
 
-    // Set default Liquid window icon
-#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
-    app.setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
-#endif
+    // CLI flags and options
+    QCommandLineParser parser;
+    QCoreApplication::setApplicationName(PROG_NAME);
+    QCoreApplication::setApplicationVersion(VERSION);
 
-    // TODO: look for -c,-e, -d flags here
+    // parser.setApplicationDescription("Test helper");
+    parser.addHelpOption();
+    parser.addVersionOption();
+
+    // A boolean option with multiple names (-f, --force)
+    QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
+            QCoreApplication::translate("main", "List all available Liquid Apps"));
+    parser.addOption(listAppsFlag);
 
     // Process arguments
     if (argc < 2) {
@@ -99,6 +107,16 @@ int main(int argc, char **argv)
         // Show main program window
         mainWindow = new MainWindow;
     } else  { // App name provided
+        // Process the actual command line arguments given by the user
+        parser.process(app);
+
+        // TODO: look for -c,-e, -d flags here
+
+        if (parser.isSet(listAppsFlag)) {
+            qDebug() << "app1   App 1\napp2   App 2\napp3   App 3";
+            return ret;
+        }
+
         QString liquidAppName(argv[1]);
         // Replace directory separators (slashes) with underscores
         // to ensure no sub-directories would get created

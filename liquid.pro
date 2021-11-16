@@ -2,10 +2,6 @@ VERSION_MAJOR = 0
 VERSION_MINOR = 7
 VERSION_PATCH = 9
 
-DEFINES     += "VERSION_MAJOR=$$VERSION_MAJOR" \
-               "VERSION_MINOR=$$VERSION_MINOR" \
-               "VERSION_PATCH=$$VERSION_PATCH" \
-
 VERSION      = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
 QT          += core gui webenginewidgets
@@ -47,9 +43,15 @@ OTHER_FILES += res/images/$${PROG_NAME}.svg \
 
 QMAKE_CLEAN += -r $${DESTDIR}/$${PROG_NAME}
 
+CONFIG      += debug
+
 DEFINES     += PROG_NAME=\\\"$${PROG_NAME}\\\"
 
-CONFIG      += debug
+DEFINES     += "VERSION_MAJOR=$$VERSION_MAJOR" \
+               "VERSION_MINOR=$$VERSION_MINOR" \
+               "VERSION_PATCH=$$VERSION_PATCH" \
+
+DEFINES     += VERSION=\\\"$${VERSION}\\\"
 
 # GNU/Linux, FreeBSD, and similar
 unix:!mac {
