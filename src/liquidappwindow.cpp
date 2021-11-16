@@ -21,6 +21,11 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
+    // Set default icon
+#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
+#endif
+
     // Disable default QWebEngineView's context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
 

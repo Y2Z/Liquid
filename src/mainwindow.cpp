@@ -19,6 +19,11 @@ MainWindow::MainWindow() : QScrollArea()
     setMinimumSize(LQD_WIN_MIN_SIZE_W, LQD_WIN_MIN_SIZE_H);
     setWidgetResizable(true);
 
+    // Set icon
+#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
+#endif
+
     settings = new QSettings(PROG_NAME, PROG_NAME);
     if (settings->contains(LQD_CFG_KEY_WIN_GEOM)) {
         QByteArray geometry = QByteArray::fromHex(
