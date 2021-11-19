@@ -304,6 +304,10 @@ bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
                 }
                 break;
 
+            case QEvent::MouseButtonPress:
+                liquidAppWebPage->closeJsDialog();
+                break;
+
             default:
                 break;
         }
