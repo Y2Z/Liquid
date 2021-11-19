@@ -1,5 +1,9 @@
 #include <QDesktopServices>
+#include <QGridLayout>
 #include <QGuiApplication>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QWebEngineSettings>
 
 #include "globals.h"
@@ -58,6 +62,91 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
     }
 
     return true;
+}
+
+void LiquidAppWebPage::closeJsDialog()
+{
+    if (jsDialogWidget != Q_NULLPTR) {
+        jsDialogWidget->reject();
+    }
+}
+
+void LiquidAppWebPage::javaScriptAlert(const QUrl& securityOrigin, const QString& msg)
+{
+    (void)securityOrigin;
+
+    jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
+    jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+
+    QVBoxLayout* jsAlertDialogLayout = new QVBoxLayout(jsDialogWidget);
+
+    jsDialogWidget->setLayout(jsAlertDialogLayout);
+
+    jsAlertDialogLayout->addWidget(new QLabel(msg));
+
+    jsDialogWidget->exec();
+    jsDialogWidget = Q_NULLPTR;
+}
+
+bool LiquidAppWebPage::javaScriptConfirm(const QUrl& securityOrigin, const QString& msg)
+{
+    (void)securityOrigin;
+
+    jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
+    jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+
+    QVBoxLayout* jsConfirmDialogLayout = new QVBoxLayout(jsDialogWidget);
+
+    jsDialogWidget->setLayout(jsConfirmDialogLayout);
+
+    jsConfirmDialogLayout->addWidget(new QLabel(msg, jsDialogWidget));
+
+    QPushButton* jsConfirmDialogButton = new QPushButton(tr("Confirm"), jsDialogWidget);
+    jsConfirmDialogLayout->addWidget(jsConfirmDialogButton);
+
+    connect(jsConfirmDialogButton, &QPushButton::clicked, jsDialogWidget, &QDialog::accept);
+
+    if (jsDialogWidget->exec() == QDialog::Accepted) {
+        jsDialogWidget = Q_NULLPTR;
+        return true;
+    }
+
+    jsDialogWidget = Q_NULLPTR;
+    return false;
+}
+
+bool LiquidAppWebPage::javaScriptPrompt(const QUrl& securityOrigin, const QString& msg, const QString& defaultValue, QString* result)
+{
+    (void)securityOrigin;
+
+    jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
+    jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+
+    QHBoxLayout* jsPromptDialogLayout = new QHBoxLayout(jsDialogWidget);
+
+    jsDialogWidget->setLayout(jsPromptDialogLayout);
+
+    jsPromptDialogLayout->addWidget(new QLabel(msg, jsDialogWidget));
+
+    QLineEdit* jsPromptDialogTextInput = new QLineEdit(defaultValue, jsDialogWidget);
+    jsPromptDialogLayout->addWidget(jsPromptDialogTextInput);
+
+    QPushButton* jsPromptDialogButton = new QPushButton(tr("Submit"), jsDialogWidget);
+    jsPromptDialogLayout->addWidget(jsPromptDialogButton);
+
+    connect(jsPromptDialogButton, &QPushButton::clicked, jsDialogWidget, &QDialog::accept);
+
+    if (jsDialogWidget->exec() == QDialog::Accepted) {
+        *result = jsPromptDialogTextInput->text();
+        jsDialogWidget = Q_NULLPTR;
+        return true;
+    }
+
+    jsDialogWidget = Q_NULLPTR;
+    return false;
 }
 
 void LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings* webSettings)
