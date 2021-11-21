@@ -27,6 +27,7 @@ public:
     QSettings* liquidAppConfig;
 
 public slots:
+    void certificateError(void);
     void exitFullScreenMode(void);
     void hardReload(void);
     void loadFinished(bool ok);
@@ -49,7 +50,7 @@ protected:
     bool handleWheelEvent(QWheelEvent* event);
     void moveEvent(QMoveEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    void contextMenuEvent(QContextMenuEvent* event);
+    void contextMenuEvent(QContextMenuEvent* event) override;
 
 private:
     static void mSleep(const int ms);
@@ -66,6 +67,7 @@ private:
 
     bool liquidAppWindowTitleIsReadOnly = false;
     bool forgiveNextPageLoadError = false;
+    bool pageHasCertificateError = false;
     bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;

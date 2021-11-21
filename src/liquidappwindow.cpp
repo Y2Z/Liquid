@@ -110,7 +110,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     });
 
     // Trigger window title update if <title> changes
-    connect(this, SIGNAL(titleChanged(QString)), SLOT(updateWindowTitle(QString)));
+    connect(this, &QWebEngineView::titleChanged, this, &LiquidAppWindow::updateWindowTitle);
 
     // Update Liquid app's icon using the one provided by the website
     connect(page(), &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
@@ -267,6 +267,17 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
 
     // Make it possible to intercept zoom events
     QApplication::instance()->installEventFilter(this);
+}
+
+void LiquidAppWindow::certificateError(void)
+{
+    const bool updateTitle = !pageHasCertificateError;
+
+    pageHasCertificateError = true;
+
+    if (updateTitle) {
+        updateWindowTitle(title());
+    }
 }
 
 void LiquidAppWindow::closeEvent(QCloseEvent* event)
@@ -590,6 +601,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 void LiquidAppWindow::loadStarted(void)
 {
     pageIsLoading = true;
+    pageHasCertificateError = false;
     pageHasError = false;
 
     updateWindowTitle(title());
@@ -894,6 +906,10 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
         }
     }
 
+    // Append unicode icons
+    if (pageHasCertificateError) {
+        textIcons.append(LQD_ICON_WARNING);
+    }
     if (windowGeometryIsLocked) {
         textIcons.append(LQD_ICON_LOCKED);
     }
