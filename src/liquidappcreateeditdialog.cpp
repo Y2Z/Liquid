@@ -745,6 +745,7 @@ void LiquidAppCreateEditDialog::save()
     // URL
     {
         QUrl url(QUrl::fromUserInput(addressInput->text()));
+        // TODO: if was given only hostname and prepending http:// didn't help, prepend https://
         tempLiquidAppConfig->setValue(LQD_CFG_KEY_URL, url.toString());
     }
 

@@ -64,6 +64,15 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
     return true;
 }
 
+bool LiquidAppWebPage::certificateError(const QWebEngineCertificateError& error)
+{
+    (void)error;
+
+    emit liquidAppWindow->certificateError();
+
+    return true;
+}
+
 void LiquidAppWebPage::closeJsDialog()
 {
     if (jsDialogWidget != Q_NULLPTR) {
