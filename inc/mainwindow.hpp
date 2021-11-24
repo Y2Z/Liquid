@@ -20,7 +20,6 @@ protected:
 
 private:
     void bindShortcuts();
-    QString getLiquidAppsDirPath();
     void flushTable();
     static QByteArray generateRandomByteArray(const int byteLength);
     void loadStyleSheet();

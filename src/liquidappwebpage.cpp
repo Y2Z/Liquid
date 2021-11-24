@@ -6,8 +6,7 @@
 #include <QPushButton>
 #include <QWebEngineSettings>
 
-#include "globals.h"
-
+#include "lqd.h"
 #include "liquidappwebpage.hpp"
 
 LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, LiquidAppWindow* parent) : QWebEnginePage(profile, parent)

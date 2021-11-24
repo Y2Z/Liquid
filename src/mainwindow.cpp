@@ -1,14 +1,12 @@
-#include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
-#include <QProcess>
 #include <QVBoxLayout>
 
-#include "globals.h"
-
+#include "lqd.h"
+#include "liquid.hpp"
 #include "liquidappcreateeditdialog.hpp"
 #include "mainwindow.hpp"
 
@@ -71,7 +69,7 @@ MainWindow::MainWindow() : QScrollArea()
                 populateTable();
 
                 if (liquidAppCreateEditDialog.isPlanningToRun()) {
-                    runLiquidApp(liquidAppCreateEditDialog.getName());
+                    Liquid::runLiquidApp(liquidAppCreateEditDialog.getName());
                 }
             break;
         }
@@ -83,7 +81,7 @@ MainWindow::MainWindow() : QScrollArea()
     // Run the liquid app upon double-click on its row in the table
     QObject::connect(appListTable, &QTableWidget::cellDoubleClicked, [=](int r, int c) {
         (void)(c);
-        runLiquidApp(appListTable->item(r, 0)->text());
+        Liquid::runLiquidApp(appListTable->item(r, 0)->text());
     });
 
     // Connect keyboard shortcuts
@@ -99,7 +97,6 @@ MainWindow::MainWindow() : QScrollArea()
 
 MainWindow::~MainWindow()
 {
-    saveSettings();
 }
 
 void MainWindow::bindShortcuts()
@@ -174,53 +171,25 @@ QByteArray MainWindow::generateRandomByteArray(const int byteLength)
     return QByteArray(reinterpret_cast<const char*>(buf.data()), byteLength);
 }
 
-QString MainWindow::getLiquidAppsDirPath()
-{
-    QSettings *dummyLiquidAppSettings = new QSettings(QSettings::IniFormat,
-                                                      QSettings::UserScope,
-                                                      QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                                      "dummy597a32d8cf3b253",
-                                                      Q_NULLPTR);
-    QFileInfo dummyLiquidAppFileInfo(dummyLiquidAppSettings->fileName());
-
-    return dummyLiquidAppFileInfo.absolutePath();
-}
-
-void MainWindow::runLiquidApp(const QString liquidAppName)
-{
-    const QString liquidAppFilePath(QCoreApplication::applicationFilePath());
-    QProcess process;
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    process.setProgram(liquidAppFilePath);
-    process.setArguments(QStringList() << QStringLiteral("%1").arg(liquidAppName));
-    process.startDetached();
-#else
-    process.startDetached(liquidAppFilePath, QStringList() << QStringLiteral("%1").arg(liquidAppName));
-#endif
-}
-
 void MainWindow::loadStyleSheet()
 {
     QString styleSheet;
 
     // Load built-in stylesheet
-    QFile styleFile(":/styles/" PROG_NAME ".qss");
-    styleFile.open(QFile::ReadOnly);
-    styleSheet = QLatin1String(styleFile.readAll());
-    styleFile.close();
+    {
+        QFile styleSheetFile(":/styles/" PROG_NAME ".qss");
+        styleSheetFile.open(QFile::ReadOnly);
+        styleSheet = QLatin1String(styleSheetFile.readAll());
+        styleSheetFile.close();
+    }
 
     // Load custom stylesheet
-    QSettings *settings = new QSettings(QSettings::IniFormat,
-                                        QSettings::UserScope,
-                                        PROG_NAME,
-                                        PROG_NAME,
-                                        Q_NULLPTR);
-    QFileInfo settingsFileInfo(settings->fileName());
-    QFile customStyleFile(settingsFileInfo.absolutePath() + QDir::separator() + PROG_NAME ".qss");
-    if (customStyleFile.open(QFile::ReadOnly)) {
-        styleSheet += QLatin1String(customStyleFile.readAll());
-        customStyleFile.close();
+    {
+        QFile customStyleSheetFile(Liquid::getConfigDir().absolutePath() + PROG_NAME ".qss");
+        if (customStyleSheetFile.open(QFile::ReadOnly)) {
+            styleSheet += QLatin1String(customStyleSheetFile.readAll());
+            customStyleSheetFile.close();
+        }
     }
 
     setStyleSheet(styleSheet);
@@ -228,18 +197,16 @@ void MainWindow::loadStyleSheet()
 
 void MainWindow::populateTable()
 {
-    QDir appsDir(getLiquidAppsDirPath());
+    const QFileInfoList liquidAppsFileList = Liquid::getAppsDir().entryInfoList(QStringList() << "*.ini",
+                                                               QDir::Files| QDir::NoDotAndDotDot,
+                                                               QDir::Name | QDir::IgnoreCase);
 
-    QFileInfoList liquidAppFiles = appsDir.entryInfoList(QStringList() << "*.ini",
-                                                         QDir::Files | QDir::NoDotAndDotDot,
-                                                         QDir::Name | QDir::IgnoreCase);
-
-    foreach (QFileInfo liquidAppFile, liquidAppFiles) {
-        int i = appListTable->rowCount();
+    foreach (QFileInfo liquidAppFileInfo, liquidAppsFileList) {
+        const int i = appListTable->rowCount();
 
         appListTable->insertRow(i);
 
-        QString liquidAppName = liquidAppFile.completeBaseName();
+        QString liquidAppName = liquidAppFileInfo.completeBaseName();
         QSettings *liquidAppSettings = new QSettings(QSettings::IniFormat,
                                                      QSettings::UserScope,
                                                      QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
@@ -250,7 +217,7 @@ void MainWindow::populateTable()
         // First column //
         //////////////////
 
-        QTableWidgetItem *appItemWidgetFirstColumn = new QTableWidgetItem();
+        QTableWidgetItem* appItemWidgetFirstColumn = new QTableWidgetItem();
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
         QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
@@ -272,14 +239,14 @@ void MainWindow::populateTable()
         // Second column //
         ///////////////////
 
-        QWidget *appItemActionButtonsWidget = new QWidget();
+        QWidget* appItemActionButtonsWidget = new QWidget();
         QHBoxLayout *appItemLayout = new QHBoxLayout();
         appItemLayout->setSpacing(0);
         appItemLayout->setMargin(0);
         appItemActionButtonsWidget->setLayout(appItemLayout);
 
         // Delete button
-        QPushButton *deleteButton = new QPushButton(tr(LQD_ICON_DELETE));
+        QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE));
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [=]() {
@@ -322,7 +289,7 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(deleteButton);
 
         // Edit button
-        QPushButton *editButton = new QPushButton(tr(LQD_ICON_EDIT));
+        QPushButton* editButton = new QPushButton(tr(LQD_ICON_EDIT));
         editButton->setCursor(Qt::PointingHandCursor);
         editButton->setProperty("class", "btnEdit");
         QObject::connect(editButton, &QPushButton::clicked, [=]() {
@@ -344,12 +311,12 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(editButton);
 
         // Run button
-        QPushButton *runButton = new QPushButton(tr(LQD_ICON_RUN));
+        QPushButton* runButton = new QPushButton(tr(LQD_ICON_RUN));
         runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
         QObject::connect(runButton, &QPushButton::clicked, [=]() {
-            runLiquidApp(liquidAppName);
+            Liquid::runLiquidApp(liquidAppName);
         });
 
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);
@@ -367,7 +334,7 @@ void MainWindow::removeDesktopFile(const QString liquidAppName)
 #ifdef Q_OS_LINUX
     // Construct directory path
     // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
+    const QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
 
     // Check if the desktop path exists
     QDir dir(desktopPath);

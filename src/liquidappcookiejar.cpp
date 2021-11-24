@@ -1,11 +1,10 @@
-#include "globals.h"
-
+#include "lqd.h"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwindow.hpp"
 
 LiquidAppCookieJar::LiquidAppCookieJar(QObject *parent) : QNetworkCookieJar(parent)
 {
-    liquidAppWindow = (LiquidAppWindow *)parent;
+    liquidAppWindow = (LiquidAppWindow*)parent;
     liquidAppConfig = liquidAppWindow->liquidAppConfig;
 }
 
@@ -19,7 +18,7 @@ bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
         return false;
     }
 
-    bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
+    const bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
     if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
@@ -30,7 +29,7 @@ bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
         }
     }
 
-    bool inserted = insertCookie(cookie);
+    const bool inserted = insertCookie(cookie);
 
     if (inserted) {
         save();
@@ -45,12 +44,12 @@ bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
         return false;
     }
 
-    bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
+    const bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
     if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
 
-    bool deleted = deleteCookie(cookie);
+    const bool deleted = deleteCookie(cookie);
 
     if (deleted) {
         save();

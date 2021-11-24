@@ -5,11 +5,13 @@
 #include <QDir>
 #include <QSettings>
 
-#include "globals.h"
-
+#include "lqd.h"
+#include "liquid.hpp"
 #include "liquidappcreateeditdialog.hpp"
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
+
+QTextStream cout(stdout);
 
 static QSharedMemory* sharedMemory = Q_NULLPTR;
 
@@ -80,21 +82,6 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
 
-    // CLI flags and options
-    QCommandLineParser parser;
-    QCoreApplication::setApplicationName(PROG_NAME);
-    QCoreApplication::setApplicationVersion(VERSION);
-
-    // parser.setApplicationDescription("Test helper");
-    parser.addHelpOption();
-    parser.addVersionOption();
-
-    // A boolean option with multiple names (-f, --force)
-    QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
-            QCoreApplication::translate("main", "List all available Liquid Apps"));
-    parser.addOption(listAppsFlag);
-
-    // Process arguments
     if (argc < 2) {
         // Allow only one instance
         sharedMemory = new QSharedMemory(getUserName() + "_Liquid");
@@ -107,13 +94,34 @@ int main(int argc, char **argv)
         // Show main program window
         mainWindow = new MainWindow;
     } else  { // App name provided
+        // CLI flags and options
+        QCommandLineParser parser;
+        QCoreApplication::setApplicationName(PROG_NAME);
+        QCoreApplication::setApplicationVersion(VERSION);
+
+        // parser.setApplicationDescription("Test helper");
+        parser.addHelpOption();
+        parser.addVersionOption();
+
+        // A boolean option with multiple names (-f, --force)
+        QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
+                QCoreApplication::translate("main", "List all available Liquid Apps"));
+        parser.addOption(listAppsFlag);
+
         // Process the actual command line arguments given by the user
         parser.process(app);
 
         // TODO: look for -c,-e, -d flags here
 
+        // Process the -l/--list-apps flag
         if (parser.isSet(listAppsFlag)) {
-            qDebug() << "app1   App 1\napp2   App 2\napp3   App 3";
+            const QFileInfoList liquidAppsFileList =
+                Liquid::getAppsDir().entryInfoList(QStringList() << "*.ini",
+                                                   QDir::Files| QDir::NoDotAndDotDot,
+                                                   QDir::Name | QDir::IgnoreCase);
+            foreach (QFileInfo liquidAppFileInfo, liquidAppsFileList) {
+                cout << liquidAppFileInfo.completeBaseName() << endl;
+            }
             return ret;
         }
 
@@ -122,11 +130,11 @@ int main(int argc, char **argv)
         // to ensure no sub-directories would get created
         liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 
-try_to_run_or_add_liquid_app:
+attempt_to_create_or_run_liquid_app:
         // Attempt to load Liquid app's config file
         QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
                                                    QSettings::UserScope,
-                                                   QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
+                                                   QString(PROG_NAME) + QDir::separator() + LQD_APPS_DIR_NAME,
                                                    liquidAppName,
                                                    Q_NULLPTR);
 
@@ -145,7 +153,7 @@ try_to_run_or_add_liquid_app:
         } else {
             // No such Liquid app found, open Liquid app creation dialog
             LiquidAppCreateEditDialog liquidAppCreateEditDialog(mainWindow, liquidAppName);
-            liquidAppCreateEditDialog.setPlanningToRun(true); // Make it run after created
+            liquidAppCreateEditDialog.setPlanningToRun(true); // Make run after it's created
 
             // Reveal Liquid app creation dialog
             liquidAppCreateEditDialog.show();
@@ -165,7 +173,7 @@ try_to_run_or_add_liquid_app:
 
                     if (liquidAppCreateEditDialog.isPlanningToRun()) {
                         // Run the newly created Liquid App
-                        goto try_to_run_or_add_liquid_app;
+                        goto attempt_to_create_or_run_liquid_app;
                     } else {
                         goto done;
                     }
