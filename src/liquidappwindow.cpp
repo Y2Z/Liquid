@@ -227,13 +227,33 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     zoomInAction = new QAction;
     zoomInAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_INC)));
     addAction(zoomInAction);
-    connect(zoomInAction, SIGNAL(triggered()), this, SLOT(zoomIn()));
+    connect(zoomInAction, &QAction::triggered, this, [this](){
+        zoomIn(false);
+    });
 
     // Connect "zoom out" shortcut
     zoomOutAction = new QAction;
     zoomOutAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_DEC)));
     addAction(zoomOutAction);
-    connect(zoomOutAction, SIGNAL(triggered()), this, SLOT(zoomOut()));
+    connect(zoomOutAction, &QAction::triggered, this, [this](){
+        zoomOut(false);
+    });
+
+    // Connect "zoom in more" shortcut
+    zoomInMoreAction = new QAction;
+    zoomInMoreAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_INC_MORE)));
+    addAction(zoomInMoreAction);
+    connect(zoomInMoreAction, &QAction::triggered, this, [this](){
+        zoomIn(true);
+    });
+
+    // Connect "zoom out more" shortcut
+    zoomOutMoreAction = new QAction;
+    zoomOutMoreAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_DEC_MORE)));
+    addAction(zoomOutMoreAction);
+    connect(zoomOutMoreAction, &QAction::triggered, this, [this](){
+        zoomOut(true);
+    });
 
     // Connect "reset zoom" shortcut
     zoomResetAction = new QAction;
@@ -343,8 +363,11 @@ void LiquidAppWindow::exitFullScreenMode(void)
 
 bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
 {
-    if (event->modifiers() & Qt::ControlModifier) {
-        (event->delta() > 0) ? zoomIn() : zoomOut();
+    const bool isCtrlActive = event->modifiers() & Qt::ControlModifier;
+    const bool isShiftActive = event->modifiers() & Qt::ShiftModifier;
+
+    if (isCtrlActive) {
+        (event->delta() > 0) ? zoomIn(isShiftActive) : zoomOut(isShiftActive);
         event->accept();
         return true;
     }
@@ -921,14 +944,14 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
     setWindowTitle(liquidAppWindowTitle + textIcons);
 }
 
-void LiquidAppWindow::zoomIn(void)
+void LiquidAppWindow::zoomIn(const bool more = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP);
+    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP * ((more) ? 10 : 1));
 }
 
-void LiquidAppWindow::zoomOut(void)
+void LiquidAppWindow::zoomOut(const bool more = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP);
+    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP * ((more) ? 10 : 1));
 }
 
 void LiquidAppWindow::zoomReset(void)
