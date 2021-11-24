@@ -29,9 +29,9 @@ private:
     static QString colorToRgba(const QColor* color);
     static QFrame* separator(void);
 
-    QAction* quitAction;
+    bool isEditingExisting = false;
 
-    bool editingExisting = false;
+    QAction* quitAction;
 
     QColor backgroundColor;
 

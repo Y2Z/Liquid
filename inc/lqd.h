@@ -12,7 +12,7 @@
 #define LQD_APP_WIN_MIN_SIZE_H 120
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5.0 // Limited to 5.0 by Chromium
-#define LQD_ZOOM_LVL_STEP      0.1
+#define LQD_ZOOM_LVL_STEP      0.005
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"

@@ -1,6 +1,6 @@
 VERSION_MAJOR = 0
 VERSION_MINOR = 7
-VERSION_PATCH = 9
+VERSION_PATCH = 10
 
 VERSION      = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
@@ -22,14 +22,16 @@ RCC_DIR      = .qrcs
 
 INCLUDEPATH += $${INC_DIR}
 
-SOURCES     += src/liquidappcookiejar.cpp \
+SOURCES     += src/liquid.cpp \
+               src/liquidappcookiejar.cpp \
                src/liquidappcreateeditdialog.cpp \
                src/liquidappwebpage.cpp \
                src/liquidappwindow.cpp \
                src/main.cpp \
                src/mainwindow.cpp \
 
-HEADERS     += inc/globals.h \
+HEADERS     += inc/lqd.h \
+               inc/liquid.hpp \
                inc/liquidappcookiejar.hpp \
                inc/liquidappcreateeditdialog.hpp \
                inc/liquidappwebpage.hpp \

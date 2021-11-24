@@ -10,8 +10,8 @@
 #include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
 
-#include "globals.h"
-
+#include "lqd.h"
+#include "liquid.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
@@ -334,7 +334,7 @@ void LiquidAppWindow::exitFullScreenMode(void)
 
     if (windowGeometryIsLocked) {
         // Pause here to wait for any kind of window resize animations to finish
-        mSleep(200);
+        Liquid::sleep(200);
 
         setMinimumSize(width(), height());
         setMaximumSize(width(), height());
@@ -607,15 +607,6 @@ void LiquidAppWindow::loadStarted(void)
     updateWindowTitle(title());
 }
 
-void LiquidAppWindow::mSleep(const int ms)
-{
-    QTime proceedAfter = QTime::currentTime().addMSecs(ms);
-
-    while (QTime::currentTime() < proceedAfter) {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, ms / 4);
-    }
-}
-
 void LiquidAppWindow::moveEvent(QMoveEvent *event)
 {
     // Remember window position
@@ -646,9 +637,9 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
     // Remember window size (unless in full screen mode)
-    if (!isFullScreen()) {
+    if (event->spontaneous() && !isFullScreen()) {
         // Pause here to wait for any kind of window resize animations to finish
-        mSleep(200);
+        Liquid::sleep(200);
 
         liquidAppWindowGeometry = saveGeometry();
     }
@@ -741,8 +732,7 @@ void LiquidAppWindow::takeSnapshotFullPageSlot(void)
 
 void LiquidAppWindow::takeSnapshot(const bool fullPage)
 {
-    const bool vector = false;
-
+    const bool vector = false; // NOTE: experimental feature
     const int ratio = QPaintDevice::devicePixelRatio();
     const QSize snapshotSize = (fullPage) ? (page()->contentsSize().toSize() / ratio) : contentsRect().size();
 
