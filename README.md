@@ -41,19 +41,21 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 
 ## Keyboard shortcuts
 
-- `Ctrl + =`: Zoom in
-- `Ctrl + -`: Zoom out
-- `Ctrl + 0`: Reset zoom level
-- `Ctrl + F`: Toggle full-screen mode
-- `Ctrl + M`: Toggle mute on/off
+- `Ctrl`+`=`: Zoom in
+- `Ctrl`+`-`: Zoom out
+- `Ctrl`+`Shift`+`=`: Zoom in by a lot
+- `Ctrl`+`Shift`+`-`: Zoom out by a lot
+- `Ctrl`+`0`: Reset zoom level
+- `Ctrl`+`F`: Toggle full-screen mode
+- `Ctrl`+`M`: Toggle mute on/off
 - `Escape`: Stop loading / exit from full-screen mode
-- `Ctrl + R`: Refresh the current page
-- `Ctrl + Shift + R`: Reload the app
-- `Ctrl + L`: Lock/unlock window geometry
-- `Ctrl + Q`, `Ctrl + W`: Close the app
-- `Ctrl + <click>`: Open link using system’s browser
-- `Ctrl + Left`, `Backspace`: Go one step back
-- `Ctrl + Right`: Go one step forward
+- `Ctrl`+`R`: Refresh the current page
+- `Ctrl`+`Shift`+`R`: Reload the app
+- `Ctrl`+`L`: Lock/unlock window geometry
+- `Ctrl`+`Q`, `Ctrl`+`W`: Close the app
+- `Ctrl`+[click]: Open link using system’s browser
+- `Ctrl`+`←`, `Backspace`: Go back
+- `Ctrl`+`→`: Go forward
 
 
 ## Build
