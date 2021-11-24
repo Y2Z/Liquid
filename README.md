@@ -11,7 +11,7 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 ## Comparison table
 
 | Feature                                          | Liquid | Conventional browsers | Notes                             |
-|:-------------------------------------------------|--------|-----------------------|:----------------------------------|
+|:-------------------------------------------------|:------:|:---------------------:|:----------------------------------|
 | Custom User-Agent string                         |   ✅   |           ✅          | Some browsers require a plug-in   |
 | Window transparency                              |   ✅   |           ❌          | See-through websites              |
 | Full-page snapshots                              |   ✅   |           ❌          | Possible with plug-ins            |
