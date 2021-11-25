@@ -239,19 +239,19 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
         zoomOut(false);
     });
 
-    // Connect "zoom in more" shortcut
-    zoomInMoreAction = new QAction;
-    zoomInMoreAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_INC_MORE)));
-    addAction(zoomInMoreAction);
-    connect(zoomInMoreAction, &QAction::triggered, this, [this](){
+    // Connect "fine zoom in" shortcut
+    zoomInFineAction = new QAction;
+    zoomInFineAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_INC_FINE)));
+    addAction(zoomInFineAction);
+    connect(zoomInFineAction, &QAction::triggered, this, [this](){
         zoomIn(true);
     });
 
-    // Connect "zoom out more" shortcut
-    zoomOutMoreAction = new QAction;
-    zoomOutMoreAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_DEC_MORE)));
-    addAction(zoomOutMoreAction);
-    connect(zoomOutMoreAction, &QAction::triggered, this, [this](){
+    // Connect "fine zoom out" shortcut
+    zoomOutFineAction = new QAction;
+    zoomOutFineAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_DEC_FINE)));
+    addAction(zoomOutFineAction);
+    connect(zoomOutFineAction, &QAction::triggered, this, [this](){
         zoomOut(true);
     });
 
@@ -944,14 +944,14 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
     setWindowTitle(liquidAppWindowTitle + textIcons);
 }
 
-void LiquidAppWindow::zoomIn(const bool more = false)
+void LiquidAppWindow::zoomIn(const bool fine = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP * ((more) ? 10 : 1));
+    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP * ((fine) ? 1 : 10));
 }
 
-void LiquidAppWindow::zoomOut(const bool more = false)
+void LiquidAppWindow::zoomOut(const bool fine = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP * ((more) ? 10 : 1));
+    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP * ((fine) ? 1 : 10));
 }
 
 void LiquidAppWindow::zoomReset(void)
