@@ -10,33 +10,33 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 
 ## Comparison table
 
-| Feature                                          | Liquid | Conventional browsers | Notes                             |
-|:-------------------------------------------------|:------:|:---------------------:|:----------------------------------|
-| Custom User-Agent string                         |   ✅   |           ✅          | Some browsers require a plug-in   |
-| Window transparency                              |   ✅   |           ❌          | See-through websites              |
-| Full-page snapshots                              |   ✅   |           ❌          | Possible with plug-ins            |
-| Transparent snapshots                            |   ✅   |           ❌          | See-through snapshots of websites |
-| Vector snapshots                                 |   ❌   |           ❌          | Experimental feature, SVG         |
-| Ability to save pages as monolithic HTML files   |   ❌   |           ❌          | Possible with plug-ins            |
-| Complete absence of pop-up windows               |   ✅   |           ❌          | Can be optionally disabled in most browsers |
-| Ability to completely disable JS                 |   ✅   |           ✅          |                                   |
-| Ability to disable all cookies                   |   ✅   |           ✅          |                                   |
-| Ability to disable third-party cookies           |   ✅   |           ✅          |                                   |
-| Ability to inject custom JS code into web pages  |   ✅   |           ❌          | Possible with plug-ins            |
-| Ability to inject custom CSS code into web pages |   ✅   |           ❌          | Possible with plug-ins            |
-| Limit websites to stay within specific domain(s) |   ✅   |           ❌          |                              |
-| Simultaneous usage of multiple user accounts     |   ✅   |           ❌          | Can be achieved using profiles and extensions in some browsers   |
-| Per-website proxy settings                       |   ✅   |           ❌          | Possible with plug-ins            |
-| Ability to hide scroll bars                      |   ✅   |           ❌          |                                   |
-| Window geometry lock                             |   ✅   |           ❌          | Possible with plug-ins            |
-| Ability to remove window frame                   |   ✅   |           ❌          |                                   |
-| Minimalistic tabless design                      |   ✅   |           ❌          |                                   |
-| Fine zoom                                        |   ✅   |           ❌          |                                   |
-| Search within the page                           |   ❌   |           ❌          | TODO                              |
-| Permanently mute website                         |   ✅   |           ❌          | Browsers automatically unmute, Liquid remembers the state |
-| Ability to go full-screen                        |   ✅   |           ✅          |                                   |
-| Full control over full-screen capabilities       |   ✅   |           ❌          | Liquid acts more like a mobile device simulator when it comes to full-screen |
-| Mandatory off-the-record capabilities            |   ✅   |           ❌          | The only thing that gets stored is cookies, if allowed |
+| Feature                                          | :ocean: Liquid | Conventional browsers | Notes                             |
+|:-------------------------------------------------|:--------------:|:---------------------:|:----------------------------------|
+| Custom User-Agent string                         |       ✅       |           ✅          | Some browsers require a plug-in   |
+| Window transparency                              |       ✅       |           ❌          | See-through websites              |
+| Full-page snapshots                              |       ✅       |           ❌          | Possible with plug-ins            |
+| Transparent snapshots                            |       ✅       |           ❌          | See-through snapshots of websites |
+| Vector snapshots                                 |       ❌       |           ❌          | Experimental feature, SVG         |
+| Ability to save pages as monolithic HTML files   |       ❌       |           ❌          | Possible with plug-ins            |
+| Complete absence of pop-up windows               |       ✅       |           ❌          | Can be optionally disabled in most browsers |
+| Ability to completely disable JS                 |       ✅       |           ✅          |                                   |
+| Ability to disable all cookies                   |       ✅       |           ✅          |                                   |
+| Ability to disable third-party cookies           |       ✅       |           ✅          |                                   |
+| Ability to inject custom JS code into web pages  |       ✅       |           ❌          | Possible with plug-ins            |
+| Ability to inject custom CSS code into web pages |       ✅       |           ❌          | Possible with plug-ins            |
+| Limit websites to stay within specific domain(s) |       ✅       |           ❌          |                              |
+| Simultaneous usage of multiple user accounts     |       ✅       |           ❌          | Can be achieved using profiles and extensions in some browsers   |
+| Per-website proxy settings                       |       ✅       |           ❌          | Possible with plug-ins            |
+| Ability to hide scroll bars                      |       ✅       |           ❌          |                                   |
+| Window geometry lock                             |       ✅       |           ❌          | Possible with plug-ins            |
+| Ability to remove window frame                   |       ✅       |           ❌          |                                   |
+| Minimalistic tabless design                      |       ✅       |           ❌          |                                   |
+| Fine zoom                                        |       ✅       |           ❌          |                                   |
+| Search within the page                           |       ❌       |           ❌          | TODO                              |
+| Permanently mute website                         |       ✅       |           ❌          | Browsers automatically unmute, Liquid remembers the state |
+| Ability to go full-screen                        |       ✅       |           ✅          |                                   |
+| Full control over full-screen capabilities       |       ✅       |           ❌          | Liquid acts more like a mobile device simulator when it comes to full-screen |
+| Mandatory off-the-record capabilities            |       ✅       |           ❌          | The only thing that gets stored is cookies, if allowed |
 
 
 ## Keyboard shortcuts
@@ -48,7 +48,7 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 - `Ctrl`+`0`: Reset zoom level
 - `Ctrl`+`F`: Toggle full-screen mode
 - `Ctrl`+`M`: Toggle mute on/off
-- `Escape`: Stop loading / exit from full-screen mode
+- `Escape`: Stop loading / Exit from full-screen mode
 - `Ctrl`+`R`: Refresh the current page
 - `Ctrl`+`Shift`+`R`: Reload the app
 - `Ctrl`+`L`: Lock/unlock window geometry

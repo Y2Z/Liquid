@@ -23,9 +23,9 @@ MainWindow::MainWindow() : QScrollArea()
 #endif
 
     settings = new QSettings(PROG_NAME, PROG_NAME);
-    if (settings->contains(LQD_CFG_KEY_WIN_GEOM)) {
+    if (settings->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
         QByteArray geometry = QByteArray::fromHex(
-            settings->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
+            settings->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
         );
         restoreGeometry(geometry);
     }
@@ -221,9 +221,9 @@ void MainWindow::populateTable()
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
         QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
-        if (liquidAppSettings->contains(LQD_CFG_KEY_ICON)) {
+        if (liquidAppSettings->contains(LQD_CFG_KEY_NAME_ICON)) {
             QByteArray byteArray = QByteArray::fromHex(
-                liquidAppSettings->value(LQD_CFG_KEY_ICON).toByteArray()
+                liquidAppSettings->value(LQD_CFG_KEY_NAME_ICON).toByteArray()
             );
             QBuffer buffer(&byteArray);
             buffer.open(QIODevice::ReadOnly);
@@ -325,7 +325,7 @@ void MainWindow::populateTable()
 
 void MainWindow::saveSettings()
 {
-    settings->setValue(LQD_CFG_KEY_WIN_GEOM, QString(saveGeometry().toHex()));
+    settings->setValue(LQD_CFG_KEY_NAME_WIN_GEOM, QString(saveGeometry().toHex()));
     settings->sync();
 }
 

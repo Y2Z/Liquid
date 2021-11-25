@@ -20,7 +20,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     // Check to see if Liquid app by this name already has config file
     if (liquidAppName.size() > 0) {
-        isEditingExisting = existingLiquidAppConfig->contains(LQD_CFG_KEY_URL);
+        isEditingExisting = existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_URL);
     } else {
         delete existingLiquidAppConfig;
     }
@@ -73,7 +73,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         addressInput->setPlaceholderText("https://example.com");
 
         if (isEditingExisting) {
-            addressInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_URL).toString());
+            addressInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
         }
 
         basicLayout->addWidget(addressInputLabel, 1, 0);
@@ -173,7 +173,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 titleInput->setPlaceholderText(tr("Title"));
 
                 if (isEditingExisting) {
-                    titleInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_TITLE).toString());
+                    titleInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString());
                 }
 
                 titleLayout->addWidget(titleInput);
@@ -203,8 +203,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                 // Fill model items
                 if (isEditingExisting) {
-                    if (existingLiquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
-                        const QStringList additionalDomainsList = existingLiquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_DOMAINS).toString().split(" ");
+                    if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS)) {
+                        const QStringList additionalDomainsList = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS).toString().split(" ");
 
                         for (int i = 0; i < additionalDomainsList.size(); i++) {
                             QStandardItem* item = new QStandardItem(additionalDomainsList[i]);
@@ -261,7 +261,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 userAgentInput->setPlaceholderText(tr("Browser identifier string"));
 
                 if (isEditingExisting) {
-                    userAgentInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_USER_AGENT).toString());
+                    userAgentInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
                 }
 
                 customUserAgentLayout->addWidget(userAgentInput);
@@ -279,7 +279,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             notesTextArea->setPlaceholderText(tr("Intentionally left blank"));
 
             if (isEditingExisting) {
-                notesTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NOTES).toString());
+                notesTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_NOTES).toString());
             }
 
             generalTabWidgetLayout->addWidget(notesLabel);
@@ -304,9 +304,9 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             hideScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
-                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
+                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS)) {
                     hideScrollBarsCheckBox->setChecked(
-                        existingLiquidAppConfig->value(LQD_CFG_KEY_HIDE_SCROLL_BARS).toBool()
+                        existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS).toBool()
                     );
                 }
             }
@@ -323,9 +323,9 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             removeWindowFrameCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
-                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_REMOVE_WINDOW_FRAME)) {
+                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME)) {
                     removeWindowFrameCheckBox->setChecked(
-                        existingLiquidAppConfig->value(LQD_CFG_KEY_REMOVE_WINDOW_FRAME).toBool()
+                        existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME).toBool()
                     );
                 }
             }
@@ -359,8 +359,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 // TODO: animate background pattern
                 static const int fontSize = customBackgroundColorButton->width() * 0.9;
 
-                if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_CUSTOM_BG_COLOR)) {
-                    backgroundColor = QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
+                if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
+                    backgroundColor = QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
                     customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(&backgroundColor)).arg(fontSize));
                 } else {
                     static const QColor defaultColor = QColor(LQD_DEFAULT_BG_COLOR);
@@ -387,7 +387,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             appearanceTabWidgetLayout->addLayout(customBackgroundColorButtonLayout);
 
             if (isEditingExisting) {
-                bool enabledInConfig = existingLiquidAppConfig->value(LQD_CFG_KEY_USE_CUSTOM_BG, false).toBool();
+                bool enabledInConfig = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool();
                 useCustomBackgroundCheckBox->setChecked(enabledInConfig);
             }
         }
@@ -400,7 +400,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             additionalCssTextArea->setPlaceholderText(tr("Additional CSS"));
 
             if (isEditingExisting) {
-                additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString());
+                additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
             }
 
             appearanceTabWidgetLayout->addWidget(additionalCssTextArea);
@@ -423,7 +423,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_ENABLE_JS).toBool();
+                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool();
                 enableJavaScriptCheckBox->setChecked(isChecked);
             } else {
                 // Checked by default (when creating new Liquid app)
@@ -442,7 +442,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
 
             if (isEditingExisting) {
-                additionalJsTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_JS).toString());
+                additionalJsTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString());
             }
 
             jsTabWidgetLayout->addWidget(additionalJsLabel);
@@ -466,7 +466,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool();
+                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool();
                 allowCookiesCheckBox->setChecked(isChecked);
             } else {
                 // Checked by default (when creating new Liquid app)
@@ -489,7 +489,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             }
 
             if (isEditingExisting) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool();
+                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool();
                 allowThirdPartyCookiesCheckBox->setChecked(isChecked);
             }
 
@@ -559,8 +559,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             useSocksSelectBox->addItem(tr("SOCKS"), true);
                             useSocksSelectBox->setEnabled(false);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USE_SOCKS)) {
-                                const bool useSocks = existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_SOCKS, false).toBool();
+                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
+                                const bool useSocks = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS, false).toBool();
 
                                 if (useSocks) {
                                     useSocksSelectBox->setCurrentIndex(1);
@@ -576,8 +576,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyHostInput->setPlaceholderText(LQD_DEFAULT_PROXY_HOST);
                             proxyHostInput->setEnabled(false);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOST)) {
-                                proxyHostInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_HOST).toString());
+                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
+                                proxyHostInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString());
                             }
 
                             proxyTypeHostPortLayout->addWidget(proxyHostInput);
@@ -590,8 +590,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyPortInput->setEnabled(false);
                             proxyPortInput->setValue(LQD_DEFAULT_PROXY_PORT);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
-                                proxyPortInput->setValue(existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_PORT).toInt());
+                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT)) {
+                                proxyPortInput->setValue(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_PORT).toInt());
                             }
 
                             proxyTypeHostPortLayout->addWidget(proxyPortInput);
@@ -618,8 +618,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyUsernameInput->setPlaceholderText(tr("Username"));
                             proxyUsernameInput->setEnabled(false);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
-                                proxyUsernameInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
+                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
+                                proxyUsernameInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
                             }
 
                             proxyCredentialsLayout->addWidget(proxyUsernameInput);
@@ -632,8 +632,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyPasswordInput->setPlaceholderText(tr("Password"));
                             proxyPasswordInput->setEchoMode(QLineEdit::Password);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
-                                proxyPasswordInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
+                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
+                                proxyPasswordInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
                             }
 
                             proxyCredentialsLayout->addWidget(proxyPasswordInput);
@@ -664,8 +664,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         }
                     });
 
-                    if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_USE_PROXY)) {
-                        const bool proxyEnabled = existingLiquidAppConfig->value(LQD_CFG_KEY_USE_PROXY, false).toBool();
+                    if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
+                        const bool proxyEnabled = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_PROXY, false).toBool();
 
                         if (proxyEnabled) {
                             proxyModeCustomRadioButton->setChecked(true);
@@ -676,7 +676,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         proxyModeSystemRadioButton->setChecked(true);
                     }
 
-                    if (isEditingExisting && existingLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH, false).toBool()) {
+                    if (isEditingExisting && existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, false).toBool()) {
                         proxyUseAuthCheckBox->setChecked(true);
                     }
 
@@ -745,38 +745,38 @@ void LiquidAppCreateEditDialog::save()
     {
         QUrl url(QUrl::fromUserInput(addressInput->text()));
         // TODO: if was given only hostname and prepending http:// didn't help, prepend https://
-        tempLiquidAppConfig->setValue(LQD_CFG_KEY_URL, url.toString());
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_URL, url.toString());
     }
 
     // Enable JS
     {
-        tempLiquidAppConfig->setValue(LQD_CFG_KEY_ENABLE_JS, enableJavaScriptCheckBox->isChecked());
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ENABLE_JS, enableJavaScriptCheckBox->isChecked());
     }
 
     // Allow cookies
     {
-        tempLiquidAppConfig->setValue(LQD_CFG_KEY_ALLOW_COOKIES, allowCookiesCheckBox->isChecked());
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ALLOW_COOKIES, allowCookiesCheckBox->isChecked());
     }
 
     // Allow third-party cookies
     {
-        tempLiquidAppConfig->setValue(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Hide scroll bars
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS) && !hideScrollBarsCheckBox->isChecked()) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_HIDE_SCROLL_BARS);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS) && !hideScrollBarsCheckBox->isChecked()) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS);
             } else {
                 if (hideScrollBarsCheckBox->isChecked()) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, true);
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS, true);
                 }
             }
         } else {
             if (hideScrollBarsCheckBox->isChecked()) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_HIDE_SCROLL_BARS, true);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS, true);
             }
         }
     }
@@ -785,16 +785,16 @@ void LiquidAppCreateEditDialog::save()
     // Remove window frame
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_REMOVE_WINDOW_FRAME) && !removeWindowFrameCheckBox->isChecked()) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_REMOVE_WINDOW_FRAME);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME) && !removeWindowFrameCheckBox->isChecked()) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME);
             } else {
                 if (removeWindowFrameCheckBox->isChecked()) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, true);
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, true);
                 }
             }
         } else {
             if (removeWindowFrameCheckBox->isChecked()) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, true);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, true);
             }
         }
     }
@@ -802,18 +802,18 @@ void LiquidAppCreateEditDialog::save()
     // Custom window title
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_TITLE) && titleInput->text().size() == 0) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_TITLE);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_TITLE) && titleInput->text().size() == 0) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_TITLE);
             } else {
-                if (tempLiquidAppConfig->value(LQD_CFG_KEY_TITLE).toString().size() > 0
+                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString().size() > 0
                     || titleInput->text().size() > 0
                 ) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_TITLE, titleInput->text());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_TITLE, titleInput->text());
                 }
             }
         } else {
             if (titleInput->text().size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_TITLE, titleInput->text());
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_TITLE, titleInput->text());
             }
         }
     }
@@ -821,18 +821,18 @@ void LiquidAppCreateEditDialog::save()
     // Custom CSS
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_CSS) && additionalCssTextArea->toPlainText().size() == 0) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_ADDITIONAL_CSS);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_CSS) && additionalCssTextArea->toPlainText().size() == 0) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_CSS);
             } else {
-                if (tempLiquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString().size() > 0
+                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString().size() > 0
                     || additionalCssTextArea->toPlainText().size() > 0
                 ) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
                 }
             }
         } else {
             if (additionalCssTextArea->toPlainText().size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ADDITIONAL_CSS, additionalCssTextArea->toPlainText());
             }
         }
     }
@@ -840,18 +840,18 @@ void LiquidAppCreateEditDialog::save()
     // Custom JS
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_JS) && additionalJsTextArea->toPlainText().size() == 0) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_ADDITIONAL_JS);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_JS) && additionalJsTextArea->toPlainText().size() == 0) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_JS);
             } else {
-                if (tempLiquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_JS).toString().size() > 0
+                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString().size() > 0
                     || additionalJsTextArea->toPlainText().size() > 0
                 ) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
                 }
             }
         } else {
             if (additionalJsTextArea->toPlainText().size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ADDITIONAL_JS, additionalJsTextArea->toPlainText());
             }
         }
     }
@@ -859,18 +859,18 @@ void LiquidAppCreateEditDialog::save()
     // Custom user-agent
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_USER_AGENT) && userAgentInput->text().size() == 0) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_USER_AGENT);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USER_AGENT) && userAgentInput->text().size() == 0) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USER_AGENT);
             } else {
-                if (tempLiquidAppConfig->value(LQD_CFG_KEY_USER_AGENT).toString().size() > 0
+                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString().size() > 0
                     || userAgentInput->text().size() > 0
                 ) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_USER_AGENT, userAgentInput->text());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USER_AGENT, userAgentInput->text());
                 }
             }
         } else {
             if (userAgentInput->text().size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_USER_AGENT, userAgentInput->text());
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USER_AGENT, userAgentInput->text());
             }
         }
     }
@@ -878,18 +878,18 @@ void LiquidAppCreateEditDialog::save()
     // Notes
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NOTES) && notesTextArea->toPlainText().size() == 0) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NOTES);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_NOTES) && notesTextArea->toPlainText().size() == 0) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_NOTES);
             } else {
-                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NOTES).toString().size() > 0
+                if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_NOTES).toString().size() > 0
                     || notesTextArea->toPlainText().size() > 0
                 ) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NOTES, notesTextArea->toPlainText());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_NOTES, notesTextArea->toPlainText());
                 }
             }
         } else {
             if (notesTextArea->toPlainText().size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NOTES, notesTextArea->toPlainText());
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_NOTES, notesTextArea->toPlainText());
             }
         }
     }
@@ -911,16 +911,16 @@ void LiquidAppCreateEditDialog::save()
         // Use custom background checkbox
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_USE_CUSTOM_BG) && !useCustomBackgroundCheckBox->isChecked()) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_USE_CUSTOM_BG);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_CUSTOM_BG) && !useCustomBackgroundCheckBox->isChecked()) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USE_CUSTOM_BG);
                 } else {
                     if (useCustomBackgroundCheckBox->isChecked()) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_USE_CUSTOM_BG, true);
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, true);
                     }
                 }
             } else {
                 if (useCustomBackgroundCheckBox->isChecked()) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_USE_CUSTOM_BG, true);
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, true);
                 }
             }
         }
@@ -928,14 +928,14 @@ void LiquidAppCreateEditDialog::save()
         // Custom background color
         {
             const QString rgba64Hex = QString("%1").arg(backgroundColor.rgba64(), 8, 16, QLatin1Char('0'));
-            tempLiquidAppConfig->setValue(LQD_CFG_KEY_CUSTOM_BG_COLOR, rgba64Hex);
+            tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR, rgba64Hex);
         }
     }
 
     // Additional domains
     {
-        if (isEditingExisting && tempLiquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS) && additionalDomainsModel->rowCount() == 1) {
-            tempLiquidAppConfig->remove(LQD_CFG_KEY_ADDITIONAL_DOMAINS);
+        if (isEditingExisting && tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS) && additionalDomainsModel->rowCount() == 1) {
+            tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS);
         } else {
             QString additionalDomains;
 
@@ -948,7 +948,7 @@ void LiquidAppCreateEditDialog::save()
             }
 
             if (additionalDomains.size() > 0) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_ADDITIONAL_DOMAINS, additionalDomains);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS, additionalDomains);
             }
         }
     }
@@ -959,14 +959,14 @@ void LiquidAppCreateEditDialog::save()
         {
             if (proxyModeSystemRadioButton->isChecked()) {
                 if (isEditingExisting) {
-                    if (tempLiquidAppConfig->contains(LQD_CFG_KEY_USE_PROXY)) {
-                         tempLiquidAppConfig->remove(LQD_CFG_KEY_USE_PROXY);
+                    if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
+                         tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USE_PROXY);
                     }
                 }
             } else if (proxyModeDirectRadioButton->isChecked()) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_USE_PROXY, false);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USE_PROXY, false);
             } else if (proxyModeCustomRadioButton->isChecked()) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_USE_PROXY, true);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_USE_PROXY, true);
             }
         }
 
@@ -974,30 +974,30 @@ void LiquidAppCreateEditDialog::save()
         {
             if (useSocksSelectBox->currentIndex() == 0) {
                 if (isEditingExisting) {
-                    if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USE_SOCKS)) {
-                         tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_USE_SOCKS);
+                    if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
+                         tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS);
                     }
                 }
             } else {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USE_SOCKS, true);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS, true);
             }
         }
 
         // Proxy host
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOST) && proxyHostInput->text().size() == 0) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_HOST);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST) && proxyHostInput->text().size() == 0) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_HOST);
                 } else {
-                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_PROXY_HOST).toString().size() > 0
+                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString().size() > 0
                         || proxyHostInput->text().size() > 0
                     ) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_HOST, proxyHostInput->text());
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_HOST, proxyHostInput->text());
                     }
                 }
             } else {
                 if (proxyHostInput->text().size() > 0) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_HOST, proxyHostInput->text());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_HOST, proxyHostInput->text());
                 }
             }
         }
@@ -1005,16 +1005,16 @@ void LiquidAppCreateEditDialog::save()
         // Proxy port number
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT) && proxyPortInput->value() == LQD_DEFAULT_PROXY_PORT) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_PORT);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT) && proxyPortInput->value() == LQD_DEFAULT_PROXY_PORT) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_PORT);
                 } else {
                     if (proxyPortInput->value() != LQD_DEFAULT_PROXY_PORT) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_PORT, proxyPortInput->value());
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_PORT, proxyPortInput->value());
                     }
                 }
             } else {
                 if (proxyPortInput->value() != LQD_DEFAULT_PROXY_PORT) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_PORT, proxyPortInput->value());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_PORT, proxyPortInput->value());
                 }
             }
         }
@@ -1022,16 +1022,16 @@ void LiquidAppCreateEditDialog::save()
         // Proxy authentication
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USE_AUTH) && !proxyUseAuthCheckBox->isChecked()) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_USE_AUTH);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_AUTH) && !proxyUseAuthCheckBox->isChecked()) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USE_AUTH);
                 } else {
                     if (proxyUseAuthCheckBox->isChecked()) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USE_AUTH, true);
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, true);
                     }
                 }
             } else {
                 if (proxyUseAuthCheckBox->isChecked()) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USE_AUTH, true);
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, true);
                 }
             }
         }
@@ -1039,18 +1039,18 @@ void LiquidAppCreateEditDialog::save()
         // Proxy username
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME) && proxyUsernameInput->text().size() == 0) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_USER_NAME);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME) && proxyUsernameInput->text().size() == 0) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USER_NAME);
                 } else {
-                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString().size() > 0
+                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString().size() > 0
                         || proxyUsernameInput->text().size() > 0
                     ) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USER_NAME, proxyUsernameInput->text());
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USER_NAME, proxyUsernameInput->text());
                     }
                 }
             } else {
                 if (proxyUsernameInput->text().size() > 0) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USER_NAME, proxyUsernameInput->text());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USER_NAME, proxyUsernameInput->text());
                 }
             }
         }
@@ -1058,18 +1058,18 @@ void LiquidAppCreateEditDialog::save()
         // Proxy password
         {
             if (isEditingExisting) {
-                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_PASSWORD) && proxyPasswordInput->text().size() == 0) {
-                     tempLiquidAppConfig->remove(LQD_CFG_KEY_PROXY_USER_PASSWORD);
+                if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD) && proxyPasswordInput->text().size() == 0) {
+                     tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD);
                 } else {
-                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_PASSWORD).toString().size() > 0
+                    if (tempLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD).toString().size() > 0
                         || proxyPasswordInput->text().size() > 0
                     ) {
-                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USER_PASSWORD, proxyPasswordInput->text());
+                        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD, proxyPasswordInput->text());
                     }
                 }
             } else {
                 if (proxyPasswordInput->text().size() > 0) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_PROXY_USER_PASSWORD, proxyPasswordInput->text());
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD, proxyPasswordInput->text());
                 }
             }
         }

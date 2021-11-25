@@ -139,7 +139,7 @@ attempt_to_create_or_run_liquid_app:
                                                    Q_NULLPTR);
 
         // Attempt to load app settings from a config file
-        if (tempAppSettings->contains(LQD_CFG_KEY_URL)) {
+        if (tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
             // // Allow only one instance
             sharedMemory = new QSharedMemory(getUserName() + "_Liquid_app_" + liquidAppName);
             if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {

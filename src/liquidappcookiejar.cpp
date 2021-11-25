@@ -14,12 +14,12 @@ LiquidAppCookieJar::~LiquidAppCookieJar(void)
 
 bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
 {
-    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
         return false;
     }
 
     const bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
-    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
+    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
 
@@ -40,12 +40,12 @@ bool LiquidAppCookieJar::upsertCookie(const QNetworkCookie &cookie)
 
 bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
 {
-    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
         return false;
     }
 
     const bool isThirdParty = !validateCookie(cookie, liquidAppWindow->url());
-    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_ALLOW_3RD_PARTY_COOKIES).toBool()) {
+    if (isThirdParty && !liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool()) {
         return false;
     }
 
@@ -59,7 +59,7 @@ bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
 }
 
 void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
-    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
         return;
     }
 
@@ -90,7 +90,7 @@ void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
 
 void LiquidAppCookieJar::save(void)
 {
-    if (!liquidAppConfig->value(LQD_CFG_KEY_ALLOW_COOKIES).toBool()) {
+    if (!liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
         return;
     }
 

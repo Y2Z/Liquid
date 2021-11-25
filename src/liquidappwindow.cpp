@@ -82,7 +82,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
         }
     }
 
-    const QUrl startingUrl(liquidAppConfig->value(LQD_CFG_KEY_URL).toString());
+    const QUrl startingUrl(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
 
     if (!startingUrl.isValid()) {
         qDebug().noquote() << "Invalid Liquid application URL:" << startingUrl;
@@ -407,7 +407,7 @@ void LiquidAppWindow::hardReload(void)
 
     // TODO: clear any type of cache, if possible
 
-    QUrl url(liquidAppConfig->value(LQD_CFG_KEY_URL).toString(), QUrl::StrictMode);
+    QUrl url(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString(), QUrl::StrictMode);
     setUrl(url);
 }
 
@@ -435,36 +435,36 @@ void LiquidAppWindow::loadFinished(bool ok)
 
 void LiquidAppWindow::loadLiquidAppConfig(void)
 {
-    if (liquidAppConfig->contains(LQD_CFG_KEY_TITLE)) {
-        liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_TITLE).toString();
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_TITLE)) {
+        liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString();
         // Make sure the window title never gets changed
         liquidAppWindowTitleIsReadOnly = true;
     }
 
     // Apply network proxy configuration
-    if (liquidAppConfig->contains(LQD_CFG_KEY_USE_PROXY)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
         proxy = new QNetworkProxy;
 
-        if (liquidAppConfig->value(LQD_CFG_KEY_USE_PROXY, false).toBool()) {
-            const bool isSocks = liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_SOCKS).toBool();
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_PROXY, false).toBool()) {
+            const bool isSocks = liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS).toBool();
 
             proxy->setType((isSocks) ? QNetworkProxy::Socks5Proxy : QNetworkProxy::HttpProxy);
 
-            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_HOST)) {
-                proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_PROXY_HOST).toString());
+            if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
+                proxy->setHostName(liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString());
             }
 
-            if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_PORT)) {
-                proxy->setPort(liquidAppConfig->value(LQD_CFG_KEY_PROXY_PORT).toInt());
+            if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT)) {
+                proxy->setPort(liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_PORT).toInt());
             }
 
-            if (liquidAppConfig->value(LQD_CFG_KEY_PROXY_USE_AUTH, false).toBool()) {
-                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_NAME)) {
-                    proxy->setUser(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_NAME).toString());
+            if (liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, false).toBool()) {
+                if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
+                    proxy->setUser(liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
                 }
 
-                if (liquidAppConfig->contains(LQD_CFG_KEY_PROXY_USER_PASSWORD)) {
-                    proxy->setPassword(liquidAppConfig->value(LQD_CFG_KEY_PROXY_USER_PASSWORD).toString());
+                if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD)) {
+                    proxy->setPassword(liquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD).toString());
                 }
             }
         } else {
@@ -476,15 +476,15 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
     // Remove window manager's frame
     {
-        if (liquidAppConfig->value(LQD_CFG_KEY_REMOVE_WINDOW_FRAME, false).toBool()) {
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool()) {
             setWindowFlags(Qt::FramelessWindowHint);
         }
     }
 
     // Set the page's background color behind the document's body
     {
-        if (liquidAppConfig->value(LQD_CFG_KEY_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_CUSTOM_BG_COLOR)) {
-            const QColor backgroundColor = QColor(QRgba64::fromRgba64(liquidAppConfig->value(LQD_CFG_KEY_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
+            const QColor backgroundColor = QColor(QRgba64::fromRgba64(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
 
             if (backgroundColor.alpha() < 255) {
                 // Make window background transparent
@@ -498,9 +498,9 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_DOMAINS)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS)) {
         liquidAppWebPage->addAllowedDomains(
-            liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_DOMAINS).toString().split(" ")
+            liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS).toString().split(" ")
         );
     }
 
@@ -516,9 +516,9 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Restore window geometry
-    if (liquidAppConfig->contains(LQD_CFG_KEY_WIN_GEOM)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
         restoreGeometry(QByteArray::fromHex(
-            liquidAppConfig->value(LQD_CFG_KEY_WIN_GEOM).toByteArray()
+            liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
         ));
     } else {
         const QDesktopWidget widget;
@@ -529,56 +529,56 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Toggle JavaScript on if enabled in application config
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ENABLE_JS)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ENABLE_JS)) {
         settings()->setAttribute(
             QWebEngineSettings::JavascriptEnabled,
-            liquidAppConfig->value(LQD_CFG_KEY_ENABLE_JS).toBool()
+            liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool()
         );
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Hide scroll bars
-    if (liquidAppConfig->contains(LQD_CFG_KEY_HIDE_SCROLL_BARS)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS)) {
         settings()->setAttribute(
             QWebEngineSettings::ShowScrollBars,
-            !liquidAppConfig->value(LQD_CFG_KEY_HIDE_SCROLL_BARS).toBool()
+            !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS).toBool()
         );
     }
 #endif
 
     // Mute audio if muted in application config
-    if (liquidAppConfig->contains(LQD_CFG_KEY_MUTE_AUDIO)) {
-        page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_MUTE_AUDIO).toBool());
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
+        page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_NAME_MUTE_AUDIO).toBool());
     }
 
     // Restore web view zoom level
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-        attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ZOOM_LVL)) {
+        attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_NAME_ZOOM_LVL).toDouble());
 
         // There's a bug in Qt, using QTimer seems to be the only solution
         QTimer::singleShot(1000, [&](){
-            if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-                attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_ZOOM_LVL).toDouble());
+            if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ZOOM_LVL)) {
+                attemptToSetZoomFactorTo(liquidAppConfig->value(LQD_CFG_KEY_NAME_ZOOM_LVL).toDouble());
             }
         });
     }
 
     // Lock for the app's window's geometry
-    if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
-        if (liquidAppConfig->value(LQD_CFG_KEY_LOCK_WIN_GEOM).toBool()) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM)) {
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM).toBool()) {
             toggleWindowGeometryLock();
             windowGeometryIsLocked = true;
         }
     }
 
     // Custom user-agent string
-    if (liquidAppConfig->contains(LQD_CFG_KEY_USER_AGENT)) {
-        liquidAppWebProfile->setHttpUserAgent(liquidAppConfig->value(LQD_CFG_KEY_USER_AGENT).toString());
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_USER_AGENT)) {
+        liquidAppWebProfile->setHttpUserAgent(liquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
     }
 
     // Additional user-defined CSS (does't require JavaScript enabled in order to work)
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_CSS)) {
-        QString additionalCss = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_CSS).toString();
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_CSS)) {
+        QString additionalCss = liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString();
         const QString js = QString("(()=>{"\
                                        "const styleEl = document.createElement('style');"\
                                        "const cssTextNode = document.createTextNode('%1');"\
@@ -594,8 +594,8 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Additional user-defined JS (does't require JavaScript enabled in order to work)
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ADDITIONAL_JS)) {
-        QString js = liquidAppConfig->value(LQD_CFG_KEY_ADDITIONAL_JS).toString();
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_JS)) {
+        QString js = liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString();
         QWebEngineScript script;
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
@@ -606,10 +606,10 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
 #if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
     // Set window icon
-    if (liquidAppConfig->contains(LQD_CFG_KEY_ICON)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
         QIcon liquidAppIcon;
         QByteArray byteArray = QByteArray::fromHex(
-            liquidAppConfig->value(LQD_CFG_KEY_ICON).toByteArray()
+            liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray()
         );
         QBuffer buffer(&byteArray);
         buffer.open(QIODevice::ReadOnly);
@@ -644,7 +644,7 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
     setWindowIcon(icon);
 
     // Save icon in settings
-    if (!liquidAppConfig->contains(LQD_CFG_KEY_ICON)) {
+    if (!liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
         QByteArray byteArray;
         QBuffer buffer(&byteArray);
         buffer.open(QIODevice::WriteOnly);
@@ -652,7 +652,7 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
         out << icon;
         buffer.close();
         // TODO: move into saveLiquidAppConfig()
-        liquidAppConfig->setValue(LQD_CFG_KEY_ICON, QString(byteArray.toHex()));
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ICON, QString(byteArray.toHex()));
         liquidAppConfig->sync();
     }
 }
@@ -673,30 +673,30 @@ void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 void LiquidAppWindow::saveLiquidAppConfig(void)
 {
     if (qFuzzyCompare(zoomFactor(), 1.0)) {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_ZOOM_LVL)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_ZOOM_LVL);
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ZOOM_LVL)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_NAME_ZOOM_LVL);
         }
     } else {
-        liquidAppConfig->setValue(LQD_CFG_KEY_ZOOM_LVL, zoomFactor());
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ZOOM_LVL, zoomFactor());
     }
 
     if (page()->isAudioMuted()) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_MUTE_AUDIO, true);
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_MUTE_AUDIO, true);
     } else {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_MUTE_AUDIO)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_MUTE_AUDIO);
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_NAME_MUTE_AUDIO);
         }
     }
 
     if (!isFullScreen()) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_WIN_GEOM, QString(liquidAppWindowGeometry.toHex()));
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_GEOM, QString(liquidAppWindowGeometry.toHex()));
     }
 
     if (windowGeometryIsLocked) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_LOCK_WIN_GEOM, true);
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM, true);
     } else {
-        if (liquidAppConfig->contains(LQD_CFG_KEY_LOCK_WIN_GEOM)) {
-            liquidAppConfig->remove(LQD_CFG_KEY_LOCK_WIN_GEOM);
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM)) {
+            liquidAppConfig->remove(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM);
         }
     }
 
