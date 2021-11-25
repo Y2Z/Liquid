@@ -39,8 +39,8 @@ public slots:
     void toggleFullScreenMode(void);
     void toggleWindowGeometryLock(void);
     void updateWindowTitle(const QString title);
-    void zoomIn(const bool more);
-    void zoomOut(const bool more);
+    void zoomIn(const bool fine);
+    void zoomOut(const bool fine);
     void zoomReset(void);
 
 protected:
@@ -92,8 +92,8 @@ private:
     QAction* toggleGeometryLockAction;
     QAction* zoomInAction;
     QAction* zoomOutAction;
-    QAction* zoomInMoreAction;
-    QAction* zoomOutMoreAction;
+    QAction* zoomInFineAction;
+    QAction* zoomOutFineAction;
     QAction* zoomResetAction;
 
     // Context menu and its actions
