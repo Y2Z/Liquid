@@ -32,7 +32,7 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 | Ability to remove window frame                   |   ✅   |           ❌          |                                   |
 | Minimalistic tabless design                      |   ✅   |           ❌          |                                   |
 | Fine zoom                                        |   ✅   |           ❌          |                                   |
-| Search within the page                           |   ❌   |           ❌          | TODO                              |
+| Search within the page                           |   ❌   |           ✅          | TODO                              |
 | Permanently mute website                         |   ✅   |           ❌          | Browsers automatically unmute, Liquid remembers the state |
 | Ability to go full-screen                        |   ✅   |           ✅          |                                   |
 | Full control over full-screen capabilities       |   ✅   |           ❌          | Liquid acts more like a mobile device simulator when it comes to full-screen |
@@ -41,37 +41,47 @@ There’s no possibility to be tracked by third-party websites or redirected whe
 
 ## Keyboard shortcuts
 
-- `Ctrl`+`=`: Zoom in
-- `Ctrl`+`-`: Zoom out
-- `Ctrl`+`Shift`+`=`: Zoom in by a lot
-- `Ctrl`+`Shift`+`-`: Zoom out by a lot
-- `Ctrl`+`0`: Reset zoom level
-- `Ctrl`+`F`: Toggle full-screen mode
-- `Ctrl`+`M`: Toggle mute on/off
-- `Escape`: Stop loading / exit from full-screen mode
-- `Ctrl`+`R`: Refresh the current page
-- `Ctrl`+`Shift`+`R`: Reload the app
-- `Ctrl`+`L`: Lock/unlock window geometry
-- `Ctrl`+`Q`, `Ctrl`+`W`: Close the app
-- `Ctrl`+[click]: Open link using system’s browser
-- `Ctrl`+`←`, `Backspace`: Go back
-- `Ctrl`+`→`: Go forward
+| Action                                    |                    |                                   |
+|:------------------------------------------|:------------------:|:---------------------------------:|
+| Zoom in                                   | `Ctrl`+`=`         | `Ctrl`+_mouse wheel up_           |
+| Zoom out                                  | `Ctrl`+`-`         | `Ctrl`+_mouse wheel down_         |
+| Fine zoom in                              | `Ctrl`+`Shift`+`=` | `Ctrl`+`Shift`+_mouse wheel up_   |
+| Fine zoom out                             | `Ctrl`+`Shift`+`-` | `Ctrl`+`Shift`+_mouse wheel down_ |
+| Reset zoom level                          | `Ctrl`+`0`         |                                   |
+| Toggle full-screen mode                   | `Ctrl`+`Shift`+`F` | `F11`                             |
+| Stop loading / exit from full-screen mode | `Esc`              |                                   |
+| Take snapshot                             | `Ctrl`+`T`         |                                   |
+| Take full-page snapshot                   | `Ctrl`+`Shift`+`T` |                                   |
+| Toggle window size lock                   | `Ctrl`+`L`         |                                   |
+| Toggle mute                               | `Ctrl`+`M`         |                                   |
+| Refresh current page                      | `Ctrl`+`R`         |                                   |
+| Reload app                                | `Ctrl`+`Shift`+`R` |                                   |
+| Close app                                 | `Ctrl`+`Q`         | `Ctrl`+`W`                        |
+| Go back                                   | `Ctrl`+`←`         | `Backspace`                       |
+| Go forward                                | `Ctrl`+`→`         |                                   |
+| Open link using web browser               | `Ctrl`+_click_     |                                   |
 
 
 ## Build
 
-    qmake
-    make -j
+```console
+qmake
+make -j
+```
 
 
 ## Install
 
-    sudo make install
+```console
+sudo make install
+```
 
 
 ## Uninstall
 
-    sudo make uninstall
+```console
+sudo make uninstall
+```
 
 
 ## Customize
