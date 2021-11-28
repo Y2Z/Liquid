@@ -572,7 +572,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             useSocksSelectBox = new QComboBox(this);
                             useSocksSelectBox->addItem(tr("HTTP"), false);
                             useSocksSelectBox->addItem(tr("SOCKS"), true);
-                            useSocksSelectBox->setEnabled(false);
 
                             if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
                                 const bool useSocks = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS, false).toBool();
@@ -589,7 +588,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         {
                             proxyHostInput = new QLineEdit(this);
                             proxyHostInput->setPlaceholderText(LQD_DEFAULT_PROXY_HOST);
-                            proxyHostInput->setEnabled(false);
 
                             if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
                                 proxyHostInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString());
@@ -602,7 +600,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         {
                             proxyPortInput = new QSpinBox(this);
                             proxyPortInput->setRange(0, 65535);
-                            proxyPortInput->setEnabled(false);
                             proxyPortInput->setValue(LQD_DEFAULT_PROXY_PORT);
 
                             if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT)) {
@@ -622,7 +619,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         // Use credentials
                         {
                             proxyUseAuthCheckBox = new QCheckBox(tr("Authenticate using credentials:"), this);
-                            proxyUseAuthCheckBox->setEnabled(false);
 
                             proxyCredentialsLayout->addWidget(proxyUseAuthCheckBox);
                         }
@@ -631,7 +627,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         {
                             proxyUsernameInput = new QLineEdit(this);
                             proxyUsernameInput->setPlaceholderText(tr("Username"));
-                            proxyUsernameInput->setEnabled(false);
 
                             if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
                                 proxyUsernameInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
@@ -643,7 +638,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         // Password
                         {
                             proxyPasswordInput = new QLineEdit(this);
-                            proxyPasswordInput->setEnabled(false);
                             proxyPasswordInput->setPlaceholderText(tr("Password"));
                             proxyPasswordInput->setEchoMode(QLineEdit::Password);
 
@@ -654,30 +648,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyCredentialsLayout->addWidget(proxyPasswordInput);
                         }
 
-                        connect(proxyUseAuthCheckBox, SIGNAL(toggled(bool)), proxyUsernameInput, SLOT(setEnabled(bool)));
-                        connect(proxyUseAuthCheckBox, SIGNAL(toggled(bool)), proxyPasswordInput, SLOT(setEnabled(bool)));
-
                         proxyConfigLayout->addLayout(proxyCredentialsLayout);
                     }
-
-                    QObject::connect(proxyModeCustomRadioButton, &QRadioButton::toggled, [=](){
-                        const bool customProxyModeActive = proxyModeCustomRadioButton->isChecked();
-
-                        useSocksSelectBox->setEnabled(customProxyModeActive);
-                        proxyHostInput->setEnabled(customProxyModeActive);
-                        proxyPortInput->setEnabled(customProxyModeActive);
-                        proxyUseAuthCheckBox->setEnabled(customProxyModeActive);
-
-                        if (customProxyModeActive) {
-                            if (proxyUseAuthCheckBox->isChecked()) {
-                                proxyUsernameInput->setEnabled(true);
-                                proxyPasswordInput->setEnabled(true);
-                            }
-                        } else {
-                            proxyUsernameInput->setEnabled(false);
-                            proxyPasswordInput->setEnabled(false);
-                        }
-                    });
 
                     if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
                         const bool proxyEnabled = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_PROXY, false).toBool();
