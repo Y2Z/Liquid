@@ -26,22 +26,22 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     }
 
     if (isEditingExisting) {
-        setWindowTitle(tr("Editing existing Liquid app “%1”").arg(liquidAppName));
+        setWindowTitle(tr("Editing existing Liquid App “%1”").arg(liquidAppName));
     } else {
-        setWindowTitle(tr("Adding new Liquid app"));
+        setWindowTitle(tr("Adding new Liquid App"));
     }
 
-    backgroundColor = QColor(Qt::black);
+    backgroundColor = new QColor(Qt::black);
 
-    QVBoxLayout* mainLayout = new QVBoxLayout;
+    QVBoxLayout* mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(4);
     mainLayout->setMargin(4);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-    QGridLayout* basicLayout = new QGridLayout;
+    QGridLayout* basicLayout = new QGridLayout();
 
-    QWidget* advancedWidget = new QWidget;
-    QVBoxLayout* advancedLayout = new QVBoxLayout;
+    QWidget* advancedWidget = new QWidget(this);
+    QVBoxLayout* advancedLayout = new QVBoxLayout();
     advancedLayout->setMargin(0);
     advancedWidget->setLayout(advancedLayout);
 
@@ -51,7 +51,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     // Name input
     {
-        QLabel* nameInputLabel = new QLabel(tr("Name:"));
+        QLabel* nameInputLabel = new QLabel(tr("Name:"), this);
         nameInput = new QLineEdit;
         nameInput->setMinimumSize(480, 0);
         nameInput->setPlaceholderText("my-liquid-app-name");
@@ -68,7 +68,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     // "URL" input
     {
-        QLabel* addressInputLabel = new QLabel(tr("URL:"));
+        QLabel* addressInputLabel = new QLabel(tr("URL:"), this);
         addressInput = new QLineEdit;
         addressInput->setPlaceholderText("https://example.com");
 
@@ -86,14 +86,14 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
         // "Create desktop icon" checkbox
         {
-            createIconCheckBox = new QCheckBox(tr("Create desktop icon"));
+            createIconCheckBox = new QCheckBox(tr("Create desktop icon"), this);
             createIconCheckBox->setCursor(Qt::PointingHandCursor);
             extraCheckboxesLayout->addWidget(createIconCheckBox);
         }
 
         // "Run after creation" checkbox
         {
-            planningToRunCheckBox = new QCheckBox(tr("Run after creation"));
+            planningToRunCheckBox = new QCheckBox(tr("Run after creation"), this);
             planningToRunCheckBox->setCursor(Qt::PointingHandCursor);
             extraCheckboxesLayout->addWidget(planningToRunCheckBox, 0, Qt::AlignRight);
         }
@@ -107,12 +107,12 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     // Horizontal buttons ("Advanced", "Cancel", "Create"/"Save")
     {
-        QHBoxLayout* buttonsLayout = new QHBoxLayout;
+        QHBoxLayout* buttonsLayout = new QHBoxLayout();
         buttonsLayout->setSpacing(4);
         buttonsLayout->setMargin(0);
 
         {
-            advancedButton = new QPushButton(tr("Advanced"));
+            advancedButton = new QPushButton(tr("Advanced"), this);
             advancedButton->setCursor(Qt::PointingHandCursor);
             advancedButton->setCheckable(true);
             buttonsLayout->addWidget(advancedButton);
@@ -121,7 +121,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         }
 
         {
-            cancelButton = new QPushButton(tr("Cancel"));
+            cancelButton = new QPushButton(tr("Cancel"), this);
             cancelButton->setCursor(Qt::PointingHandCursor);
             buttonsLayout->addWidget(cancelButton);
 
@@ -131,7 +131,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         }
 
         {
-            saveButton = new QPushButton(tr((isEditingExisting) ? "Save" : "Add"));
+            saveButton = new QPushButton(tr((isEditingExisting) ? "Save" : "Add"), this);
             saveButton->setCursor(Qt::PointingHandCursor);
             saveButton->setDefault(true);
             buttonsLayout->addWidget(saveButton);
@@ -151,8 +151,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     /////////////////
 
     {
-        QWidget* generalTabWidget = new QWidget;
-        generalTabWidgetLayout = new QVBoxLayout;
+        QWidget* generalTabWidget = new QWidget(this);
+        QVBoxLayout* generalTabWidgetLayout = new QVBoxLayout();
         generalTabWidget->setLayout(generalTabWidgetLayout);
         tabWidget->addTab(generalTabWidget, tr("General"));
 
@@ -162,14 +162,14 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             // Title label
             {
-                QLabel* textLabel = new QLabel(tr("Title:"));
+                QLabel* textLabel = new QLabel(tr("Title:"), this);
 
                 titleLayout->addWidget(textLabel);
             }
 
             // Title text input
             {
-                titleInput = new QLineEdit;
+                titleInput = new QLineEdit(this);
                 titleInput->setPlaceholderText(tr("Title"));
 
                 if (isEditingExisting) {
@@ -188,15 +188,15 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             // Additional domains label
             {
-                QLabel* additionalDomainsListLabel = new QLabel(tr("Additional domains:"));
+                QLabel* additionalDomainsListLabel = new QLabel(tr("Additional domains:"), this);
 
                 generalTabWidgetLayout->addWidget(additionalDomainsListLabel);
             }
 
             // Editable list of additional domains
             {
-                additionalDomainsListView = new QListView();
-                additionalDomainsModel = new QStandardItemModel();
+                additionalDomainsListView = new QListView(this);
+                additionalDomainsModel = new QStandardItemModel(this);
 
                 // Assign model
                 additionalDomainsListView->setModel(additionalDomainsModel);
@@ -249,14 +249,14 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             // Custom user-agent label
             {
-                QLabel* customUserAgentLabel = new QLabel(tr("Custom user-agent string:"));
+                QLabel* customUserAgentLabel = new QLabel(tr("Custom user-agent string:"), this);
 
                 customUserAgentLayout->addWidget(customUserAgentLabel);
             }
 
             // Custom user-agent text input
             {
-                userAgentInput = new QLineEdit();
+                userAgentInput = new QLineEdit(this);
                 // TODO: set placeholder to whatever QWebEngineProfile has by default
                 userAgentInput->setPlaceholderText(tr("Browser identifier string"));
 
@@ -274,8 +274,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             generalTabWidgetLayout->addWidget(separator());
 
-            QLabel* notesLabel = new QLabel(tr("Notes:"));
-            notesTextArea = new QPlainTextEdit();
+            QLabel* notesLabel = new QLabel(tr("Notes:"), this);
+            notesTextArea = new QPlainTextEdit(this);
             notesTextArea->setPlaceholderText(tr("Intentionally left blank"));
 
             if (isEditingExisting) {
@@ -292,21 +292,21 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     ////////////////////
 
     {
-        appearanceTabWidget = new QWidget;
-        appearanceTabWidgetLayout = new QVBoxLayout;
+        QWidget* appearanceTabWidget = new QWidget(this);
+        QVBoxLayout* appearanceTabWidgetLayout = new QVBoxLayout();
         appearanceTabWidget->setLayout(appearanceTabWidgetLayout);
         tabWidget->addTab(appearanceTabWidget, tr("Appearance"));
 
-        // Hide scroll bars checkbox
+        // Hide scrollbars checkbox
         #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         {
-            hideScrollBarsCheckBox = new QCheckBox(tr("Hide scroll bars"));
+            hideScrollBarsCheckBox = new QCheckBox(tr("Hide scrollbars"), this);
             hideScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
-                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS)) {
+                if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS)) {
                     hideScrollBarsCheckBox->setChecked(
-                        existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS).toBool()
+                        existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()
                     );
                 }
             }
@@ -319,7 +319,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             appearanceTabWidgetLayout->addWidget(separator());
 
-            removeWindowFrameCheckBox = new QCheckBox(tr("Remove window frame"));
+            removeWindowFrameCheckBox = new QCheckBox(tr("Remove window frame"), this);
             removeWindowFrameCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
@@ -337,11 +337,11 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             appearanceTabWidgetLayout->addWidget(separator());
 
-            QHBoxLayout* customBackgroundColorButtonLayout = new QHBoxLayout;
+            QHBoxLayout* customBackgroundColorButtonLayout = new QHBoxLayout();
 
             // Use custom background checkbox
             {
-                useCustomBackgroundCheckBox = new QCheckBox(tr("Use custom background color:"));
+                useCustomBackgroundCheckBox = new QCheckBox(tr("Use custom background color:"), this);
                 useCustomBackgroundCheckBox->setCursor(Qt::PointingHandCursor);
 
                 customBackgroundColorButtonLayout->addWidget(useCustomBackgroundCheckBox);
@@ -349,9 +349,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             // Custom background color button
             {
-                customBackgroundColorButton = new QPushButton;
+                customBackgroundColorButton = new QPushButton("█");
                 customBackgroundColorButton->setCursor(Qt::PointingHandCursor);
-                customBackgroundColorButton->setText("█");
                 customBackgroundColorButton->setFlat(true);
                 customBackgroundColorButton->setFixedSize(customBackgroundColorButton->width(), 24);
 
@@ -360,8 +359,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 static const int fontSize = customBackgroundColorButton->width() * 0.9;
 
                 if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
-                    backgroundColor = QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
-                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(&backgroundColor)).arg(fontSize));
+                    backgroundColor = new QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
+                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(backgroundColor)).arg(fontSize));
                 } else {
                     static const QColor defaultColor = QColor(LQD_DEFAULT_BG_COLOR);
                     customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(&defaultColor)).arg(fontSize));
@@ -371,15 +370,15 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                 QObject::connect(customBackgroundColorButton, &QPushButton::clicked, [=]() {
                     const QColorDialog::ColorDialogOptions options = QFlag(QColorDialog::ShowAlphaChannel);
-                    QColor color = QColorDialog::getColor(backgroundColor, this, tr("Pick custom background color"), options);
+                    QColor color = QColorDialog::getColor(*backgroundColor, this, tr("Pick custom background color"), options);
 
                     if (color.isValid()) {
                         if (!useCustomBackgroundCheckBox->isChecked()) {
                             useCustomBackgroundCheckBox->setChecked(true);
                         }
 
-                        backgroundColor = color;
-                        customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(&backgroundColor)).arg(fontSize));
+                        backgroundColor = &color;
+                        customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(backgroundColor)).arg(fontSize));
                     }
                 });
             }
@@ -396,8 +395,12 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             appearanceTabWidgetLayout->addWidget(separator());
 
-            additionalCssTextArea = new QPlainTextEdit();
-            additionalCssTextArea->setPlaceholderText(tr("Additional CSS"));
+            {
+                QLabel* additionalCssLabel = new QLabel(tr("Additional CSS:"), this);
+                appearanceTabWidgetLayout->addWidget(additionalCssLabel);
+            }
+            additionalCssTextArea = new QPlainTextEdit(this);
+            additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
 
             if (isEditingExisting) {
                 additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
@@ -412,14 +415,14 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     ////////////////////
 
     {
-        jsTabWidget = new QWidget;
-        jsTabWidgetLayout = new QVBoxLayout;
+        QWidget* jsTabWidget = new QWidget(this);
+        QVBoxLayout* jsTabWidgetLayout = new QVBoxLayout();
         jsTabWidget->setLayout(jsTabWidgetLayout);
         tabWidget->addTab(jsTabWidget, tr("JavaScript"));
 
         // Enable JavaScript checkbox
         {
-            enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"));
+            enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"), this);
             enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
 
             if (isEditingExisting) {
@@ -437,8 +440,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             jsTabWidgetLayout->addWidget(separator());
 
-            additionalJsLabel = new QLabel(tr("Additonal JavaScript code:"));
-            additionalJsTextArea = new QPlainTextEdit();
+            additionalJsLabel = new QLabel(tr("Additonal JavaScript code:"), this);
+            additionalJsTextArea = new QPlainTextEdit(this);
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
 
             if (isEditingExisting) {
@@ -455,55 +458,64 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     /////////////////
 
     {
-        cookiesTabWidget = new QWidget;
-        cookiesTabWidgetLayout = new QVBoxLayout;
+        QWidget* cookiesTabWidget = new QWidget(this);
+        QVBoxLayout* cookiesTabWidgetLayout = new QVBoxLayout();
         cookiesTabWidget->setLayout(cookiesTabWidgetLayout);
         tabWidget->addTab(cookiesTabWidget, tr("Cookies"));
 
-        // Allow Cookies checkbox
+        // Allow cookies & allow third-party cookies checkboxes
         {
-            allowCookiesCheckBox = new QCheckBox(tr("Allow cookies"));
-            allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
+            // Allow cookies checkbox
+            {
+                allowCookiesCheckBox = new QCheckBox(tr("Allow cookies"), this);
+                allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
 
-            if (isEditingExisting) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool();
-                allowCookiesCheckBox->setChecked(isChecked);
-            } else {
-                // Checked by default (when creating new Liquid app)
-                allowCookiesCheckBox->setChecked(true);
+                if (isEditingExisting) {
+                    bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool();
+                    allowCookiesCheckBox->setChecked(isChecked);
+                } else {
+                    // Checked by default (when creating new Liquid App)
+                    allowCookiesCheckBox->setChecked(true);
+                }
+
+                cookiesTabWidgetLayout->addWidget(allowCookiesCheckBox);
             }
 
-            cookiesTabWidgetLayout->addWidget(allowCookiesCheckBox);
-        }
+            // Allow third-party cookies checkbox
+            {
+                QHBoxLayout* allowThirdPartyCookiesLayout = new QHBoxLayout();
+                allowThirdPartyCookiesLayout->setContentsMargins(LQD_UI_MARGIN, 0, 0, 0);
 
-        // Allow third-party Cookies checkbox
-        {
-            // TODO: add spacing on the left side
+                allowThirdPartyCookiesCheckBox = new QCheckBox(tr("Allow third-party cookies"), this);
+                allowThirdPartyCookiesCheckBox->setCursor(Qt::PointingHandCursor);
 
-            allowThirdPartyCookiesCheckBox = new QCheckBox(tr("Allow third-party cookies"));
-            allowThirdPartyCookiesCheckBox->setCursor(Qt::PointingHandCursor);
+                if (isEditingExisting) {
+                    bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool();
+                    allowThirdPartyCookiesCheckBox->setChecked(isChecked);
+                }
 
-            // TODO: make this checkbox always enabled, but make it check the one above if toggled
-            if (!allowCookiesCheckBox->isChecked()) {
-                allowThirdPartyCookiesCheckBox->setEnabled(false);
+                allowThirdPartyCookiesLayout->addWidget(allowThirdPartyCookiesCheckBox);
+
+                connect(allowCookiesCheckBox, &QCheckBox::toggled, [&](const bool isOn){
+                    if (!isOn) {
+                        allowThirdPartyCookiesCheckBox->setChecked(false);
+                    }
+                });
+                connect(allowThirdPartyCookiesCheckBox, &QCheckBox::toggled, [&](const bool isOn){
+                    if (isOn) {
+                        allowCookiesCheckBox->setChecked(isOn);
+                    }
+                });
+
+                cookiesTabWidgetLayout->addLayout(allowThirdPartyCookiesLayout);
             }
-
-            if (isEditingExisting) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool();
-                allowThirdPartyCookiesCheckBox->setChecked(isChecked);
-            }
-
-            cookiesTabWidgetLayout->addWidget(allowThirdPartyCookiesCheckBox);
-
-            // TODO: make the main checkbox uncheck the third-party one below it
-            connect(allowCookiesCheckBox, SIGNAL(toggled(bool)), allowThirdPartyCookiesCheckBox, SLOT(setEnabled(bool)));
         }
 
         // TODO: add QListView to add,edit, and remove cookies
 
         // Spacer
         {
-            QWidget* spacer = new QWidget();
+            QWidget* spacer = new QWidget(this);
             spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
             cookiesTabWidgetLayout->addWidget(spacer);
         }
@@ -514,8 +526,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     /////////////////
 
     {
-        networkTabWidget = new QWidget;
-        networkTabWidgetLayout = new QVBoxLayout;
+        QWidget* networkTabWidget = new QWidget(this);
+        QVBoxLayout* networkTabWidgetLayout = new QVBoxLayout();
         networkTabWidget->setLayout(networkTabWidgetLayout);
         tabWidget->addTab(networkTabWidget, tr("Network"));
 
@@ -523,38 +535,41 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         {
             // Option 1: Use global system proxy settings (default)
             {
-                proxyModeSystemRadioButton = new QRadioButton(tr("Use global system settings"));
+                proxyModeSystemRadioButton = new QRadioButton(tr("Use global system settings"), this);
+                proxyModeSystemRadioButton->setCursor(Qt::PointingHandCursor);
 
                 networkTabWidgetLayout->addWidget(proxyModeSystemRadioButton);
             }
 
             // Option 2: Use direct internet connection
             {
-                proxyModeDirectRadioButton = new QRadioButton(tr("Direct internet connection"));
+                proxyModeDirectRadioButton = new QRadioButton(tr("Direct internet connection"), this);
+                proxyModeDirectRadioButton->setCursor(Qt::PointingHandCursor);
 
                 networkTabWidgetLayout->addWidget(proxyModeDirectRadioButton);
             }
 
             // Option 3: Use custom proxy configuration
             {
-                QHBoxLayout* customProxyModeLayout = new QHBoxLayout;
+                QHBoxLayout* customProxyModeLayout = new QHBoxLayout();
 
                 // Radio box
-                proxyModeCustomRadioButton = new QRadioButton(tr("Custom proxy configuration:"));
+                proxyModeCustomRadioButton = new QRadioButton(tr("Custom proxy configuration:"), this);
+                proxyModeCustomRadioButton->setCursor(Qt::PointingHandCursor);
 
                 customProxyModeLayout->addWidget(proxyModeCustomRadioButton, 0, Qt::AlignTop);
 
                 // Custom proxy configuration
                 {
-                    QVBoxLayout* proxyConfigLayout = new QVBoxLayout;
+                    QVBoxLayout* proxyConfigLayout = new QVBoxLayout();
 
                     // Row 1 (type, host, port)
                     {
-                        QHBoxLayout* proxyTypeHostPortLayout = new QHBoxLayout;
+                        QHBoxLayout* proxyTypeHostPortLayout = new QHBoxLayout();
 
                         // Proxy type
                         {
-                            useSocksSelectBox = new QComboBox;
+                            useSocksSelectBox = new QComboBox(this);
                             useSocksSelectBox->addItem(tr("HTTP"), false);
                             useSocksSelectBox->addItem(tr("SOCKS"), true);
                             useSocksSelectBox->setEnabled(false);
@@ -572,7 +587,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                         // Proxy host
                         {
-                            proxyHostInput = new QLineEdit;
+                            proxyHostInput = new QLineEdit(this);
                             proxyHostInput->setPlaceholderText(LQD_DEFAULT_PROXY_HOST);
                             proxyHostInput->setEnabled(false);
 
@@ -585,7 +600,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                         // Proxy port
                         {
-                            proxyPortInput = new QSpinBox;
+                            proxyPortInput = new QSpinBox(this);
                             proxyPortInput->setRange(0, 65535);
                             proxyPortInput->setEnabled(false);
                             proxyPortInput->setValue(LQD_DEFAULT_PROXY_PORT);
@@ -602,11 +617,11 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                     // Row 2 (use authentication checkbox, username, password)
                     {
-                        QHBoxLayout* proxyCredentialsLayout = new QHBoxLayout;
+                        QHBoxLayout* proxyCredentialsLayout = new QHBoxLayout();
 
                         // Use credentials
                         {
-                            proxyUseAuthCheckBox = new QCheckBox(tr("Authenticate using credentials:"));
+                            proxyUseAuthCheckBox = new QCheckBox(tr("Authenticate using credentials:"), this);
                             proxyUseAuthCheckBox->setEnabled(false);
 
                             proxyCredentialsLayout->addWidget(proxyUseAuthCheckBox);
@@ -614,7 +629,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                         // Username
                         {
-                            proxyUsernameInput = new QLineEdit();
+                            proxyUsernameInput = new QLineEdit(this);
                             proxyUsernameInput->setPlaceholderText(tr("Username"));
                             proxyUsernameInput->setEnabled(false);
 
@@ -627,7 +642,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                         // Password
                         {
-                            proxyPasswordInput = new QLineEdit();
+                            proxyPasswordInput = new QLineEdit(this);
                             proxyPasswordInput->setEnabled(false);
                             proxyPasswordInput->setPlaceholderText(tr("Password"));
                             proxyPasswordInput->setEchoMode(QLineEdit::Password);
@@ -689,7 +704,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
         // Spacer
         {
-            QWidget* spacer = new QWidget();
+            QWidget* spacer = new QWidget(this);
             spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
             networkTabWidgetLayout->addWidget(spacer);
         }
@@ -764,19 +779,19 @@ void LiquidAppCreateEditDialog::save()
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    // Hide scroll bars
+    // Hide scrollbars
     {
         if (isEditingExisting) {
-            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS) && !hideScrollBarsCheckBox->isChecked()) {
-                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS);
+            if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS) && !hideScrollBarsCheckBox->isChecked()) {
+                 tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS);
             } else {
                 if (hideScrollBarsCheckBox->isChecked()) {
-                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS, true);
+                    tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS, true);
                 }
             }
         } else {
             if (hideScrollBarsCheckBox->isChecked()) {
-                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS, true);
+                tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS, true);
             }
         }
     }
@@ -927,7 +942,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Custom background color
         {
-            const QString rgba64Hex = QString("%1").arg(backgroundColor.rgba64(), 8, 16, QLatin1Char('0'));
+            const QString rgba64Hex = QString("%1").arg(backgroundColor->rgba64(), 8, 16, QLatin1Char('0'));
             tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR, rgba64Hex);
         }
     }

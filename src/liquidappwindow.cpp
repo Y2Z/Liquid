@@ -539,10 +539,10 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Hide scrollbars
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS)) {
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS)) {
         settings()->setAttribute(
             QWebEngineSettings::ShowScrollBars,
-            !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS).toBool()
+            !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()
         );
     }
 #endif
