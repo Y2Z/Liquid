@@ -33,7 +33,7 @@ private:
 
     QAction* quitAction;
 
-    QColor backgroundColor;
+    QColor* backgroundColor;
 
     QLineEdit* nameInput;
     QLineEdit* addressInput;
@@ -41,7 +41,6 @@ private:
     QCheckBox* planningToRunCheckBox;
 
     // General tab
-    QVBoxLayout* generalTabWidgetLayout;
     QLineEdit* titleInput;
     QListView* additionalDomainsListView;
     QStandardItemModel* additionalDomainsModel;
@@ -49,8 +48,6 @@ private:
     QPlainTextEdit* notesTextArea;
 
     // Appearance tab
-    QWidget* appearanceTabWidget;
-    QVBoxLayout* appearanceTabWidgetLayout;
     QCheckBox* hideScrollBarsCheckBox;
     QCheckBox* removeWindowFrameCheckBox;
     QCheckBox* useCustomBackgroundCheckBox;
@@ -58,21 +55,15 @@ private:
     QPlainTextEdit* additionalCssTextArea;
 
     // JavaScript tab
-    QWidget* jsTabWidget;
-    QVBoxLayout* jsTabWidgetLayout;
     QCheckBox* enableJavaScriptCheckBox;
     QLabel* additionalJsLabel;
     QPlainTextEdit* additionalJsTextArea;
 
     // Cookies tab
-    QWidget* cookiesTabWidget;
-    QVBoxLayout* cookiesTabWidgetLayout;
     QCheckBox* allowCookiesCheckBox;
     QCheckBox* allowThirdPartyCookiesCheckBox;
 
     // Network tab
-    QWidget* networkTabWidget;
-    QVBoxLayout* networkTabWidgetLayout;
     QRadioButton* proxyModeSystemRadioButton;
     QRadioButton* proxyModeDirectRadioButton;
     QRadioButton* proxyModeCustomRadioButton;

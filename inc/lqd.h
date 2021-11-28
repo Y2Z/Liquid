@@ -10,6 +10,7 @@
 #define LQD_WIN_MIN_SIZE_H     400
 #define LQD_APP_WIN_MIN_SIZE_W 160
 #define LQD_APP_WIN_MIN_SIZE_H 120
+#define LQD_UI_MARGIN          24
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5.0 // Limited to 5.0 by Chromium
 #define LQD_ZOOM_LVL_STEP      0.005
@@ -39,7 +40,7 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR         "CustomBackgroundColor" // text
 #define LQD_CFG_KEY_NAME_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
-#define LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS        "HideScrollBars" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_HIDE_SCROLLBARS         "HideScrollBars" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_ICON                    "Icon" // text
 #define LQD_CFG_KEY_NAME_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
