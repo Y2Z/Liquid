@@ -125,7 +125,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             cancelButton->setCursor(Qt::PointingHandCursor);
             buttonsLayout->addWidget(cancelButton);
 
-            QObject::connect(cancelButton, &QPushButton::clicked, [=]() {
+            connect(cancelButton, &QPushButton::clicked, [&]() {
                 close();
             });
         }
@@ -136,7 +136,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             saveButton->setDefault(true);
             buttonsLayout->addWidget(saveButton);
 
-            QObject::connect(saveButton, &QPushButton::clicked, [=]() {
+            connect(saveButton, &QPushButton::clicked, [&]() {
                 save();
             });
         }
@@ -216,7 +216,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 // Append empty row
                 additionalDomainsModel->appendRow(new QStandardItem());
 
-                connect(additionalDomainsModel, &QStandardItemModel::itemChanged, [=](QStandardItem* item){
+                connect(additionalDomainsModel, &QStandardItemModel::itemChanged, [&](QStandardItem* item){
                     const int itemIndex = item->row();
                     const bool isLastItem = itemIndex == additionalDomainsModel->rowCount() - 1;
                     static const QRegExp allowedCharacters = QRegExp("[^a-z0-9\\.:\\-]");
@@ -368,7 +368,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                 customBackgroundColorButtonLayout->addWidget(customBackgroundColorButton);
 
-                QObject::connect(customBackgroundColorButton, &QPushButton::clicked, [=]() {
+                connect(customBackgroundColorButton, &QPushButton::clicked, [&]() {
                     const QColorDialog::ColorDialogOptions options = QFlag(QColorDialog::ShowAlphaChannel);
                     QColor color = QColorDialog::getColor(*backgroundColor, this, tr("Pick custom background color"), options);
 
@@ -669,6 +669,31 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                     customProxyModeLayout->addLayout(proxyConfigLayout);
                 }
+
+                connect(useSocksSelectBox, &QComboBox::currentTextChanged, [&](){
+                    proxyModeCustomRadioButton->setChecked(true);
+                });
+                connect(proxyHostInput, &QLineEdit::textChanged, [&](const QString value){
+                    if (value.size() > 0) {
+                        proxyModeCustomRadioButton->setChecked(true);
+                    } else {
+                        proxyModeSystemRadioButton->setChecked(true);
+                    }
+                });
+                connect(proxyPortInput, QOverload<int>::of(&QSpinBox::valueChanged), [&](){
+                    proxyModeCustomRadioButton->setChecked(true);
+                });
+                connect(proxyUseAuthCheckBox, &QCheckBox::stateChanged, [&](){
+                    proxyModeCustomRadioButton->setChecked(true);
+                });
+                connect(proxyUsernameInput, &QLineEdit::textChanged, [&](const QString value){
+                    proxyModeCustomRadioButton->setChecked(true);
+                    proxyUseAuthCheckBox->setChecked(value.size() > 0);
+                });
+                connect(proxyPasswordInput, &QLineEdit::textChanged, [&](const QString value){
+                    proxyModeCustomRadioButton->setChecked(true);
+                    proxyUseAuthCheckBox->setChecked(value.size() > 0);
+                });
 
                 networkTabWidgetLayout->addLayout(customProxyModeLayout);
             }
