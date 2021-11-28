@@ -38,8 +38,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
                                     Q_NULLPTR);
 
     // These default settings affect everything (including sub-frames)
-    QWebEngineSettings *globalWebSettings = QWebEngineSettings::globalSettings();
-    LiquidAppWebPage::setWebSettingsToDefault(globalWebSettings);
+    LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings::globalSettings());
 
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
@@ -54,12 +53,14 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
     setPage(liquidAppWebPage);
 
+    liquidAppWebSettings = liquidAppWebPage->settings();
+
     // Set default window title
     liquidAppWindowTitle = *liquidAppName;
 
     updateWindowTitle(*liquidAppName);
 
-    // Pre-fill list of all possible zoom factors to snap to
+    // Pre-fill all possible zoom factors to snap desired zoom level to
     {
         for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP && z > 0; z -= LQD_ZOOM_LVL_STEP) {
             if (z >= LQD_ZOOM_LVL_MIN) {
@@ -104,7 +105,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Initialize context menu
     setupContextMenu();
 
-    // Allow page-level full screen happen
+    // Allow page-level full-screen happen
     connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
         request.accept();
     });
@@ -206,18 +207,18 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(hardReloadAction);
     connect(hardReloadAction, SIGNAL(triggered()), this, SLOT(hardReload()));
 
-    // Connect "toggle full screen" shortcut
+    // Connect "toggle full-screen" shortcut
     toggleFullScreenModeAction = new QAction;
     toggleFullScreenModeAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TOGGLE_FS_MODE)));
     addAction(toggleFullScreenModeAction);
     connect(toggleFullScreenModeAction, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
-    // Connect "alternative toggle full screen" shortcut (there can be only one QKeySequence per QAction)
+    // Connect "alternative toggle full-screen" shortcut (there can be only one QKeySequence per QAction)
     toggleFullScreenModeAction2 = new QAction;
     toggleFullScreenModeAction2->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TOGGLE_FS_MODE_2)));
     addAction(toggleFullScreenModeAction2);
     connect(toggleFullScreenModeAction2, SIGNAL(triggered()), this, SLOT(toggleFullScreenMode()));
 
-    // Connect "stop loading" / "exit full screen mode" shortcut
+    // Connect "stop loading" / "exit full-screen mode" shortcut
     stopLoadingOrExitFullScreenModeAction = new QAction;
     stopLoadingOrExitFullScreenModeAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_STOP_OR_EXIT_FS_MODE)));
     addAction(stopLoadingOrExitFullScreenModeAction);
@@ -279,7 +280,7 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(takeSnapshotAction);
     connect(takeSnapshotAction, SIGNAL(triggered()), this, SLOT(takeSnapshotSlot()));
 
-    // Connect "take full page snapshot" shortcut
+    // Connect "take full-page snapshot" shortcut
     takeSnapshotFullPageAction = new QAction;
     takeSnapshotFullPageAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TAKE_SNAPSHOT_FULL)));
     addAction(takeSnapshotFullPageAction);
@@ -349,7 +350,7 @@ bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 
 void LiquidAppWindow::exitFullScreenMode(void)
 {
-    // Exit from full screen mode
+    // Exit from full-screen mode
     setWindowState(windowState() & ~Qt::WindowFullScreen);
 
     if (windowGeometryIsLocked) {
@@ -537,7 +538,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    // Hide scroll bars
+    // Hide scrollbars
     if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLL_BARS)) {
         settings()->setAttribute(
             QWebEngineSettings::ShowScrollBars,
@@ -659,7 +660,7 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
-    // Remember window size (unless in full screen mode)
+    // Remember window size (unless in full-screen mode)
     if (event->spontaneous() && !isFullScreen()) {
         // Pause here to wait for any kind of window resize animations to finish
         Liquid::sleep(200);
@@ -770,7 +771,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     // Compose snapshot file name
     const QString fileName = QString("%1 %2 (%3)")
                                 .arg(*liquidAppName)
-                                .arg(tr((fullPage) ? "full page snapshot" : "snapshot"))
+                                .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"))
                                 .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat()));
 
     if (vector) {
@@ -802,8 +803,6 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
         QImage* image = new QImage(snapshotSize * ratio, format);
         image->setDevicePixelRatio(ratio);
         image->fill(Qt::transparent);
-
-        // TODO: hide scrollbars before taking snapshot
 
         QPainter* painter = new QPainter(image);
         // TODO: make fonts appear less blurry (potentially use painter->scale(ratio, ratio)
@@ -840,18 +839,46 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
                 setAttribute(Qt::WA_DontShowOnScreen, false);
                 show();
 
-                // Restore window's full screen mode
+                // Restore window's full-screen mode
                 if (wasFullScreen && !isFullScreen()) {
                     toggleFullScreenMode();
                 }
 
-                // Scroll the web view back to where it was before we started taking full page snapshot
+                // Scroll the web view back to where it was before we started taking full-page snapshot
                 static const QString js = "window.scrollTo(%1, %2);";
                 page()->runJavaScript(QString(js).arg(origScrollPos.x()).arg(origScrollPos.y()), QWebEngineScript::ApplicationWorld);
             }
         } else {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+            const bool hadScrollBarsShown = liquidAppWebSettings->testAttribute(QWebEngineSettings::ShowScrollBars);
+
+            if (hadScrollBarsShown) {
+                // Hide scrollbars before taking snapshot
+                liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+
+                // Wait a little bit for scrollbars to disappear
+                Liquid::sleep(1500);
+
+                // qDebug() << liquidAppWebPage->renderProcessPid; // Qt 5.15 could allow us to trigger immediate page re-render by sending signal to that process
+                // liquidAppWebPage->setVisible(false); liquidAppWebPage->setVisible(true); // Try this out once Qt 5.14 is more widely available
+
+                // This is another approach for temporarily hiding scrollbars
+                // static const QString js = "'undefined' != typeof document.styleSheets && 0 < document.styleSheets.length && document.styleSheets[0].addRule('::-webkit-scrollbar', 'width: 0 !important; height: 0 !important', 0);";
+                // page()->runJavaScript(QString(js), QWebEngineScript::ApplicationWorld, [&](const QVariant& res){
+                //     // Liquid::sleep(100);
+                // });
+            }
+#endif
+
             // Render contents of QWidget into QPainter
             render(painter);
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+            if (hadScrollBarsShown) {
+                // Bring scrollbars back after taking snapshot
+                liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
+            }
+#endif
         }
 
         painter->end();
@@ -880,14 +907,14 @@ void LiquidAppWindow::toggleFullScreenMode(void)
             setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
             setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         }
-        // Enter the full screen mode
+        // Enter the full-screen mode
         setWindowState(windowState() | Qt::WindowFullScreen);
     }
 }
 
 void LiquidAppWindow::toggleWindowGeometryLock(void)
 {
-    // Prevent toggling window geometry lock while in full screen mode
+    // Prevent toggling window geometry lock while in full-screen mode
     if (!isFullScreen()) {
         if (windowGeometryIsLocked) {
             // Open up resizing restrictions

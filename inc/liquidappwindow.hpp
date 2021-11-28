@@ -62,6 +62,7 @@ private:
 
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
+    QWebEngineSettings* liquidAppWebSettings = Q_NULLPTR;
     QByteArray liquidAppWindowGeometry;
 
     bool liquidAppWindowTitleIsReadOnly = false;
