@@ -59,33 +59,31 @@ bool LiquidAppCookieJar::removeCookie(const QNetworkCookie &cookie)
 }
 
 void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
-    if (!liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
-        return;
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool()) {
+        liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
+        foreach(QString cookieId, liquidAppConfig->allKeys()) {
+            const QByteArray rawCookie = liquidAppConfig->value(cookieId).toByteArray();
+            QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
+
+            // Construct origin URL based on cookie data
+            QString scheme("http");
+            if (cookie.isSecure()) {
+                scheme += "s";
+            }
+            QString domain(cookie.domain());
+            while (domain.startsWith(".")) {
+                domain = domain.right(domain.size() - 1);
+            }
+            QUrl url(scheme + "://" + domain + cookie.path());
+
+            // Avoid prepending leading dot (https://bugreports.qt.io/browse/QTBUG-64732)
+            if (!cookie.domain().startsWith(".")) {
+                cookie.setDomain("");
+            }
+            cookieStore->setCookie(cookie, url);
+        }
+        liquidAppConfig->endGroup();
     }
-
-    liquidAppConfig->beginGroup("Cookies");
-    foreach(QString cookieId, liquidAppConfig->allKeys()) {
-        QByteArray rawCookie = liquidAppConfig->value(cookieId).toByteArray();
-        QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
-
-        // Construct origin URL based on the cookie itself
-        QString scheme("http");
-        if (cookie.isSecure()) {
-            scheme += "s";
-        }
-        QString domain(cookie.domain());
-        while (domain.startsWith(".")) {
-            domain = domain.right(domain.size() - 1);
-        }
-        QUrl url(scheme + "://" + domain + cookie.path());
-
-        // Avoid prepending leading dot (https://bugreports.qt.io/browse/QTBUG-64732)
-        if (!cookie.domain().startsWith(".")) {
-            cookie.setDomain("");
-        }
-        cookieStore->setCookie(cookie, url);
-    }
-    liquidAppConfig->endGroup();
 }
 
 void LiquidAppCookieJar::save(void)
@@ -94,7 +92,7 @@ void LiquidAppCookieJar::save(void)
         return;
     }
 
-    liquidAppConfig->beginGroup("Cookies");
+    liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
     // Remove all cookies
     foreach(QString cookieName, liquidAppConfig->allKeys()) {
         liquidAppConfig->remove(cookieName);

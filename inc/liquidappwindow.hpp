@@ -19,7 +19,7 @@ class LiquidAppWindow : public QWebEngineView
     Q_OBJECT
 
 public:
-    explicit LiquidAppWindow(QString* name);
+    explicit LiquidAppWindow(const QString* name);
     ~LiquidAppWindow(void);
 
     void setForgiveNextPageLoadError(const bool ok);

@@ -16,7 +16,7 @@
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
 
-LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
+LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 {
     // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
@@ -29,7 +29,7 @@ LiquidAppWindow::LiquidAppWindow(QString* name) : QWebEngineView()
     // Disable default QWebEngineView's context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
 
-    liquidAppName = name;
+    liquidAppName = (QString*)name;
 
     liquidAppConfig = new QSettings(QSettings::IniFormat,
                                     QSettings::UserScope,

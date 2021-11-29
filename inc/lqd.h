@@ -26,13 +26,17 @@
 #define LQD_ICON_DELETE  "✖"
 #define LQD_ICON_RUN     "➤"
 
+/* Liquid App config */
+#define LQD_CFG_GROUP_NAME_COOKIES               "Cookies"
+#define LQD_CFG_GROUP_NAME_PROXY                 "Proxy"
+
 /*
-App config key names.
-Names must be given in a way that would let them answer to questions:
-- "what is it?" (everything else)
-- "do what?" (for booleans)
-e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
-*/
+ * Liquid App config key names.
+ * Names must be given in a way that would let them answer to questions:
+ * - "what is it?" (everything else)
+ * - "do what?" (for booleans)
+ * e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
+ */
 #define LQD_CFG_KEY_NAME_ADDITIONAL_CSS          "AdditionalCSS" // text
 #define LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS      "AdditionalDomains" // text, whitespace-separated items
 #define LQD_CFG_KEY_NAME_ADDITIONAL_JS           "AdditionalJS" // text
@@ -45,12 +49,12 @@ e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
 #define LQD_CFG_KEY_NAME_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_NOTES                   "Notes" // text
-#define LQD_CFG_KEY_NAME_PROXY_HOST              "Proxy/Host" // text
-#define LQD_CFG_KEY_NAME_PROXY_PORT              "Proxy/Port" // number
-#define LQD_CFG_KEY_NAME_PROXY_USE_AUTH          "Proxy/UseAuthentication" // boolean, defaults to FALSE
-#define LQD_CFG_KEY_NAME_PROXY_USE_SOCKS         "Proxy/UseSocks" // boolean, defaults to FALSE
-#define LQD_CFG_KEY_NAME_PROXY_USER_NAME         "Proxy/UserName" // text
-#define LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD     "Proxy/UserPassword" // text
+#define LQD_CFG_KEY_NAME_PROXY_HOST              LQD_CFG_GROUP_NAME_PROXY "/" "Host" // text
+#define LQD_CFG_KEY_NAME_PROXY_PORT              LQD_CFG_GROUP_NAME_PROXY "/" "Port" // number
+#define LQD_CFG_KEY_NAME_PROXY_USE_AUTH          LQD_CFG_GROUP_NAME_PROXY "/" "UseAuthentication" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_PROXY_USE_SOCKS         LQD_CFG_GROUP_NAME_PROXY "/" "UseSocks" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_PROXY_USER_NAME         LQD_CFG_GROUP_NAME_PROXY "/" "UserName" // text
+#define LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD     LQD_CFG_GROUP_NAME_PROXY "/" "UserPassword" // text
 #define LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME     "RemoveWindowFrame" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_TITLE                   "Title" // text
 #define LQD_CFG_KEY_NAME_USE_PROXY               "UseProxy" // boolean, defaults to FALSE

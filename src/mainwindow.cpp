@@ -158,19 +158,6 @@ void MainWindow::flushTable()
     }
 }
 
-QByteArray MainWindow::generateRandomByteArray(const int byteLength)
-{
-    std::vector<quint32> buf;
-
-    qsrand(QTime::currentTime().msec());
-
-    for(int i = 0; i < byteLength; ++i) {
-        buf.push_back(qrand());
-    }
-
-    return QByteArray(reinterpret_cast<const char*>(buf.data()), byteLength);
-}
-
 void MainWindow::loadStyleSheet()
 {
     QString styleSheet;
@@ -264,7 +251,7 @@ void MainWindow::populateTable()
                     // Shred (especially important if it contains Cookie data)
                     for (int i = 0, imax = 5; i < imax; i++) {
                         // Write randomly generated array of bytes to disk
-                        liquidAppSettingsFile.write(generateRandomByteArray(liquidAppSettingsFileSize), liquidAppSettingsFileSize);
+                        liquidAppSettingsFile.write(Liquid::generateRandomByteArray(liquidAppSettingsFileSize), liquidAppSettingsFileSize);
                         // Close file handle
                         liquidAppSettingsFile.close();
 
