@@ -21,14 +21,15 @@ protected:
 private:
     void bindShortcuts();
     void flushTable();
-    static QByteArray generateRandomByteArray(const int byteLength);
     void loadStyleSheet();
     void populateTable();
     void runLiquidApp(const QString liquidAppName);
     void saveSettings();
 
+    QSettings* settings;
+
+    QAction* quitAction;
+
     QTableWidget* appListTable;
     QPushButton* createNewLiquidAppButton;
-    QAction* quitAction;
-    QSettings* settings;
 };

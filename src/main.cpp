@@ -100,16 +100,28 @@ int main(int argc, char **argv)
         QCoreApplication::setApplicationVersion(VERSION);
 
         // parser.setApplicationDescription("Test helper");
+        parser.setApplicationDescription("Test helper");
         parser.addHelpOption();
         parser.addVersionOption();
+        parser.addPositionalArgument("app-name", QCoreApplication::translate("main", "Liquid App name"));
 
-        // A boolean option with multiple names (-f, --force)
-        QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
+        // Set up CLI flags and options
+        const QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
                 QCoreApplication::translate("main", "List all available Liquid Apps"));
         parser.addOption(listAppsFlag);
+        const QCommandLineOption editAppDialogFlag(QStringList() << "E" << "edit-app-dialog",
+                QCoreApplication::translate("main", "Open edit Liquid App dialog"));
+        parser.addOption(editAppDialogFlag);
 
         // Process the actual command line arguments given by the user
         parser.process(app);
+
+        const QStringList args = parser.positionalArguments();
+        QString liquidAppName = args.at(0);
+
+        // Replace directory separators (slashes) with underscores
+        // to ensure no sub-directories would get created
+        liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 
         // TODO: look for -c,-e, -d flags here
 
@@ -125,11 +137,6 @@ int main(int argc, char **argv)
             return ret;
         }
 
-        QString liquidAppName(argv[1]);
-        // Replace directory separators (slashes) with underscores
-        // to ensure no sub-directories would get created
-        liquidAppName = liquidAppName.replace(QDir::separator(), "_");
-
 attempt_to_create_or_run_liquid_app:
         // Attempt to load Liquid app's config file
         QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
@@ -139,7 +146,7 @@ attempt_to_create_or_run_liquid_app:
                                                    Q_NULLPTR);
 
         // Attempt to load app settings from a config file
-        if (tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
+        if (!parser.isSet(editAppDialogFlag) && tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
             // // Allow only one instance
             sharedMemory = new QSharedMemory(getUserName() + "_Liquid_app_" + liquidAppName);
             if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {

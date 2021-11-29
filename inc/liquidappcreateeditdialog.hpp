@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QListView>
 #include <QPlainTextEdit>
+#include <QTableView>
 #include <QTabWidget>
 #include <QtGui>
 #include <QtWidgets>
@@ -19,7 +20,7 @@ public:
 
     QString getName(void);
     bool isPlanningToRun(void);
-    void setPlanningToRun(const bool maybe);
+    void setPlanningToRun(const bool state);
 
 public slots:
     void save();
@@ -29,7 +30,8 @@ private:
     static QString colorToRgba(const QColor* color);
     static QFrame* separator(void);
 
-    bool isEditingExisting = false;
+    bool isEditingExistingBool = false;
+    bool isPlanningToRunBool = false;
 
     QAction* quitAction;
 
@@ -38,7 +40,7 @@ private:
     QLineEdit* nameInput;
     QLineEdit* addressInput;
     QCheckBox* createIconCheckBox;
-    QCheckBox* planningToRunCheckBox;
+    QCheckBox* planningToRunCheckBox = Q_NULLPTR;
 
     // General tab
     QLineEdit* titleInput;
@@ -62,6 +64,8 @@ private:
     // Cookies tab
     QCheckBox* allowCookiesCheckBox;
     QCheckBox* allowThirdPartyCookiesCheckBox;
+    QTableView* cookiesTableView;
+    QStandardItemModel* cookiesModel;
 
     // Network tab
     QRadioButton* proxyModeSystemRadioButton;

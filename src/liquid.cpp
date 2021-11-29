@@ -6,6 +6,19 @@
 #include <QSettings>
 #include <QTime>
 
+QByteArray Liquid::generateRandomByteArray(const int byteLength)
+{
+    std::vector<quint32> buf;
+
+    qsrand(QTime::currentTime().msec());
+
+    for (int i = 0; i < byteLength; ++i) {
+        buf.push_back(qrand());
+    }
+
+    return QByteArray(reinterpret_cast<const char*>(buf.data()), byteLength);
+}
+
 QDir Liquid::getAppsDir(void)
 {
     return QDir(getConfigDir().absolutePath() + QDir::separator() + LQD_APPS_DIR_NAME + QDir::separator());

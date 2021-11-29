@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QNetworkCookie>
 #include <QWebEngineProfile>
 
 #include "lqd.h"
@@ -20,12 +21,12 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     // Check to see if Liquid app by this name already has config file
     if (liquidAppName.size() > 0) {
-        isEditingExisting = existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_URL);
+        isEditingExistingBool = existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_URL);
     } else {
         delete existingLiquidAppConfig;
     }
 
-    if (isEditingExisting) {
+    if (isEditingExistingBool) {
         setWindowTitle(tr("Editing existing Liquid App “%1”").arg(liquidAppName));
     } else {
         setWindowTitle(tr("Adding new Liquid App"));
@@ -57,7 +58,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         nameInput->setPlaceholderText("my-liquid-app-name");
         nameInput->setText(liquidAppName);
 
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             // TODO: make it possible to edit names for existing Liquid apps
             nameInput->setReadOnly(true);
         }
@@ -72,7 +73,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         addressInput = new QLineEdit;
         addressInput->setPlaceholderText("https://example.com");
 
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             addressInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
         }
 
@@ -81,7 +82,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     }
 
     // Extra checkboxes visible only in "Create" mode
-    if (!isEditingExisting) {
+    if (!isEditingExistingBool) {
         QHBoxLayout* extraCheckboxesLayout = new QHBoxLayout();
 
         // "Create desktop icon" checkbox
@@ -94,6 +95,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         // "Run after creation" checkbox
         {
             planningToRunCheckBox = new QCheckBox(tr("Run after creation"), this);
+            planningToRunCheckBox->setChecked(isPlanningToRunBool);
             planningToRunCheckBox->setCursor(Qt::PointingHandCursor);
             extraCheckboxesLayout->addWidget(planningToRunCheckBox, 0, Qt::AlignRight);
         }
@@ -131,7 +133,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         }
 
         {
-            saveButton = new QPushButton(tr((isEditingExisting) ? "Save" : "Add"), this);
+            saveButton = new QPushButton(tr((isEditingExistingBool) ? "Save" : "Add"), this);
             saveButton->setCursor(Qt::PointingHandCursor);
             saveButton->setDefault(true);
             buttonsLayout->addWidget(saveButton);
@@ -172,7 +174,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 titleInput = new QLineEdit(this);
                 titleInput->setPlaceholderText(tr("Title"));
 
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     titleInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString());
                 }
 
@@ -189,7 +191,6 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             // Additional domains label
             {
                 QLabel* additionalDomainsListLabel = new QLabel(tr("Additional domains:"), this);
-
                 generalTabWidgetLayout->addWidget(additionalDomainsListLabel);
             }
 
@@ -202,7 +203,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 additionalDomainsListView->setModel(additionalDomainsModel);
 
                 // Fill model items
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS)) {
                         const QStringList additionalDomainsList = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS).toString().split(" ");
 
@@ -260,7 +261,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 // TODO: set placeholder to whatever QWebEngineProfile has by default
                 userAgentInput->setPlaceholderText(tr("Browser identifier string"));
 
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     userAgentInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
                 }
 
@@ -278,7 +279,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             notesTextArea = new QPlainTextEdit(this);
             notesTextArea->setPlaceholderText(tr("Intentionally left blank"));
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 notesTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_NOTES).toString());
             }
 
@@ -303,7 +304,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             hideScrollBarsCheckBox = new QCheckBox(tr("Hide scrollbars"), this);
             hideScrollBarsCheckBox->setCursor(Qt::PointingHandCursor);
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS)) {
                     hideScrollBarsCheckBox->setChecked(
                         existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()
@@ -322,7 +323,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             removeWindowFrameCheckBox = new QCheckBox(tr("Remove window frame"), this);
             removeWindowFrameCheckBox->setCursor(Qt::PointingHandCursor);
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME)) {
                     removeWindowFrameCheckBox->setChecked(
                         existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME).toBool()
@@ -358,7 +359,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 // TODO: animate background pattern
                 static const int fontSize = customBackgroundColorButton->width() * 0.9;
 
-                if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
+                if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
                     backgroundColor = new QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
                     customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(backgroundColor)).arg(fontSize));
                 } else {
@@ -385,7 +386,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             appearanceTabWidgetLayout->addLayout(customBackgroundColorButtonLayout);
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 bool enabledInConfig = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool();
                 useCustomBackgroundCheckBox->setChecked(enabledInConfig);
             }
@@ -402,7 +403,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             additionalCssTextArea = new QPlainTextEdit(this);
             additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
             }
 
@@ -425,7 +426,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"), this);
             enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool();
                 enableJavaScriptCheckBox->setChecked(isChecked);
             } else {
@@ -444,7 +445,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             additionalJsTextArea = new QPlainTextEdit(this);
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
 
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 additionalJsTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString());
             }
 
@@ -470,7 +471,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 allowCookiesCheckBox = new QCheckBox(tr("Allow cookies"), this);
                 allowCookiesCheckBox->setCursor(Qt::PointingHandCursor);
 
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_COOKIES).toBool();
                     allowCookiesCheckBox->setChecked(isChecked);
                 } else {
@@ -489,7 +490,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 allowThirdPartyCookiesCheckBox = new QCheckBox(tr("Allow third-party cookies"), this);
                 allowThirdPartyCookiesCheckBox->setCursor(Qt::PointingHandCursor);
 
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES).toBool();
                     allowThirdPartyCookiesCheckBox->setChecked(isChecked);
                 }
@@ -511,13 +512,56 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             }
         }
 
-        // TODO: add QListView to add,edit, and remove cookies
-
-        // Spacer
+        // Cookies list view
         {
-            QWidget* spacer = new QWidget(this);
-            spacer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-            cookiesTabWidgetLayout->addWidget(spacer);
+            cookiesTabWidgetLayout->addWidget(separator());
+
+            // Cookies list label
+            {
+                QLabel* cookiesListLabel = new QLabel(tr("Cookie jar:"), this);
+                cookiesTabWidgetLayout->addWidget(cookiesListLabel);
+            }
+
+            // Cookies list
+            {
+                cookiesTableView = new QTableView(this);
+                cookiesModel = new QStandardItemModel(this);
+
+                cookiesModel->setHorizontalHeaderItem(0, new QStandardItem(tr("Name")));
+                cookiesModel->setHorizontalHeaderItem(1, new QStandardItem(tr("Value")));
+                cookiesModel->setHorizontalHeaderItem(2, new QStandardItem(tr("Domain")));
+                cookiesModel->setHorizontalHeaderItem(3, new QStandardItem(tr("Path")));
+                cookiesModel->setHorizontalHeaderItem(4, new QStandardItem(tr("Expires")));
+                cookiesModel->setHorizontalHeaderItem(5, new QStandardItem(tr("HttpOnly")));
+                cookiesModel->setHorizontalHeaderItem(6, new QStandardItem(tr("Secure")));
+
+                // Assign model
+                cookiesTableView->setModel(cookiesModel);
+
+                // Fill model items
+                if (isEditingExistingBool) {
+                    existingLiquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
+                    int i = 0;
+                    foreach(QString cookieId, existingLiquidAppConfig->allKeys()) {
+                        const QByteArray rawCookie = existingLiquidAppConfig->value(cookieId).toByteArray();
+                        QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
+
+                        cookiesModel->appendRow(new QStandardItem());
+                        cookiesModel->setItem(i, 0, new QStandardItem(QString(cookie.name())));
+                        cookiesModel->setItem(i, 1, new QStandardItem(QString(cookie.value())));
+                        cookiesModel->setItem(i, 2, new QStandardItem(cookie.domain()));
+                        cookiesModel->setItem(i, 3, new QStandardItem(cookie.path()));
+                        cookiesModel->setItem(i, 4, new QStandardItem(cookie.expirationDate().toString()));
+                        cookiesModel->setItem(i, 5, new QStandardItem(cookie.isHttpOnly() ? "true" : "false"));
+                        cookiesModel->setItem(i, 6, new QStandardItem(cookie.isSecure() ? "true" : "false"));
+
+                        i++;
+                    }
+                    existingLiquidAppConfig->endGroup();
+                }
+            }
+
+            cookiesTabWidgetLayout->addWidget(cookiesTableView);
         }
     }
 
@@ -573,7 +617,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             useSocksSelectBox->addItem(tr("HTTP"), false);
                             useSocksSelectBox->addItem(tr("SOCKS"), true);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
+                            if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
                                 const bool useSocks = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS, false).toBool();
 
                                 if (useSocks) {
@@ -589,7 +633,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyHostInput = new QLineEdit(this);
                             proxyHostInput->setPlaceholderText(LQD_DEFAULT_PROXY_HOST);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
+                            if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
                                 proxyHostInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString());
                             }
 
@@ -602,7 +646,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyPortInput->setRange(0, 65535);
                             proxyPortInput->setValue(LQD_DEFAULT_PROXY_PORT);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT)) {
+                            if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT)) {
                                 proxyPortInput->setValue(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_PORT).toInt());
                             }
 
@@ -628,7 +672,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyUsernameInput = new QLineEdit(this);
                             proxyUsernameInput->setPlaceholderText(tr("Username"));
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
+                            if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
                                 proxyUsernameInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
                             }
 
@@ -641,7 +685,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             proxyPasswordInput->setPlaceholderText(tr("Password"));
                             proxyPasswordInput->setEchoMode(QLineEdit::Password);
 
-                            if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
+                            if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
                                 proxyPasswordInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
                             }
 
@@ -651,7 +695,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         proxyConfigLayout->addLayout(proxyCredentialsLayout);
                     }
 
-                    if (isEditingExisting && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
+                    if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
                         const bool proxyEnabled = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_PROXY, false).toBool();
 
                         if (proxyEnabled) {
@@ -663,7 +707,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                         proxyModeSystemRadioButton->setChecked(true);
                     }
 
-                    if (isEditingExisting && existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, false).toBool()) {
+                    if (isEditingExistingBool && existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USE_AUTH, false).toBool()) {
                         proxyUseAuthCheckBox->setChecked(true);
                     }
 
@@ -711,7 +755,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
     setLayout(mainLayout);
 
-    if (isEditingExisting) {
+    if (isEditingExistingBool) {
         // Force advanced section to be visible in edit mode
         advancedButton->toggle();
     } else {
@@ -778,7 +822,7 @@ void LiquidAppCreateEditDialog::save()
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Hide scrollbars
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS) && !hideScrollBarsCheckBox->isChecked()) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS);
             } else {
@@ -796,7 +840,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Remove window frame
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME) && !removeWindowFrameCheckBox->isChecked()) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME);
             } else {
@@ -813,7 +857,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Custom window title
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_TITLE) && titleInput->text().size() == 0) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_TITLE);
             } else {
@@ -832,7 +876,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Custom CSS
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_CSS) && additionalCssTextArea->toPlainText().size() == 0) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_CSS);
             } else {
@@ -851,7 +895,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Custom JS
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_JS) && additionalJsTextArea->toPlainText().size() == 0) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_JS);
             } else {
@@ -870,7 +914,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Custom user-agent
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USER_AGENT) && userAgentInput->text().size() == 0) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USER_AGENT);
             } else {
@@ -889,7 +933,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Notes
     {
-        if (isEditingExisting) {
+        if (isEditingExistingBool) {
             if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_NOTES) && notesTextArea->toPlainText().size() == 0) {
                  tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_NOTES);
             } else {
@@ -910,7 +954,7 @@ void LiquidAppCreateEditDialog::save()
     {
         // TODO: make it possible to remove and (re-)create desktop icons for existing Liquid apps
 
-        if (!isEditingExisting) {
+        if (!isEditingExistingBool) {
             if (createIconCheckBox->isChecked()) {
                 QUrl url(QUrl::fromUserInput(addressInput->text()));
                 ((MainWindow*)parent())->createDesktopFile(appName, url);
@@ -922,7 +966,7 @@ void LiquidAppCreateEditDialog::save()
     {
         // Use custom background checkbox
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_CUSTOM_BG) && !useCustomBackgroundCheckBox->isChecked()) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USE_CUSTOM_BG);
                 } else {
@@ -946,7 +990,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Additional domains
     {
-        if (isEditingExisting && tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS) && additionalDomainsModel->rowCount() == 1) {
+        if (isEditingExistingBool && tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS) && additionalDomainsModel->rowCount() == 1) {
             tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS);
         } else {
             QString additionalDomains;
@@ -970,7 +1014,7 @@ void LiquidAppCreateEditDialog::save()
         // Proxy mode
         {
             if (proxyModeSystemRadioButton->isChecked()) {
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_USE_PROXY)) {
                          tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_USE_PROXY);
                     }
@@ -985,7 +1029,7 @@ void LiquidAppCreateEditDialog::save()
         // Proxy type
         {
             if (useSocksSelectBox->currentIndex() == 0) {
-                if (isEditingExisting) {
+                if (isEditingExistingBool) {
                     if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS)) {
                          tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USE_SOCKS);
                     }
@@ -997,7 +1041,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Proxy host
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST) && proxyHostInput->text().size() == 0) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_HOST);
                 } else {
@@ -1016,7 +1060,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Proxy port number
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_PORT) && proxyPortInput->value() == LQD_DEFAULT_PROXY_PORT) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_PORT);
                 } else {
@@ -1033,7 +1077,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Proxy authentication
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USE_AUTH) && !proxyUseAuthCheckBox->isChecked()) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USE_AUTH);
                 } else {
@@ -1050,7 +1094,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Proxy username
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME) && proxyUsernameInput->text().size() == 0) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USER_NAME);
                 } else {
@@ -1069,7 +1113,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Proxy password
         {
-            if (isEditingExisting) {
+            if (isEditingExistingBool) {
                 if (tempLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD) && proxyPasswordInput->text().size() == 0) {
                      tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD);
                 } else {
@@ -1130,7 +1174,10 @@ QFrame* LiquidAppCreateEditDialog::separator(void)
     return separatorFrame;
 }
 
-void LiquidAppCreateEditDialog::setPlanningToRun(const bool maybe)
+void LiquidAppCreateEditDialog::setPlanningToRun(const bool state)
 {
-    planningToRunCheckBox->setChecked(maybe);
+    isPlanningToRunBool = state;
+    if (planningToRunCheckBox != Q_NULLPTR) {
+        planningToRunCheckBox->setChecked(state);
+    }
 }
