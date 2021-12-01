@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         parser.process(app);
 
         const QStringList args = parser.positionalArguments();
-        QString liquidAppName = args.at(0);
+        QString liquidAppName = (args.size() > 0) ? args.at(0) : "";
 
         // Replace directory separators (slashes) with underscores
         // to ensure no sub-directories would get created
