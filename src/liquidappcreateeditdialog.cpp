@@ -2,8 +2,9 @@
 #include <QNetworkCookie>
 #include <QWebEngineProfile>
 
-#include "lqd.h"
+#include "liquid.hpp"
 #include "liquidappcreateeditdialog.hpp"
+#include "lqd.h"
 #include "mainwindow.hpp"
 
 LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
@@ -789,13 +790,17 @@ void LiquidAppCreateEditDialog::save()
     // Replace directory separators (slashes) with underscores
     // to ensure no sub-directories would get created
     appName = appName.replace(QDir::separator(), "_");
+
+    // Check if given Liquid App name is already in use
+    if (Liquid::getLiquidAppsList().contains(appName)) {
+        return;
+    }
+
     QSettings* tempLiquidAppConfig = new QSettings(QSettings::IniFormat,
                                                    QSettings::UserScope,
                                                    QString(PROG_NAME) + QDir::separator() + LQD_APPS_DIR_NAME,
                                                    appName,
                                                    Q_NULLPTR);
-
-    // TODO: check if the given Liquid app name is already in use
 
     // URL
     {
