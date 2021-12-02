@@ -127,13 +127,7 @@ int main(int argc, char **argv)
 
         // Process the -l/--list-apps flag
         if (parser.isSet(listAppsFlag)) {
-            const QFileInfoList liquidAppsFileList =
-                Liquid::getAppsDir().entryInfoList(QStringList() << "*.ini",
-                                                   QDir::Files| QDir::NoDotAndDotDot,
-                                                   QDir::Name | QDir::IgnoreCase);
-            foreach (QFileInfo liquidAppFileInfo, liquidAppsFileList) {
-                cout << liquidAppFileInfo.completeBaseName() << endl;
-            }
+            cout << Liquid::getLiquidAppsList().join("\n") << endl;
             return ret;
         }
 

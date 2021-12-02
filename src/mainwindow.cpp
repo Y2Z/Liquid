@@ -184,17 +184,12 @@ void MainWindow::loadStyleSheet()
 
 void MainWindow::populateTable()
 {
-    const QFileInfoList liquidAppsFileList = Liquid::getAppsDir().entryInfoList(QStringList() << "*.ini",
-                                                               QDir::Files| QDir::NoDotAndDotDot,
-                                                               QDir::Name | QDir::IgnoreCase);
-
-    foreach (QFileInfo liquidAppFileInfo, liquidAppsFileList) {
+    foreach (const QString liquidAppName, Liquid::getLiquidAppsList()) {
         const int i = appListTable->rowCount();
 
         appListTable->insertRow(i);
 
-        QString liquidAppName = liquidAppFileInfo.completeBaseName();
-        QSettings *liquidAppSettings = new QSettings(QSettings::IniFormat,
+        QSettings* liquidAppSettings = new QSettings(QSettings::IniFormat,
                                                      QSettings::UserScope,
                                                      QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
                                                      liquidAppName,
