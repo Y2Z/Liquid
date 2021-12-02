@@ -37,6 +37,18 @@ QDir Liquid::getConfigDir(void)
     return QDir(settingsFileInfo.absolutePath() + QDir::separator());
 }
 
+QStringList Liquid::getLiquidAppsList(void)
+{
+    const QFileInfoList liquidAppsFileList = getAppsDir().entryInfoList(QStringList() << "*.ini",
+                                                                        QDir::Files | QDir::NoDotAndDotDot,
+                                                                        QDir::Name | QDir::IgnoreCase);
+    QStringList liquidAppsNames;
+    foreach (QFileInfo liquidAppFileInfo, liquidAppsFileList) {
+        liquidAppsNames << liquidAppFileInfo.completeBaseName();
+    }
+    return liquidAppsNames;
+}
+
 void Liquid::runLiquidApp(const QString liquidAppName)
 {
     const QString liquidAppFilePath(QCoreApplication::applicationFilePath());

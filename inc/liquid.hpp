@@ -8,6 +8,7 @@ public:
     static QByteArray generateRandomByteArray(const int byteLength);
     static QDir getAppsDir(void);
     static QDir getConfigDir(void);
+    static QStringList getLiquidAppsList(void);
     static void runLiquidApp(const QString liquidAppName);
     static void sleep(const int ms);
 };
