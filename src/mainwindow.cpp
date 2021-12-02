@@ -221,14 +221,14 @@ void MainWindow::populateTable()
         // Second column //
         ///////////////////
 
-        QWidget* appItemActionButtonsWidget = new QWidget();
+        QWidget* appItemActionButtonsWidget = new QWidget(this);
         QHBoxLayout *appItemLayout = new QHBoxLayout();
         appItemLayout->setSpacing(0);
         appItemLayout->setMargin(0);
         appItemActionButtonsWidget->setLayout(appItemLayout);
 
         // Delete button
-        QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE));
+        QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE), this);
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
         QObject::connect(deleteButton, &QPushButton::clicked, [&]() {
@@ -271,7 +271,7 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(deleteButton);
 
         // Edit button
-        QPushButton* editButton = new QPushButton(tr(LQD_ICON_EDIT));
+        QPushButton* editButton = new QPushButton(tr(LQD_ICON_EDIT), this);
         editButton->setCursor(Qt::PointingHandCursor);
         editButton->setProperty("class", "btnEdit");
         QObject::connect(editButton, &QPushButton::clicked, [&]() {
@@ -293,7 +293,7 @@ void MainWindow::populateTable()
         appItemLayout->addWidget(editButton);
 
         // Run button
-        QPushButton* runButton = new QPushButton(tr(LQD_ICON_RUN));
+        QPushButton* runButton = new QPushButton(tr(LQD_ICON_RUN), this);
         runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
