@@ -54,7 +54,7 @@ MainWindow::MainWindow() : QScrollArea()
     createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
     createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
     createNewLiquidAppButton->setFlat(true);
-    QObject::connect(createNewLiquidAppButton, &QPushButton::clicked, [&]() {
+    connect(createNewLiquidAppButton, &QPushButton::clicked, [&]() {
         LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
         switch (liquidAppCreateEditDialog.exec()) {
             case QDialog::Accepted:
@@ -79,7 +79,7 @@ MainWindow::MainWindow() : QScrollArea()
     widget->setLayout(layout);
 
     // Run the liquid app upon double-click on its row in the table
-    QObject::connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int r, int c) {
+    connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int r, int c) {
         (void)(c);
         Liquid::runLiquidApp(appListTable->item(r, 0)->text());
     });
@@ -231,7 +231,7 @@ void MainWindow::populateTable()
         QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE), this);
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "btnDelete");
-        QObject::connect(deleteButton, &QPushButton::clicked, [&]() {
+        connect(deleteButton, &QPushButton::clicked, [this, liquidAppName, liquidAppSettings]() {
             const QString text = QString("Are you sure you want to delete Liquid app “%1”?").arg(liquidAppName);
             const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
@@ -274,7 +274,7 @@ void MainWindow::populateTable()
         QPushButton* editButton = new QPushButton(tr(LQD_ICON_EDIT), this);
         editButton->setCursor(Qt::PointingHandCursor);
         editButton->setProperty("class", "btnEdit");
-        QObject::connect(editButton, &QPushButton::clicked, [&]() {
+        connect(editButton, &QPushButton::clicked, [this, liquidAppName]() {
             LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, liquidAppName);
             switch (liquidAppCreateEditDialog.exec()) {
                 case QDialog::Accepted:
@@ -297,7 +297,7 @@ void MainWindow::populateTable()
         runButton->setCursor(Qt::PointingHandCursor);
         runButton->setProperty("class", "btnRun");
         appItemLayout->addWidget(runButton);
-        QObject::connect(runButton, &QPushButton::clicked, [&]() {
+        connect(runButton, &QPushButton::clicked, [liquidAppName]() {
             Liquid::runLiquidApp(liquidAppName);
         });
 
