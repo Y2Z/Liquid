@@ -5,6 +5,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QTime>
+#include <QWebEngineProfile>
 
 QByteArray Liquid::generateRandomByteArray(const int byteLength)
 {
@@ -35,6 +36,11 @@ QDir Liquid::getConfigDir(void)
     QFileInfo settingsFileInfo(settings->fileName());
 
     return QDir(settingsFileInfo.absolutePath() + QDir::separator());
+}
+
+QString Liquid::getDefaultUserAgentString(void)
+{
+    return QWebEngineProfile().httpUserAgent();
 }
 
 QStringList Liquid::getLiquidAppsList(void)

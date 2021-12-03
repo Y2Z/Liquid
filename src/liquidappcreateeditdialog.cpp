@@ -259,8 +259,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             // Custom user-agent text input
             {
                 userAgentInput = new QLineEdit(this);
-                // TODO: set placeholder to whatever QWebEngineProfile has by default
-                userAgentInput->setPlaceholderText(tr("Browser identifier string"));
+                // Set placeholder to what QWebEngineProfile has by default
+                userAgentInput->setPlaceholderText(Liquid::getDefaultUserAgentString());
 
                 if (isEditingExistingBool) {
                     userAgentInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
