@@ -27,7 +27,6 @@ public slots:
 
 private:
     void bindShortcuts(void);
-    static QString colorToRgba(const QColor* color);
     static QFrame* separator(void);
 
     bool isEditingExistingBool = false;

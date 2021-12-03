@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 
 attempt_to_create_or_run_liquid_app:
         // Attempt to load Liquid app's config file
-        QSettings *tempAppSettings = new QSettings(QSettings::IniFormat,
+        QSettings* tempAppSettings = new QSettings(QSettings::IniFormat,
                                                    QSettings::UserScope,
                                                    QString(PROG_NAME) + QDir::separator() + LQD_APPS_DIR_NAME,
                                                    liquidAppName,

@@ -33,7 +33,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
         setWindowTitle(tr("Adding new Liquid App"));
     }
 
-    backgroundColor = new QColor(Qt::black);
+    backgroundColor = new QColor(LQD_DEFAULT_BG_COLOR);
 
     QVBoxLayout* mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(4);
@@ -361,11 +361,11 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 static const int fontSize = customBackgroundColorButton->width() * 0.9;
 
                 if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
-                    backgroundColor = new QColor(QRgba64::fromRgba64(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
-                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(backgroundColor)).arg(fontSize));
+                    backgroundColor = new QColor(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString());
+                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(backgroundColor->name(QColor::HexArgb)).arg(fontSize));
                 } else {
                     static const QColor defaultColor = QColor(LQD_DEFAULT_BG_COLOR);
-                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(&defaultColor)).arg(fontSize));
+                    customBackgroundColorButton->setStyleSheet(buttonStyle.arg(defaultColor.name(QColor::HexArgb)).arg(fontSize));
                 }
 
                 customBackgroundColorButtonLayout->addWidget(customBackgroundColorButton);
@@ -379,8 +379,8 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                             useCustomBackgroundCheckBox->setChecked(true);
                         }
 
-                        backgroundColor = &color;
-                        customBackgroundColorButton->setStyleSheet(buttonStyle.arg(colorToRgba(backgroundColor)).arg(fontSize));
+                        *backgroundColor = color;
+                        customBackgroundColorButton->setStyleSheet(buttonStyle.arg(backgroundColor->name(QColor::HexArgb)).arg(fontSize));
                     }
                 });
             }
@@ -792,7 +792,7 @@ void LiquidAppCreateEditDialog::save()
     appName = appName.replace(QDir::separator(), "_");
 
     // Check if given Liquid App name is already in use
-    if (Liquid::getLiquidAppsList().contains(appName)) {
+    if (!isEditingExistingBool && Liquid::getLiquidAppsList().contains(appName)) {
         return;
     }
 
@@ -957,7 +957,7 @@ void LiquidAppCreateEditDialog::save()
 
     // Create desktop icon
     {
-        // TODO: make it possible to remove and (re-)create desktop icons for existing Liquid apps
+        // TODO: make it possible to remove and (re-)create desktop icons for existing Liquid Apps
 
         if (!isEditingExistingBool) {
             if (createIconCheckBox->isChecked()) {
@@ -988,8 +988,7 @@ void LiquidAppCreateEditDialog::save()
 
         // Custom background color
         {
-            const QString rgba64Hex = QString("%1").arg(backgroundColor->rgba64(), 8, 16, QLatin1Char('0'));
-            tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR, rgba64Hex);
+            tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR, backgroundColor->name(QColor::HexArgb));
         }
     }
 
@@ -1150,18 +1149,9 @@ void LiquidAppCreateEditDialog::bindShortcuts(void)
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
 
-QString LiquidAppCreateEditDialog::colorToRgba(const QColor* color)
-{
-    return QString("rgba(%1,%2,%3,%4)")
-        .arg(color->red())
-        .arg(color->green())
-        .arg(color->blue())
-        .arg(color->alphaF());
-}
-
 bool LiquidAppCreateEditDialog::isPlanningToRun(void)
 {
-    return planningToRunCheckBox->isChecked();
+    return !isEditingExistingBool && planningToRunCheckBox->isChecked();
 }
 
 QString LiquidAppCreateEditDialog::getName(void)
@@ -1181,8 +1171,10 @@ QFrame* LiquidAppCreateEditDialog::separator(void)
 
 void LiquidAppCreateEditDialog::setPlanningToRun(const bool state)
 {
-    isPlanningToRunBool = state;
-    if (planningToRunCheckBox != Q_NULLPTR) {
-        planningToRunCheckBox->setChecked(state);
+    if (!isEditingExistingBool) {
+        isPlanningToRunBool = state;
+        if (planningToRunCheckBox != Q_NULLPTR) {
+            planningToRunCheckBox->setChecked(state);
+        }
     }
 }
