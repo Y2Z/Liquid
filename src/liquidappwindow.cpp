@@ -485,7 +485,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     // Set the page's background color behind the document's body
     {
         if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
-            const QColor backgroundColor = QColor(QRgba64::fromRgba64(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString().toULongLong(Q_NULLPTR, 16)));
+            const QColor backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString());
 
             if (backgroundColor.alpha() < 255) {
                 // Make window background transparent
