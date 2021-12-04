@@ -12,11 +12,11 @@
 #include <QtGui>
 #include <QtWidgets>
 
-class LiquidAppCreateEditDialog : public QDialog
+class LiquidAppConfigDialog : public QDialog
 {
 public:
-    LiquidAppCreateEditDialog(QWidget* parent = Q_NULLPTR, QString liquidAppName = "");
-    ~LiquidAppCreateEditDialog(void);
+    LiquidAppConfigDialog(QWidget* parent = Q_NULLPTR, QString liquidAppName = "");
+    ~LiquidAppConfigDialog(void);
 
     QString getName(void);
     bool isPlanningToRun(void);

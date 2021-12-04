@@ -3,15 +3,17 @@
 #include <QWebEngineProfile>
 
 #include "liquid.hpp"
-#include "liquidappcreateeditdialog.hpp"
+#include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
 
-LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
+LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
 {
     setWindowFlags(Qt::Window);
 
     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
+
+    Liquid::applyQtStyleSheets(this);
 
     // Attempt to load liquid app's config file
     QSettings* existingLiquidAppConfig = new QSettings(QSettings::IniFormat,
@@ -173,7 +175,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
             // Title text input
             {
                 titleInput = new QLineEdit(this);
-                titleInput->setPlaceholderText(tr("Title"));
+                titleInput->setPlaceholderText(tr("Application Title"));
 
                 if (isEditingExistingBool) {
                     titleInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString());
@@ -402,6 +404,12 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
                 appearanceTabWidgetLayout->addWidget(additionalCssLabel);
             }
             additionalCssTextArea = new QPlainTextEdit(this);
+            {
+                QTextDocument* doc = additionalCssTextArea->document();
+                QFont font(doc->defaultFont());
+                font.setFamily("monospace");
+                doc->setDefaultFont(font);
+            }
             additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
 
             if (isEditingExistingBool) {
@@ -444,6 +452,12 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
             additionalJsLabel = new QLabel(tr("Additonal JavaScript code:"), this);
             additionalJsTextArea = new QPlainTextEdit(this);
+            {
+                QTextDocument* doc = additionalJsTextArea->document();
+                QFont font(doc->defaultFont());
+                font.setFamily("monospace");
+                doc->setDefaultFont(font);
+            }
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
 
             if (isEditingExistingBool) {
@@ -663,7 +677,7 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
 
                         // Use credentials
                         {
-                            proxyUseAuthCheckBox = new QCheckBox(tr("Authenticate using credentials:"), this);
+                            proxyUseAuthCheckBox = new QCheckBox(tr("Authenticate with credentials:"), this);
 
                             proxyCredentialsLayout->addWidget(proxyUseAuthCheckBox);
                         }
@@ -774,11 +788,11 @@ LiquidAppCreateEditDialog::LiquidAppCreateEditDialog(QWidget* parent, QString li
     bindShortcuts();
 }
 
-LiquidAppCreateEditDialog::~LiquidAppCreateEditDialog(void)
+LiquidAppConfigDialog::~LiquidAppConfigDialog(void)
 {
 }
 
-void LiquidAppCreateEditDialog::save()
+void LiquidAppConfigDialog::save()
 {
     bool isFormValid = nameInput->text().size() > 0 && addressInput->text().size() > 0;
 
@@ -962,7 +976,7 @@ void LiquidAppCreateEditDialog::save()
         if (!isEditingExistingBool) {
             if (createIconCheckBox->isChecked()) {
                 QUrl url(QUrl::fromUserInput(addressInput->text()));
-                ((MainWindow*)parent())->createDesktopFile(appName, url);
+                Liquid::createDesktopFile(appName, url.toString());
             }
         }
     }
@@ -1140,7 +1154,7 @@ void LiquidAppCreateEditDialog::save()
     accept();
 }
 
-void LiquidAppCreateEditDialog::bindShortcuts(void)
+void LiquidAppConfigDialog::bindShortcuts(void)
 {
     // Connect keyboard shortcut that closes the dialog
     quitAction = new QAction();
@@ -1149,17 +1163,17 @@ void LiquidAppCreateEditDialog::bindShortcuts(void)
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 }
 
-bool LiquidAppCreateEditDialog::isPlanningToRun(void)
+bool LiquidAppConfigDialog::isPlanningToRun(void)
 {
     return !isEditingExistingBool && planningToRunCheckBox->isChecked();
 }
 
-QString LiquidAppCreateEditDialog::getName(void)
+QString LiquidAppConfigDialog::getName(void)
 {
     return nameInput->text();
 }
 
-QFrame* LiquidAppCreateEditDialog::separator(void)
+QFrame* LiquidAppConfigDialog::separator(void)
 {
     QFrame* separatorFrame = new QFrame;
 
@@ -1169,7 +1183,7 @@ QFrame* LiquidAppCreateEditDialog::separator(void)
     return separatorFrame;
 }
 
-void LiquidAppCreateEditDialog::setPlanningToRun(const bool state)
+void LiquidAppConfigDialog::setPlanningToRun(const bool state)
 {
     if (!isEditingExistingBool) {
         isPlanningToRunBool = state;

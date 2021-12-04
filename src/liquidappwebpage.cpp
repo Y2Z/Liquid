@@ -6,8 +6,9 @@
 #include <QPushButton>
 #include <QWebEngineSettings>
 
-#include "lqd.h"
+#include "liquid.hpp"
 #include "liquidappwebpage.hpp"
+#include "lqd.h"
 
 LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, LiquidAppWindow* parent) : QWebEnginePage(profile, parent)
 {
@@ -24,7 +25,7 @@ void LiquidAppWebPage::addAllowedDomain(const QString domain) {
 
 void LiquidAppWebPage::addAllowedDomains(const QStringList domainsList) {
     allowedDomainsList->append(domainsList);
-    // TODO: make unique
+    // TODO: remove duplicates from allowedDomainsList
 }
 
 bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame)
@@ -84,8 +85,10 @@ void LiquidAppWebPage::javaScriptAlert(const QUrl& securityOrigin, const QString
     (void)securityOrigin;
 
     jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setObjectName("liquidAppJsDialogAlert");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QVBoxLayout* jsAlertDialogLayout = new QVBoxLayout(jsDialogWidget);
 
@@ -102,8 +105,10 @@ bool LiquidAppWebPage::javaScriptConfirm(const QUrl& securityOrigin, const QStri
     (void)securityOrigin;
 
     jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setObjectName("liquidAppJsDialogConfirm");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QVBoxLayout* jsConfirmDialogLayout = new QVBoxLayout(jsDialogWidget);
 
@@ -130,8 +135,10 @@ bool LiquidAppWebPage::javaScriptPrompt(const QUrl& securityOrigin, const QStrin
     (void)securityOrigin;
 
     jsDialogWidget = new QDialog(liquidAppWindow, Qt::FramelessWindowHint);
+    jsDialogWidget->setObjectName("liquidAppJsDialogPrompt");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
+    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QHBoxLayout* jsPromptDialogLayout = new QHBoxLayout(jsDialogWidget);
 

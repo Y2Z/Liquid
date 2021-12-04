@@ -5,9 +5,9 @@
 #include <QMessageBox>
 #include <QVBoxLayout>
 
-#include "lqd.h"
 #include "liquid.hpp"
-#include "liquidappcreateeditdialog.hpp"
+#include "liquidappconfigwindow.hpp"
+#include "lqd.h"
 #include "mainwindow.hpp"
 
 MainWindow::MainWindow() : QScrollArea()
@@ -30,7 +30,7 @@ MainWindow::MainWindow() : QScrollArea()
         restoreGeometry(geometry);
     }
 
-    loadStyleSheet();
+    Liquid::applyQtStyleSheets(this);
 
     QWidget* widget = new QWidget();
     setWidget(widget);
@@ -53,10 +53,9 @@ MainWindow::MainWindow() : QScrollArea()
     // Add new liquid app button
     createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
     createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
-    createNewLiquidAppButton->setFlat(true);
     connect(createNewLiquidAppButton, &QPushButton::clicked, [&]() {
-        LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, "");
-        switch (liquidAppCreateEditDialog.exec()) {
+        LiquidAppConfigDialog LiquidAppConfigDialog(this, "");
+        switch (LiquidAppConfigDialog.exec()) {
             case QDialog::Accepted:
                 // Give some time to the filesystem before scanning for the newly created Liquid App
                 {
@@ -68,8 +67,8 @@ MainWindow::MainWindow() : QScrollArea()
                 flushTable();
                 populateTable();
 
-                if (liquidAppCreateEditDialog.isPlanningToRun()) {
-                    Liquid::runLiquidApp(liquidAppCreateEditDialog.getName());
+                if (LiquidAppConfigDialog.isPlanningToRun()) {
+                    Liquid::runLiquidApp(LiquidAppConfigDialog.getName());
                 }
             break;
         }
@@ -99,7 +98,7 @@ MainWindow::~MainWindow()
 {
 }
 
-void MainWindow::bindShortcuts()
+void MainWindow::bindShortcuts(void)
 {
     // Connect the exit shortcut
     quitAction = new QAction();
@@ -116,73 +115,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-void MainWindow::createDesktopFile(const QString liquidAppName, const QUrl liquidAppStartingUrl)
-{
-#ifdef Q_OS_LINUX
-    // Compose content
-    QString context = "#!/usr/bin/env xdg-open\n\n";
-    context += "[Desktop Entry]\n";
-    context += "Type=Application\n";
-    context += "Name=" + liquidAppName + "\n";
-    context += "Icon=internet-web-browser\n";
-    context += "Exec=liquid " + liquidAppName + "\n";
-    context += "Comment=" + liquidAppStartingUrl.toString() + "\n";
-    context += "Categories=Network;WebBrowser;\n";
-
-    // Construct directory path
-    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
-
-    // Check if the desktop path exists
-    QDir dir(desktopPath);
-    if (dir.exists()) {
-        // Create file
-        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
-        file.open(QIODevice::WriteOnly);
-        file.write(context.toStdString().c_str());
-        file.setPermissions(QFileDevice::ReadUser
-                           |QFileDevice::WriteUser
-                           |QFileDevice::ExeUser
-                           |QFileDevice::ReadGroup
-                           |QFileDevice::ReadOther);
-        file.flush();
-        file.close();
-    }
-#endif
-}
-
-void MainWindow::flushTable()
+void MainWindow::flushTable(void)
 {
     for (int i = appListTable->rowCount(); i > -1 ; i--) {
         appListTable->removeRow(i);
     }
 }
 
-void MainWindow::loadStyleSheet()
-{
-    QString styleSheet;
-
-    // Load built-in stylesheet
-    {
-        QFile styleSheetFile(":/styles/" PROG_NAME ".qss");
-        styleSheetFile.open(QFile::ReadOnly);
-        styleSheet = QLatin1String(styleSheetFile.readAll());
-        styleSheetFile.close();
-    }
-
-    // Load custom stylesheet
-    {
-        QFile customStyleSheetFile(Liquid::getConfigDir().absolutePath() + PROG_NAME ".qss");
-        if (customStyleSheetFile.open(QFile::ReadOnly)) {
-            styleSheet += QLatin1String(customStyleSheetFile.readAll());
-            customStyleSheetFile.close();
-        }
-    }
-
-    setStyleSheet(styleSheet);
-}
-
-void MainWindow::populateTable()
+void MainWindow::populateTable(void)
 {
     foreach (const QString liquidAppName, Liquid::getLiquidAppsList()) {
         const int i = appListTable->rowCount();
@@ -230,12 +170,12 @@ void MainWindow::populateTable()
         // Delete button
         QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE), this);
         deleteButton->setCursor(Qt::PointingHandCursor);
-        deleteButton->setProperty("class", "btnDelete");
+        deleteButton->setProperty("class", "liquidAppsListButtonDelete");
         connect(deleteButton, &QPushButton::clicked, [this, liquidAppName, liquidAppSettings]() {
             const QString text = QString("Are you sure you want to delete Liquid app “%1”?").arg(liquidAppName);
             const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
-                removeDesktopFile(liquidAppName);
+                Liquid::removeDesktopFile(liquidAppName);
 
                 // Shred and unlink Liquid app settings file
                 QFile liquidAppSettingsFile(liquidAppSettings->fileName());
@@ -273,10 +213,10 @@ void MainWindow::populateTable()
         // Edit button
         QPushButton* editButton = new QPushButton(tr(LQD_ICON_EDIT), this);
         editButton->setCursor(Qt::PointingHandCursor);
-        editButton->setProperty("class", "btnEdit");
+        editButton->setProperty("class", "liquidAppsListButtonEdit");
         connect(editButton, &QPushButton::clicked, [this, liquidAppName]() {
-            LiquidAppCreateEditDialog liquidAppCreateEditDialog(this, liquidAppName);
-            switch (liquidAppCreateEditDialog.exec()) {
+            LiquidAppConfigDialog LiquidAppConfigDialog(this, liquidAppName);
+            switch (LiquidAppConfigDialog.exec()) {
                 case QDialog::Accepted:
                     // Give some time to the filesystem before scanning for the newly created app
                     {
@@ -295,7 +235,7 @@ void MainWindow::populateTable()
         // Run button
         QPushButton* runButton = new QPushButton(tr(LQD_ICON_RUN), this);
         runButton->setCursor(Qt::PointingHandCursor);
-        runButton->setProperty("class", "btnRun");
+        runButton->setProperty("class", "liquidAppsListButtonRun");
         appItemLayout->addWidget(runButton);
         connect(runButton, &QPushButton::clicked, [liquidAppName]() {
             Liquid::runLiquidApp(liquidAppName);
@@ -305,25 +245,8 @@ void MainWindow::populateTable()
     }
 }
 
-void MainWindow::saveSettings()
+void MainWindow::saveSettings(void)
 {
     settings->setValue(LQD_CFG_KEY_NAME_WIN_GEOM, QString(saveGeometry().toHex()));
     settings->sync();
-}
-
-void MainWindow::removeDesktopFile(const QString liquidAppName)
-{
-#ifdef Q_OS_LINUX
-    // Construct directory path
-    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    const QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
-
-    // Check if the desktop path exists
-    QDir dir(desktopPath);
-    if (dir.exists()) {
-        // Unlink file
-        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
-        file.remove();
-    }
-#endif
 }
