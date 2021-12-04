@@ -559,18 +559,21 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                     int i = 0;
                     foreach(QString cookieId, existingLiquidAppConfig->allKeys()) {
                         const QByteArray rawCookie = existingLiquidAppConfig->value(cookieId).toByteArray();
-                        QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
+                        QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(rawCookie);
+                        if (cookies.size() > 0) {
+                            QNetworkCookie cookie = cookies[0];
 
-                        cookiesModel->appendRow(new QStandardItem());
-                        cookiesModel->setItem(i, 0, new QStandardItem(QString(cookie.name())));
-                        cookiesModel->setItem(i, 1, new QStandardItem(QString(cookie.value())));
-                        cookiesModel->setItem(i, 2, new QStandardItem(cookie.domain()));
-                        cookiesModel->setItem(i, 3, new QStandardItem(cookie.path()));
-                        cookiesModel->setItem(i, 4, new QStandardItem(cookie.expirationDate().toString()));
-                        cookiesModel->setItem(i, 5, new QStandardItem(cookie.isHttpOnly() ? "true" : "false"));
-                        cookiesModel->setItem(i, 6, new QStandardItem(cookie.isSecure() ? "true" : "false"));
+                            cookiesModel->appendRow(new QStandardItem());
+                            cookiesModel->setItem(i, 0, new QStandardItem(QString(cookie.name())));
+                            cookiesModel->setItem(i, 1, new QStandardItem(QString(cookie.value())));
+                            cookiesModel->setItem(i, 2, new QStandardItem(cookie.domain()));
+                            cookiesModel->setItem(i, 3, new QStandardItem(cookie.path()));
+                            cookiesModel->setItem(i, 4, new QStandardItem(cookie.expirationDate().toString()));
+                            cookiesModel->setItem(i, 5, new QStandardItem(cookie.isHttpOnly() ? "true" : "false"));
+                            cookiesModel->setItem(i, 6, new QStandardItem(cookie.isSecure() ? "true" : "false"));
 
-                        i++;
+                            i++;
+                        }
                     }
                     existingLiquidAppConfig->endGroup();
                 }
