@@ -2,10 +2,70 @@
 #include "liquid.hpp"
 
 #include <QCoreApplication>
+#include <QDebug>
 #include <QProcess>
 #include <QSettings>
 #include <QTime>
 #include <QWebEngineProfile>
+
+void Liquid::applyQtStyleSheets(QWidget* window)
+{
+    QString styleSheet;
+
+    // Load built-in stylesheet
+    {
+        QFile styleSheetFile(":/styles/" PROG_NAME ".qss");
+        styleSheetFile.open(QFile::ReadOnly);
+        styleSheet = QLatin1String(styleSheetFile.readAll());
+        styleSheetFile.close();
+    }
+
+    // Load custom stylesheet
+    {
+        QFile customStyleSheetFile(Liquid::getConfigDir().absolutePath() + QDir::separator() + PROG_NAME ".qss");
+        if (customStyleSheetFile.open(QFile::ReadOnly)) {
+            styleSheet += QLatin1String(customStyleSheetFile.readAll());
+            customStyleSheetFile.close();
+        }
+    }
+
+    window->setStyleSheet(styleSheet);
+}
+
+void Liquid::createDesktopFile(const QString liquidAppName, const QString liquidAppStartingUrl)
+{
+#ifdef Q_OS_LINUX
+    // Compose content
+    QString context = "#!/usr/bin/env xdg-open\n\n";
+    context += "[Desktop Entry]\n";
+    context += "Type=Application\n";
+    context += "Name=" + liquidAppName + "\n";
+    context += "Icon=internet-web-browser\n";
+    context += "Exec=liquid " + liquidAppName + "\n";
+    context += "Comment=" + liquidAppStartingUrl + "\n";
+    context += "Categories=Network;WebBrowser;\n";
+
+    // Construct directory path
+    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
+
+    // Check if the desktop path exists
+    QDir dir(desktopPath);
+    if (dir.exists()) {
+        // Create file
+        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
+        file.open(QIODevice::WriteOnly);
+        file.write(context.toStdString().c_str());
+        file.setPermissions(QFileDevice::ReadUser
+                           |QFileDevice::WriteUser
+                           |QFileDevice::ExeUser
+                           |QFileDevice::ReadGroup
+                           |QFileDevice::ReadOther);
+        file.flush();
+        file.close();
+    }
+#endif
+}
 
 QByteArray Liquid::generateRandomByteArray(const int byteLength)
 {
@@ -53,6 +113,23 @@ QStringList Liquid::getLiquidAppsList(void)
         liquidAppsNames << liquidAppFileInfo.completeBaseName();
     }
     return liquidAppsNames;
+}
+
+void Liquid::removeDesktopFile(const QString liquidAppName)
+{
+#ifdef Q_OS_LINUX
+    // Construct directory path
+    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    const QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
+
+    // Check if the desktop path exists
+    QDir dir(desktopPath);
+    if (dir.exists()) {
+        // Unlink file
+        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
+        file.remove();
+    }
+#endif
 }
 
 void Liquid::runLiquidApp(const QString liquidAppName)

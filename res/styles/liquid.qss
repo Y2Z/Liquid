@@ -14,13 +14,13 @@ QTableWidget QPushButton {
     border-radius: 0;
     height: 100%;
 }
-QTableWidget QPushButton.btnDelete:hover {
+QTableWidget QPushButton.liquidAppsListButtonDelete:hover {
     background-color: rgba(255, 0, 0, 0.1);
 }
-QTableWidget QPushButton.btnEdit:hover {
+QTableWidget QPushButton.liquidAppsListButtonEdit:hover {
     background-color: rgba(0, 255, 0, 0.1);
 }
-QTableWidget QPushButton.btnRun:hover {
+QTableWidget QPushButton.liquidAppsListButtonRun:hover {
     background-color: rgba(0, 0, 255, 0.1);
 }
 

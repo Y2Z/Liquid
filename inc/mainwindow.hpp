@@ -12,19 +12,15 @@ public:
     MainWindow();
     ~MainWindow();
 
-    static void createDesktopFile(const QString liquidAppName, const QUrl liquidAppStartingUrl);
-    static void removeDesktopFile(const QString liquidAppName);
-
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
-    void bindShortcuts();
-    void flushTable();
-    void loadStyleSheet();
-    void populateTable();
+    void bindShortcuts(void);
+    void flushTable(void);
+    void populateTable(void);
     void runLiquidApp(const QString liquidAppName);
-    void saveSettings();
+    void saveSettings(void);
 
     QSettings* settings;
 

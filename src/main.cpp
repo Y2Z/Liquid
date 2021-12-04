@@ -7,7 +7,7 @@
 
 #include "lqd.h"
 #include "liquid.hpp"
-#include "liquidappcreateeditdialog.hpp"
+#include "liquidappconfigwindow.hpp"
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
 
@@ -153,12 +153,12 @@ attempt_to_create_or_run_liquid_app:
             liquidAppWindow = new LiquidAppWindow(&liquidAppName);
         } else {
             // No such Liquid app found, open Liquid app creation dialog
-            LiquidAppCreateEditDialog liquidAppCreateEditDialog(mainWindow, liquidAppName);
-            liquidAppCreateEditDialog.setPlanningToRun(true); // Make run after it's created
+            LiquidAppConfigDialog LiquidAppConfigDialog(mainWindow, liquidAppName);
+            LiquidAppConfigDialog.setPlanningToRun(true); // Make run after it's created
 
             // Reveal Liquid app creation dialog
-            liquidAppCreateEditDialog.show();
-            switch (liquidAppCreateEditDialog.exec()) {
+            LiquidAppConfigDialog.show();
+            switch (LiquidAppConfigDialog.exec()) {
                 case QDialog::Rejected:
                     // Exit the program
                     goto done;
@@ -167,12 +167,12 @@ attempt_to_create_or_run_liquid_app:
                 case QDialog::Accepted:
                     // Ensure the new Liquid app's settings file is named based on the input field,
                     // and not on what was initially provided via CLI
-                    liquidAppName = liquidAppCreateEditDialog.getName();
+                    liquidAppName = LiquidAppConfigDialog.getName();
                     // Replace directory separators (slashes) with underscores
                     // to ensure no sub-directories would get created
                     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 
-                    if (liquidAppCreateEditDialog.isPlanningToRun()) {
+                    if (LiquidAppConfigDialog.isPlanningToRun()) {
                         // Run the newly created Liquid App
                         goto attempt_to_create_or_run_liquid_app;
                     } else {
