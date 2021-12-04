@@ -63,24 +63,27 @@ void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
         liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
         foreach(QString cookieId, liquidAppConfig->allKeys()) {
             const QByteArray rawCookie = liquidAppConfig->value(cookieId).toByteArray();
-            QNetworkCookie cookie = QNetworkCookie::parseCookies(rawCookie)[0];
+            QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(rawCookie);
+            if (cookies.size() > 0) {
+                QNetworkCookie cookie = cookies[0];
 
-            // Construct origin URL based on cookie data
-            QString scheme("http");
-            if (cookie.isSecure()) {
-                scheme += "s";
-            }
-            QString domain(cookie.domain());
-            while (domain.startsWith(".")) {
-                domain = domain.right(domain.size() - 1);
-            }
-            QUrl url(scheme + "://" + domain + cookie.path());
+                // Construct origin URL based on cookie data
+                QString scheme("http");
+                if (cookie.isSecure()) {
+                    scheme += "s";
+                }
+                QString domain(cookie.domain());
+                while (domain.startsWith(".")) {
+                    domain = domain.right(domain.size() - 1);
+                }
+                QUrl url(scheme + "://" + domain + cookie.path());
 
-            // Avoid prepending leading dot (https://bugreports.qt.io/browse/QTBUG-64732)
-            if (!cookie.domain().startsWith(".")) {
-                cookie.setDomain("");
+                // Avoid prepending leading dot (https://bugreports.qt.io/browse/QTBUG-64732)
+                if (!cookie.domain().startsWith(".")) {
+                    cookie.setDomain("");
+                }
+                cookieStore->setCookie(cookie, url);
             }
-            cookieStore->setCookie(cookie, url);
         }
         liquidAppConfig->endGroup();
     }
@@ -103,6 +106,7 @@ void LiquidAppCookieJar::save(void)
                                          "_" + cookie.path().toLatin1() +
                                          "_" + cookie.name());
         QString rawCookie = QString(cookie.toRawForm(QNetworkCookie::Full));
+        // TODO: save Session cookies?
         liquidAppConfig->setValue(cookieId, rawCookie);
     }
     liquidAppConfig->endGroup();
