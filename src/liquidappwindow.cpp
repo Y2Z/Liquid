@@ -64,7 +64,7 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 
     // Pre-fill all possible zoom factors to snap desired zoom level to
     {
-        for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP && z > 0; z -= LQD_ZOOM_LVL_STEP) {
+        for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP_FINE; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP_FINE && z > 0; z -= LQD_ZOOM_LVL_STEP_FINE) {
             if (z >= LQD_ZOOM_LVL_MIN) {
                 zoomFactors.prepend(z);
             } else {
@@ -76,7 +76,7 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
             zoomFactors.append(1.0);
         }
 
-        for (qreal z = 1.0 + LQD_ZOOM_LVL_STEP; z <= LQD_ZOOM_LVL_MAX + LQD_ZOOM_LVL_STEP; z += LQD_ZOOM_LVL_STEP) {
+        for (qreal z = 1.0 + LQD_ZOOM_LVL_STEP_FINE; z <= LQD_ZOOM_LVL_MAX + LQD_ZOOM_LVL_STEP_FINE; z += LQD_ZOOM_LVL_STEP_FINE) {
             if (z <= LQD_ZOOM_LVL_MAX) {
                 zoomFactors.append(z);
             } else {
@@ -263,6 +263,12 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     zoomResetAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_RESET)));
     addAction(zoomResetAction);
     connect(zoomResetAction, SIGNAL(triggered()), this, SLOT(zoomReset()));
+
+    // Connect "alternative reset zoom" shortcut
+    zoomResetAltAction = new QAction;
+    zoomResetAltAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_ZOOM_LVL_RESET_2)));
+    addAction(zoomResetAltAction);
+    connect(zoomResetAltAction, SIGNAL(triggered()), this, SLOT(zoomReset()));
 
     // Connect "exit" shortcut
     quitAction = new QAction;
@@ -975,12 +981,12 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
 
 void LiquidAppWindow::zoomIn(const bool fine = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() + LQD_ZOOM_LVL_STEP * ((fine) ? 1 : 10));
+    attemptToSetZoomFactorTo(zoomFactor() + ((fine) ? LQD_ZOOM_LVL_STEP_FINE : LQD_ZOOM_LVL_STEP));
 }
 
 void LiquidAppWindow::zoomOut(const bool fine = false)
 {
-    attemptToSetZoomFactorTo(zoomFactor() - LQD_ZOOM_LVL_STEP * ((fine) ? 1 : 10));
+    attemptToSetZoomFactorTo(zoomFactor() - ((fine) ? LQD_ZOOM_LVL_STEP_FINE : LQD_ZOOM_LVL_STEP));
 }
 
 void LiquidAppWindow::zoomReset(void)
