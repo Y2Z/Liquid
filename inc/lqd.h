@@ -50,6 +50,8 @@
 #define LQD_CFG_KEY_NAME_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_NOTES                   "Notes" // text
+#define LQD_CFG_KEY_NAME_PRESERVE_COOKIES        "PreserveCookies" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_PRESERVE_LOCAL_STORAGE  "PreserveLocalStorage" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_PROXY_HOST              LQD_CFG_GROUP_NAME_PROXY "/" "Host" // text
 #define LQD_CFG_KEY_NAME_PROXY_PORT              LQD_CFG_GROUP_NAME_PROXY "/" "Port" // number
 #define LQD_CFG_KEY_NAME_PROXY_USE_AUTH          LQD_CFG_GROUP_NAME_PROXY "/" "UseAuthentication" // boolean, defaults to FALSE
