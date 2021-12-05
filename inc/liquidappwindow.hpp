@@ -59,6 +59,7 @@ private:
     QString* liquidAppName;
 
     QString liquidAppWindowTitle;
+    QIcon iconToSave;
 
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;

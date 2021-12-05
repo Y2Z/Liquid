@@ -22,7 +22,7 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
     // Set default icon
-#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
 #endif
 
@@ -613,19 +613,12 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         liquidAppWebPage->scripts().insert(script);
     }
 
-#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
     // Set window icon
     if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
-        QIcon liquidAppIcon;
-        QByteArray byteArray = QByteArray::fromHex(
-            liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray()
-        );
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::ReadOnly);
-        QDataStream in(&buffer);
-        in >> liquidAppIcon;
-        buffer.close();
-        window()->setWindowIcon(liquidAppIcon);
+        QPixmap pixmap;
+        pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
+        window()->setWindowIcon(QIcon(pixmap));
     }
 #endif
 }
@@ -652,18 +645,7 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
     // Set window icon
     setWindowIcon(icon);
 
-    // Save icon in settings
-    if (!liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
-        QByteArray byteArray;
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::WriteOnly);
-        QDataStream out(&buffer);
-        out << icon;
-        buffer.close();
-        // TODO: move into saveLiquidAppConfig()
-        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ICON, QString(byteArray.toHex()));
-        liquidAppConfig->sync();
-    }
+    iconToSave = icon;
 }
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
@@ -695,6 +677,14 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
         if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
             liquidAppConfig->remove(LQD_CFG_KEY_NAME_MUTE_AUDIO);
         }
+    }
+
+    // Save icon data as base64 string
+    {
+        QBuffer buffer;
+        buffer.open(QIODevice::WriteOnly);
+        iconToSave.pixmap(iconToSave.availableSizes()[0]).save(&buffer, "PNG");
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ICON, QString("data:image/png;base64,%1").arg(QString(buffer.data().toBase64())));
     }
 
     if (!isFullScreen()) {
