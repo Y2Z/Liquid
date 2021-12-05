@@ -96,6 +96,7 @@ private:
     QAction* zoomInFineAction;
     QAction* zoomOutFineAction;
     QAction* zoomResetAction;
+    QAction* zoomResetAltAction;
 
     // Context menu and its actions
     QMenu* contextMenu;

@@ -13,7 +13,8 @@
 #define LQD_UI_MARGIN          24
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5.0 // Limited to 5.0 by Chromium
-#define LQD_ZOOM_LVL_STEP      0.005
+#define LQD_ZOOM_LVL_STEP      0.04
+#define LQD_ZOOM_LVL_STEP_FINE (LQD_ZOOM_LVL_STEP / 10)
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -26,15 +27,15 @@
 #define LQD_ICON_DELETE  "✖"
 #define LQD_ICON_RUN     "➤"
 
-/* Liquid App config */
+/* Liquid App config file group names */
 #define LQD_CFG_GROUP_NAME_COOKIES               "Cookies"
 #define LQD_CFG_GROUP_NAME_PROXY                 "Proxy"
 
 /*
  * Liquid App config key names.
  * Names must be given in a way that would let them answer to questions:
- * - "what is it?" (everything else)
  * - "do what?" (for booleans)
+ * - "what is it?" (everything else)
  * e.g.: ShowScrollBars, Icon, ZoomLevel, etc.
  */
 #define LQD_CFG_KEY_NAME_ADDITIONAL_CSS          "AdditionalCSS" // text
@@ -85,3 +86,4 @@
 #define LQD_KBD_SEQ_ZOOM_LVL_DEC         "Ctrl+-"
 #define LQD_KBD_SEQ_ZOOM_LVL_DEC_FINE    "Ctrl+Shift+-"
 #define LQD_KBD_SEQ_ZOOM_LVL_RESET       "Ctrl+0"
+#define LQD_KBD_SEQ_ZOOM_LVL_RESET_2     "Ctrl+Shift+0"
