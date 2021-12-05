@@ -18,7 +18,7 @@ MainWindow::MainWindow() : QScrollArea()
     setWidgetResizable(true);
 
     // Set icon
-#if !defined(Q_OS_LINUX) && !defined(Q_OS_UNIX) // This doesn't work on X11
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
 #endif
 
@@ -129,11 +129,11 @@ void MainWindow::populateTable(void)
 
         appListTable->insertRow(i);
 
-        QSettings* liquidAppSettings = new QSettings(QSettings::IniFormat,
-                                                     QSettings::UserScope,
-                                                     QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                                     liquidAppName,
-                                                     Q_NULLPTR);
+        QSettings* liquidAppConfig = new QSettings(QSettings::IniFormat,
+                                                   QSettings::UserScope,
+                                                   QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
+                                                   liquidAppName,
+                                                   Q_NULLPTR);
 
         //////////////////
         // First column //
@@ -142,18 +142,13 @@ void MainWindow::populateTable(void)
         QTableWidgetItem* appItemWidgetFirstColumn = new QTableWidgetItem();
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
-        QIcon liquidAppIcon(":/images/" PROG_NAME ".svg");
-        if (liquidAppSettings->contains(LQD_CFG_KEY_NAME_ICON)) {
-            QByteArray byteArray = QByteArray::fromHex(
-                liquidAppSettings->value(LQD_CFG_KEY_NAME_ICON).toByteArray()
-            );
-            QBuffer buffer(&byteArray);
-            buffer.open(QIODevice::ReadOnly);
-            QDataStream in(&buffer);
-            in >> liquidAppIcon;
-            buffer.close();
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
+            QPixmap pixmap;
+            pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
+            appItemWidgetFirstColumn->setIcon(QIcon(pixmap));
+        } else {
+            appItemWidgetFirstColumn->setIcon(QIcon(":/images/" PROG_NAME ".svg"));
         }
-        appItemWidgetFirstColumn->setIcon(liquidAppIcon);
         appItemWidgetFirstColumn->setText(liquidAppName);
         appListTable->setItem(i, 0, appItemWidgetFirstColumn);
 
@@ -171,36 +166,36 @@ void MainWindow::populateTable(void)
         QPushButton* deleteButton = new QPushButton(tr(LQD_ICON_DELETE), this);
         deleteButton->setCursor(Qt::PointingHandCursor);
         deleteButton->setProperty("class", "liquidAppsListButtonDelete");
-        connect(deleteButton, &QPushButton::clicked, [this, liquidAppName, liquidAppSettings]() {
+        connect(deleteButton, &QPushButton::clicked, [this, liquidAppName, liquidAppConfig]() {
             const QString text = QString("Are you sure you want to delete Liquid app “%1”?").arg(liquidAppName);
             const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
                 Liquid::removeDesktopFile(liquidAppName);
 
                 // Shred and unlink Liquid app settings file
-                QFile liquidAppSettingsFile(liquidAppSettings->fileName());
+                QFile liquidAppConfigFile(liquidAppConfig->fileName());
                 // Open file handle
-                if (liquidAppSettingsFile.open(QIODevice::ReadWrite)) {
+                if (liquidAppConfigFile.open(QIODevice::ReadWrite)) {
                     // Determine file length
-                    const int liquidAppSettingsFileSize = liquidAppSettingsFile.size();
+                    const int liquidAppConfigFileSize = liquidAppConfigFile.size();
                     // Shred (especially important if it contains Cookie data)
                     for (int i = 0, imax = 5; i < imax; i++) {
                         // Write randomly generated array of bytes to disk
-                        liquidAppSettingsFile.write(Liquid::generateRandomByteArray(liquidAppSettingsFileSize), liquidAppSettingsFileSize);
+                        liquidAppConfigFile.write(Liquid::generateRandomByteArray(liquidAppConfigFileSize), liquidAppConfigFileSize);
                         // Close file handle
-                        liquidAppSettingsFile.close();
+                        liquidAppConfigFile.close();
 
                         if (i < imax - 1) {
                             // Put cursor back to start (to write again across the same byte range instead of appending data upon next iteration)
-                            liquidAppSettingsFile.open(QIODevice::ReadWrite);
+                            liquidAppConfigFile.open(QIODevice::ReadWrite);
                         } else {
                             // Unlink file
-                            liquidAppSettingsFile.remove();
+                            liquidAppConfigFile.remove();
                             qDebug().noquote() << QString("Removed config file for Liquid app %1").arg(liquidAppName);
                         }
                     }
                 } else {
-                    qDebug().noquote() << QString("Unable to open file %1 in Read/Write mode").arg(liquidAppSettings->fileName());
+                    qDebug().noquote() << QString("Unable to open file %1 in Read/Write mode").arg(liquidAppConfig->fileName());
                 }
 
                 // Refresh table
