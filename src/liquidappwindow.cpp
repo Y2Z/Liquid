@@ -10,11 +10,11 @@
 #include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
 
-#include "lqd.h"
 #include "liquid.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
+#include "lqd.h"
 
 LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 {
@@ -49,6 +49,8 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
         // Privacy is paramount for this program, separate apps need to be completely siloed
         exit(EXIT_FAILURE);
     }
+
+    Liquid::applyQtStyleSheets(this);
 
     liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
     setPage(liquidAppWebPage);

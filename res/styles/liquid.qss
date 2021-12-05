@@ -25,5 +25,10 @@ QTableWidget QPushButton.liquidAppsListButtonRun:hover {
 }
 
 QLineEdit[readOnly="true"] {
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(0, 0, 0, 0.75);
+}
+
+QPlainTextEdit#liquidAppConfigAdditionalCSSTextArea,
+QPlainTextEdit#liquidAppConfigAdditionalJSTextArea {
+    font-family: monospace;
 }
