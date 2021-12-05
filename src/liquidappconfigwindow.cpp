@@ -404,12 +404,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 appearanceTabWidgetLayout->addWidget(additionalCssLabel);
             }
             additionalCssTextArea = new QPlainTextEdit(this);
-            {
-                QTextDocument* doc = additionalCssTextArea->document();
-                QFont font(doc->defaultFont());
-                font.setFamily("monospace");
-                doc->setDefaultFont(font);
-            }
+            additionalCssTextArea->setObjectName("liquidAppConfigAdditionalCSSTextArea");
             additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
 
             if (isEditingExistingBool) {
@@ -452,12 +447,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
 
             additionalJsLabel = new QLabel(tr("Additonal JavaScript code:"), this);
             additionalJsTextArea = new QPlainTextEdit(this);
-            {
-                QTextDocument* doc = additionalJsTextArea->document();
-                QFont font(doc->defaultFont());
-                font.setFamily("monospace");
-                doc->setDefaultFont(font);
-            }
+            additionalJsTextArea->setObjectName("liquidAppConfigAdditionalJSTextArea");
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
 
             if (isEditingExistingBool) {

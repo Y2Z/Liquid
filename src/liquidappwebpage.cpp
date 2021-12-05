@@ -6,7 +6,6 @@
 #include <QPushButton>
 #include <QWebEngineSettings>
 
-#include "liquid.hpp"
 #include "liquidappwebpage.hpp"
 #include "lqd.h"
 
@@ -88,7 +87,6 @@ void LiquidAppWebPage::javaScriptAlert(const QUrl& securityOrigin, const QString
     jsDialogWidget->setObjectName("liquidAppJsDialogAlert");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
-    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QVBoxLayout* jsAlertDialogLayout = new QVBoxLayout(jsDialogWidget);
 
@@ -108,7 +106,6 @@ bool LiquidAppWebPage::javaScriptConfirm(const QUrl& securityOrigin, const QStri
     jsDialogWidget->setObjectName("liquidAppJsDialogConfirm");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
-    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QVBoxLayout* jsConfirmDialogLayout = new QVBoxLayout(jsDialogWidget);
 
@@ -138,7 +135,6 @@ bool LiquidAppWebPage::javaScriptPrompt(const QUrl& securityOrigin, const QStrin
     jsDialogWidget->setObjectName("liquidAppJsDialogPrompt");
     jsDialogWidget->setAttribute(Qt::WA_DeleteOnClose);
     jsDialogWidget->setWindowModality(Qt::ApplicationModal);
-    Liquid::applyQtStyleSheets(jsDialogWidget);
 
     QHBoxLayout* jsPromptDialogLayout = new QHBoxLayout(jsDialogWidget);
 
