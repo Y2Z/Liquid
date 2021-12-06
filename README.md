@@ -44,7 +44,7 @@ You’ll be able to:
 
 ## Keyboard shortcuts
 
-| Action                                    |                    |                                   |
+| Action                                    | Primary            | Alternative                       |
 |:------------------------------------------|:------------------:|:---------------------------------:|
 | Zoom in                                   | `Ctrl`+`=`         | `Ctrl`+_mouse wheel up_           |
 | Zoom out                                  | `Ctrl`+`-`         | `Ctrl`+_mouse wheel down_         |
