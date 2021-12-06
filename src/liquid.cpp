@@ -2,6 +2,7 @@
 #include "liquid.hpp"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDebug>
 #include <QProcess>
 #include <QSettings>
@@ -113,6 +114,11 @@ QStringList Liquid::getLiquidAppsList(void)
         liquidAppsNames << liquidAppFileInfo.completeBaseName();
     }
     return liquidAppsNames;
+}
+
+QString Liquid::getReadableDateTimeString(void)
+{
+    return QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat());
 }
 
 void Liquid::removeDesktopFile(const QString liquidAppName)

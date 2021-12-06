@@ -65,6 +65,7 @@ private:
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     QWebEngineSettings* liquidAppWebSettings = Q_NULLPTR;
     QByteArray liquidAppWindowGeometry;
+    QList<qreal> zoomFactors;
 
     bool liquidAppWindowTitleIsReadOnly = false;
     bool forgiveNextPageLoadError = false;
@@ -72,7 +73,6 @@ private:
     bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
-    QList<qreal> zoomFactors;
 
     QNetworkProxy* proxy = Q_NULLPTR;
 
@@ -86,6 +86,7 @@ private:
     QAction* quitAction2;
     QAction* reloadAction;
     QAction* reloadAction2;
+    QAction* savePageAction;
     QAction* stopLoadingOrExitFullScreenModeAction;
     QAction* takeSnapshotAction;
     QAction* takeSnapshotFullPageAction;

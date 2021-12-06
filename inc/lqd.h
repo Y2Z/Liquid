@@ -81,6 +81,8 @@
 #define LQD_KBD_SEQ_TAKE_SNAPSHOT_FULL   "Ctrl+Shift+T"
 #define LQD_KBD_SEQ_QUIT                 "Ctrl+Q"
 #define LQD_KBD_SEQ_QUIT_2               "Ctrl+W"
+#define LQD_KBD_SEQ_SAVE_PAGE            "Ctrl+S"
+#define LQD_KBD_SEQ_SAVE_PAGE_AS         "Ctrl+Shift+S" // TODO
 #define LQD_KBD_SEQ_ZOOM_LVL_INC         "Ctrl+="
 #define LQD_KBD_SEQ_ZOOM_LVL_INC_FINE    "Ctrl+Shift+="
 #define LQD_KBD_SEQ_ZOOM_LVL_DEC         "Ctrl+-"
