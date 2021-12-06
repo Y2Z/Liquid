@@ -294,6 +294,15 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(takeSnapshotFullPageAction);
     connect(takeSnapshotFullPageAction, SIGNAL(triggered()), this, SLOT(takeSnapshotFullPageSlot()));
 
+    // Connect "save page" shortcut
+    savePageAction = new QAction;
+    savePageAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_SAVE_PAGE)));
+    addAction(savePageAction);
+    connect(savePageAction, &QAction::triggered, this, [this](){
+        // TODO: make it save the page along with its custom CSS/JS, as one monolithic HTML file (instead of MHT)
+        page()->save(QString("%1 (%2).mhtml").arg(*liquidAppName).arg(Liquid::getReadableDateTimeString()));
+    });
+
     // Make it possible to intercept zoom events
     QApplication::instance()->installEventFilter(this);
 }
@@ -770,7 +779,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     const QString fileName = QString("%1 %2 (%3)")
                                 .arg(*liquidAppName)
                                 .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"))
-                                .arg(QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat()));
+                                .arg(Liquid::getReadableDateTimeString());
 
     if (vector) {
         QFile jsFile(":/js/html2svg.js");
