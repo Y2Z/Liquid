@@ -175,7 +175,7 @@ void LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings* webSettings)
     webSettings->setAttribute(QWebEngineSettings::JavascriptCanPaste, false);
 #endif
     webSettings->setAttribute(QWebEngineSettings::JavascriptEnabled, false);
-    webSettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    webSettings->setAttribute(QWebEngineSettings::LocalStorageEnabled, false);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
     webSettings->setAttribute(QWebEngineSettings::PdfViewerEnabled, false);
 #endif

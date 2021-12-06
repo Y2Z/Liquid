@@ -57,6 +57,7 @@ private:
 
     // JavaScript tab
     QCheckBox* enableJavaScriptCheckBox;
+    QCheckBox* enableLocalStorageCheckBox;
     QLabel* additionalJsLabel;
     QPlainTextEdit* additionalJsTextArea;
 
