@@ -72,10 +72,10 @@ QByteArray Liquid::generateRandomByteArray(const int byteLength)
 {
     std::vector<quint32> buf;
 
-    qsrand(QTime::currentTime().msec());
+    srand(QTime::currentTime().msec());
 
     for (int i = 0; i < byteLength; ++i) {
-        buf.push_back(qrand());
+        buf.push_back(rand());
     }
 
     return QByteArray(reinterpret_cast<const char*>(buf.data()), byteLength);

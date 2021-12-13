@@ -127,7 +127,11 @@ int main(int argc, char **argv)
 
         // Process the -l/--list-apps flag
         if (parser.isSet(listAppsFlag)) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            cout << Liquid::getLiquidAppsList().join("\n") << Qt::endl;
+#else
             cout << Liquid::getLiquidAppsList().join("\n") << endl;
+#endif
             return ret;
         }
 

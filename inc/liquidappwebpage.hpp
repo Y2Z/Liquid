@@ -23,7 +23,7 @@ protected:
     bool acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame) override;
 
 private:
-    bool certificateError(const QWebEngineCertificateError& error) override;
+    bool certificateError(const QWebEngineCertificateError& error);
     void javaScriptAlert(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptConfirm(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptPrompt(const QUrl& securityOrigin, const QString& msg, const QString& defaultValue, QString* result) override;
