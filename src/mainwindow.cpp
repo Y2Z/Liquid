@@ -37,7 +37,7 @@ MainWindow::MainWindow() : QScrollArea()
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->setSpacing(0);
-    layout->setMargin(0);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     appListTable = new QTableWidget();
     appListTable->setColumnCount(2);
@@ -159,7 +159,7 @@ void MainWindow::populateTable(void)
         QWidget* appItemActionButtonsWidget = new QWidget(this);
         QHBoxLayout *appItemLayout = new QHBoxLayout();
         appItemLayout->setSpacing(0);
-        appItemLayout->setMargin(0);
+        appItemLayout->setContentsMargins(0, 0, 0, 0);
         appItemActionButtonsWidget->setLayout(appItemLayout);
 
         // Delete button

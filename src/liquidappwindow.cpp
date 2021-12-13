@@ -1,9 +1,10 @@
 #include <QApplication>
 #include <QBuffer>
-#include <QDesktopWidget>
 #include <QDir>
 #include <QClipboard>
 #include <QNetworkProxy>
+#include <QPainter>
+#include <QScreen>
 #include <QTimer>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
@@ -38,7 +39,9 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
                                     Q_NULLPTR);
 
     // These default settings affect everything (including sub-frames)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings::globalSettings());
+#endif
 
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
@@ -385,7 +388,7 @@ bool LiquidAppWindow::handleWheelEvent(QWheelEvent *event)
     const bool isShiftActive = event->modifiers() & Qt::ShiftModifier;
 
     if (isCtrlActive) {
-        (event->delta() > 0) ? zoomIn(isShiftActive) : zoomOut(isShiftActive);
+        (event->inverted()) ? zoomIn(isShiftActive) : zoomOut(isShiftActive);
         event->accept();
         return true;
     }
@@ -539,8 +542,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
             liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
         ));
     } else {
-        const QDesktopWidget widget;
-        const QRect currentScreenSize = widget.availableGeometry(widget.primaryScreen());
+        const QRect currentScreenSize = QGuiApplication::primaryScreen()->availableGeometry();
         const int currentScreenWidth = currentScreenSize.width();
         const int currentScreenHeight = currentScreenSize.height();
         setGeometry(currentScreenWidth / 4, currentScreenHeight / 4, currentScreenWidth / 2, currentScreenHeight / 2);
@@ -801,7 +803,11 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
                 QFile file(path + QDir::separator() + fileName + ".svg");
                 if (file.open(QIODevice::ReadWrite)) {
                     QTextStream stream(&file);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+                    stream << res.toString() << Qt::endl;
+#else
                     stream << res.toString() << endl;
+#endif
                 }
             }
         });
@@ -816,8 +822,10 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
         painter->setRenderHint(QPainter::Antialiasing);
         painter->setRenderHint(QPainter::TextAntialiasing);
         painter->setRenderHint(QPainter::SmoothPixmapTransform);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         painter->setRenderHint(QPainter::HighQualityAntialiasing);
         painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
+#endif
 
         if (fullPage) {
             const QSize origWindowSize = size();

@@ -39,14 +39,14 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
 
     QVBoxLayout* mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(4);
-    mainLayout->setMargin(4);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
     QGridLayout* basicLayout = new QGridLayout();
 
     QWidget* advancedWidget = new QWidget(this);
     QVBoxLayout* advancedLayout = new QVBoxLayout();
-    advancedLayout->setMargin(0);
+    advancedWidget->setContentsMargins(0, 0, 0, 0);
     advancedWidget->setLayout(advancedLayout);
 
     QTabWidget* tabWidget = new QTabWidget;
@@ -114,7 +114,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
     {
         QHBoxLayout* buttonsLayout = new QHBoxLayout();
         buttonsLayout->setSpacing(4);
-        buttonsLayout->setMargin(0);
+        buttonsLayout->setContentsMargins(0, 0, 0, 0);
 
         {
             advancedButton = new QPushButton(tr("Advanced"), this);
@@ -223,7 +223,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 connect(additionalDomainsModel, &QStandardItemModel::itemChanged, [&](QStandardItem* item){
                     const int itemIndex = item->row();
                     const bool isLastItem = itemIndex == additionalDomainsModel->rowCount() - 1;
-                    static const QRegExp allowedCharacters = QRegExp("[^a-z0-9\\.:\\-]");
+                    static const QRegularExpression allowedCharacters = QRegularExpression("[^a-z0-9\\.:\\-]");
 
                     // Format domain name
                     item->setText(item->text().toLower().remove(allowedCharacters));
