@@ -32,12 +32,12 @@ MainWindow::MainWindow() : QScrollArea()
 
     Liquid::applyQtStyleSheets(this);
 
-    QWidget* widget = new QWidget();
-    setWidget(widget);
+    QWidget* mainWindowWidget = new QWidget();
+    setWidget(mainWindowWidget);
 
-    QVBoxLayout* layout = new QVBoxLayout();
-    layout->setSpacing(0);
-    layout->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout* mainWindowLayout = new QVBoxLayout();
+    mainWindowLayout->setSpacing(0);
+    mainWindowLayout->setContentsMargins(0, 0, 0, 0);
 
     appListTable = new QTableWidget();
     appListTable->setColumnCount(2);
@@ -48,7 +48,7 @@ MainWindow::MainWindow() : QScrollArea()
     appListTable->setFocusPolicy(Qt::NoFocus);
     // appListTable->setSelectionMode(QAbstractItemView::SingleSelection);
     appListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    layout->addWidget(appListTable);
+    mainWindowLayout->addWidget(appListTable);
 
     // Add new liquid app button
     createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
@@ -73,14 +73,14 @@ MainWindow::MainWindow() : QScrollArea()
             break;
         }
     });
-    layout->addWidget(createNewLiquidAppButton);
+    mainWindowLayout->addWidget(createNewLiquidAppButton);
 
-    widget->setLayout(layout);
+    mainWindowWidget->setLayout(mainWindowLayout);
 
     // Run the liquid app upon double-click on its row in the table
-    connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int r, int c) {
-        Q_UNUSED(c);
-        Liquid::runLiquidApp(appListTable->item(r, 0)->text());
+    connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int row, int col) {
+        Q_UNUSED(col);
+        Liquid::runLiquidApp(appListTable->item(row, 0)->text());
     });
 
     // Connect keyboard shortcuts
@@ -109,7 +109,7 @@ void MainWindow::bindShortcuts(void)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    // Remember window position
+    // Remember window geometry and position
     saveSettings();
 
     event->accept();

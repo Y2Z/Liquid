@@ -1,0 +1,14 @@
+QScrollArea {
+    border: 0;
+}
+
+QTableWidget QPushButton {
+    background-color: transparent;
+    border-radius: 0;
+    height: 100%;
+}
+
+QPlainTextEdit#liquidAppConfigAdditionalCSSTextArea,
+QPlainTextEdit#liquidAppConfigAdditionalJSTextArea {
+    font-family: monospace;
+}

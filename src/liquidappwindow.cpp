@@ -22,6 +22,13 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    // Ensure dark mode is enabled on the web page in case the system theme is dark
+    if (Liquid::detectDarkMode()) {
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--force-dark-mode --blink-settings=darkMode=4 --blink-settings=forceDarkModeEnabled=true --blink-settings=darkModeEnabled=true");
+    }
+#endif
+
     // Set default icon
 #if !defined(Q_OS_LINUX) // This doesn't work on X11
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
@@ -114,13 +121,13 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     connect(this, &QWebEngineView::titleChanged, this, &LiquidAppWindow::updateWindowTitle);
 
     // Update Liquid app's icon using the one provided by the website
-    connect(page(), &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
+    connect(liquidAppWebPage, &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
 
     // Catch loading's start
-    connect(page(), &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
+    connect(liquidAppWebPage, &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
 
     // Catch loading's end
-    connect(page(), &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
+    connect(liquidAppWebPage, &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
 
     // Load Liquid app's starting URL
     load(startingUrl);

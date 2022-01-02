@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 {
     int ret = EXIT_SUCCESS;
 
-#if defined(__GNUC__) && defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
     // Handle any further termination signals to ensure
     // that the QSharedMemory block is deleted
     // even if the process crashes
@@ -77,8 +77,10 @@ int main(int argc, char **argv)
     signal(SIGXFSZ, onSignalHandler);
 #endif
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0) 
     // Account for running on high-DPI displays
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
     QApplication app(argc, argv);
 

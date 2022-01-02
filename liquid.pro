@@ -41,7 +41,9 @@ HEADERS     += inc/lqd.h \
 RESOURCES    = res/resources.qrc
 
 OTHER_FILES += res/images/$${PROG_NAME}.svg \
-               res/styles/$${PROG_NAME}.qss
+               res/styles/base.qss \
+               res/styles/dark.qss \
+               res/styles/light.qss
 
 QMAKE_CLEAN += -r $${DESTDIR}/$${PROG_NAME}
 
