@@ -8,7 +8,7 @@ QT          += core gui webenginewidgets
 CONFIG      += c++11
 TEMPLATE     = app
 
-DESTDIR      = bin
+DESTDIR      = build
 PROG_NAME    = liquid
 
 SRC_DIR      = src
