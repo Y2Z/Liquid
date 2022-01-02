@@ -4,6 +4,8 @@
         <file>images/checkers.svg</file>
         <file>images/liquid.svg</file>
         <file>js/html2svg.js</file>
-        <file>styles/liquid.qss</file>
+        <file>styles/base.qss</file>
+        <file>styles/dark.qss</file>
+        <file>styles/light.qss</file>
     </qresource>
 </RCC>

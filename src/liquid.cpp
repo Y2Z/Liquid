@@ -1,6 +1,7 @@
 #include "lqd.h"
 #include "liquid.hpp"
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
@@ -9,19 +10,31 @@
 #include <QTime>
 #include <QWebEngineProfile>
 
-void Liquid::applyQtStyleSheets(QWidget* window)
+#if defined(Q_OS_MAC)
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreServices/CoreServices.h>
+#endif
+
+void Liquid::applyQtStyleSheets(QWidget* widget)
 {
     QString styleSheet;
 
-    // Load built-in stylesheet
+    // Load built-in base stylesheet
     {
-        QFile styleSheetFile(":/styles/" PROG_NAME ".qss");
+        QFile styleSheetFile(":/styles/base.qss");
         styleSheetFile.open(QFile::ReadOnly);
         styleSheet = QLatin1String(styleSheetFile.readAll());
         styleSheetFile.close();
     }
+    // Load built-in color theme stylesheet
+    {
+        QFile colorThemeStyleSheetFile(QString(":/styles/%1.qss").arg((Liquid::detectDarkMode()) ? "dark" : "light"));
+        colorThemeStyleSheetFile.open(QFile::ReadOnly);
+        styleSheet += QLatin1String(colorThemeStyleSheetFile.readAll());
+        colorThemeStyleSheetFile.close();
+    }
 
-    // Load custom stylesheet
+    // Load user-defined stylesheet
     {
         QFile customStyleSheetFile(Liquid::getConfigDir().absolutePath() + QDir::separator() + PROG_NAME ".qss");
         if (customStyleSheetFile.open(QFile::ReadOnly)) {
@@ -30,12 +43,12 @@ void Liquid::applyQtStyleSheets(QWidget* window)
         }
     }
 
-    window->setStyleSheet(styleSheet);
+    widget->setStyleSheet(styleSheet);
 }
 
 void Liquid::createDesktopFile(const QString liquidAppName, const QString liquidAppStartingUrl)
 {
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX)
     // Compose content
     QString context = "#!/usr/bin/env xdg-open\n\n";
     context += "[Desktop Entry]\n";
@@ -65,7 +78,42 @@ void Liquid::createDesktopFile(const QString liquidAppName, const QString liquid
         file.flush();
         file.close();
     }
+#else
+    Q_UNUSED(liquidAppName);
+    Q_UNUSED(liquidAppStartingUrl);
 #endif
+}
+
+bool Liquid::detectDarkMode(void)
+{
+#if defined(Q_OS_LINUX)
+    QProcess process;
+    process.start("gsettings", QStringList() << "get" << "org.gnome.desktop.interface" << "gtk-theme");
+    process.waitForFinished(1000);
+    QString output = process.readAllStandardOutput();
+    if (output.size() > 0) {
+        return output.endsWith("-dark'\n", Qt::CaseInsensitive);
+    }
+#elif defined(Q_OS_MACOS)
+    static const QString macOsVer = QSysInfo::productVersion();
+    static const QStringList macOsVerParts = macOsVer.split('.');
+    if (macOsVerParts.at(0).toInt() > 10 || (macOsVerParts.at(0).toInt() >= 10 && macOsVerParts.at(1).toInt() >= 14)) {
+        bool macOsUserInterfaceIsUsingDarkMode = false;
+        CFStringRef darkStr = CFSTR("Dark");
+        CFStringRef macOsUserInterfaceStyleStr = CFSTR("AppleInterfaceStyle");
+        CFStringRef macOsUserInterfaceStyle = (CFStringRef)CFPreferencesCopyAppValue(macOsUserInterfaceStyleStr, kCFPreferencesCurrentApplication);
+        if (macOsUserInterfaceStyle != Q_NULLPTR) {
+            macOsUserInterfaceIsUsingDarkMode = (CFStringCompare(macOsUserInterfaceStyle, darkStr, 0) == kCFCompareEqualTo);
+            CFRelease(macOsUserInterfaceStyle);
+            return macOsUserInterfaceIsUsingDarkMode;
+        }
+    }
+#elif defined(Q_OS_WIN)
+    return (QSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", QSettings::NativeFormat)
+            .value("AppsUseLightTheme", 1) == 0);
+#endif
+
+    return QApplication::palette().text().color().lightnessF() > QApplication::palette().window().color().lightnessF();
 }
 
 QByteArray Liquid::generateRandomByteArray(const int byteLength)
@@ -123,7 +171,7 @@ QString Liquid::getReadableDateTimeString(void)
 
 void Liquid::removeDesktopFile(const QString liquidAppName)
 {
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX)
     // Construct directory path
     // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     const QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
@@ -135,15 +183,14 @@ void Liquid::removeDesktopFile(const QString liquidAppName)
         QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
         file.remove();
     }
+#else
+    Q_UNUSED(liquidAppName);
 #endif
 }
 
 void Liquid::runLiquidApp(const QString liquidAppName)
 {
-    const QString liquidAppFilePath(QCoreApplication::applicationFilePath());
-    QProcess process;
-
-    process.startDetached(liquidAppFilePath, QStringList() << QStringLiteral("%1").arg(liquidAppName));
+    QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList() << QStringLiteral("%1").arg(liquidAppName));
 }
 
 void Liquid::sleep(const int ms)

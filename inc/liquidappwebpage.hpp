@@ -32,7 +32,6 @@ private:
     bool javaScriptConfirm(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptPrompt(const QUrl& securityOrigin, const QString& msg, const QString& defaultValue, QString* result) override;
 
-    QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     LiquidAppWindow* liquidAppWindow = Q_NULLPTR;
     QStringList* allowedDomainsList = new QStringList();
 

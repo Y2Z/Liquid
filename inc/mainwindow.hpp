@@ -22,10 +22,9 @@ private:
     void runLiquidApp(const QString liquidAppName);
     void saveSettings(void);
 
+    QTableWidget* appListTable;
+    QPushButton* createNewLiquidAppButton;
     QSettings* settings;
 
     QAction* quitAction;
-
-    QTableWidget* appListTable;
-    QPushButton* createNewLiquidAppButton;
 };
