@@ -79,7 +79,7 @@ MainWindow::MainWindow() : QScrollArea()
 
     // Run the liquid app upon double-click on its row in the table
     connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int r, int c) {
-        (void)(c);
+        Q_UNUSED(c);
         Liquid::runLiquidApp(appListTable->item(r, 0)->text());
     });
 

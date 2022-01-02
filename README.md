@@ -2,13 +2,18 @@
 
 Liquid is a tool that turns web pages into desktop applications.
 
-It’s capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
+
+## How it works
+
+Liquid is capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
 
 You’ll be able to:
  - encapsulate websites the way virtual machines and Docker do it for operating systems
  - safely and securely utilize different browsing identities
  - remain safe from being tracked by third-party websites
  - make sure you stay within specific domain range
+
+What gets stored (if allowed): cookies.
 
 
 ## Comparison table
@@ -26,6 +31,7 @@ You’ll be able to:
 | Ability to disable all cookies                   |       ✅       |            ✅           |                                   |
 | Ability to disable third-party cookies           |       ✅       |            ✅           |                                   |
 | Ability to inject custom JS code into web pages  |       ✅       |            ❌           | Possible with plug-ins            |
+| Support for HTTP basic authentication mechanism  |       ✅       |            ✅           |                                   |
 | Ability to inject custom CSS code into web pages |       ✅       |            ❌           | Possible with plug-ins            |
 | Limit websites to stay within specific domain(s) |       ✅       |            ❌           |                              |
 | Simultaneous usage of multiple user accounts     |       ✅       |            ❌           | Can be achieved using profiles and extensions in some browsers   |
@@ -35,11 +41,11 @@ You’ll be able to:
 | Ability to remove window frame                   |       ✅       |            ❌           |                                   |
 | Minimalistic tabless design                      |       ✅       |            ❌           |                                   |
 | Fine zoom                                        |       ✅       |            ❌           |                                   |
-| Search within the page                           |       ❌       |            ✅           | TODO                              |
+| Search within the page                           |       ❌       |            ✅           |                                   |
 | Permanently mute website                         |       ✅       |            ❌           | Browsers automatically unmute, Liquid remembers the state |
 | Ability to go full-screen                        |       ✅       |            ✅           |                                   |
 | Full control over full-screen capabilities       |       ✅       |            ❌           | Liquid acts more like a mobile device simulator when it comes to full-screen |
-| Mandatory off-the-record capabilities            |       ✅       |            ❌           | The only thing that gets stored is cookies, if allowed |
+| Mandatory off-the-record capabilities            |       ✅       |            ❌           |                                   |
 
 
 ## Keyboard shortcuts
@@ -65,22 +71,22 @@ You’ll be able to:
 | Open link using default web browser       | `Ctrl`+_click_     |                                   |
 
 
-## Build
+## Working with the codebase
+
+#### Build
 
 ```console
 qmake
 make -j
 ```
 
-
-## Install
+#### Install
 
 ```console
 sudo make install
 ```
 
-
-## Uninstall
+#### Uninstall
 
 ```console
 sudo make uninstall
@@ -89,5 +95,5 @@ sudo make uninstall
 
 ## Customize
 
-Placing a file named `liquid.qss` into `~/.config/liquid/` will serve as custom stylesheet for the program.
-You can use [liquid.qss](res/styles/liquid.qss) for reference.
+Placing a file named `liquid.qss` into `~/.config/liquid/` will serve as additional stylesheet for the program.
+You can use [liquid.qss](res/styles/liquid.qss) as reference.

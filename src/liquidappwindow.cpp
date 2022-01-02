@@ -110,11 +110,6 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     // Initialize context menu
     setupContextMenu();
 
-    // Allow page-level full-screen happen
-    connect(page(), &QWebEnginePage::fullScreenRequested, this, [](QWebEngineFullScreenRequest request) {
-        request.accept();
-    });
-
     // Trigger window title update if <title> changes
     connect(this, &QWebEngineView::titleChanged, this, &LiquidAppWindow::updateWindowTitle);
 
@@ -338,7 +333,7 @@ const QString LiquidAppWindow::colorToRgba(const QColor color)
 
 void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 {
-    (void)event;
+    Q_UNUSED(event);
 
     contextMenuBackAction->setEnabled(history()->canGoBack());
     contextMenuForwardAction->setEnabled(history()->canGoForward());
