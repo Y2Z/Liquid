@@ -79,7 +79,10 @@ int main(int argc, char **argv)
 
     // Account for running on high-DPI displays
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    // Make pixmaps assume high-DPI scaling by default
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
+    // Initialize application
     QApplication app(argc, argv);
 
     if (argc < 2) {
