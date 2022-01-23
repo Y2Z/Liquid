@@ -100,6 +100,8 @@ void LiquidAppWebPage::authenticationRequired(const QUrl& requestUrl, QAuthentic
     if (dialogWidget->exec() == QDialog::Accepted) {
         authenticator->setUser(httpBasicAuthPromptDialogUsernameTextInput->text());
         authenticator->setPassword(httpBasicAuthPromptDialogPasswordTextInput->text());
+    } else {
+        *authenticator = QAuthenticator();
     }
 
     dialogWidget = Q_NULLPTR;
