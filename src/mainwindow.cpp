@@ -12,86 +12,10 @@
 
 MainWindow::MainWindow() : QScrollArea()
 {
-    setWindowTitle(LQD_PROG_TITLE);
-
-    setMinimumSize(LQD_WIN_MIN_SIZE_W, LQD_WIN_MIN_SIZE_H);
-    setWidgetResizable(true);
-
-    // Set icon
-#if !defined(Q_OS_LINUX) // This doesn't work on X11
-    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
-#endif
-
-    settings = new QSettings(PROG_NAME, PROG_NAME);
-    if (settings->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
-        QByteArray geometry = QByteArray::fromHex(
-            settings->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
-        );
-        restoreGeometry(geometry);
+    {
+        QString instanceName = QApplication::applicationName();
+        singleInstance = new SingleInstance((QWidget*)this, &instanceName);
     }
-
-    Liquid::applyQtStyleSheets(this);
-
-    QWidget* mainWindowWidget = new QWidget();
-    setWidget(mainWindowWidget);
-
-    QVBoxLayout* mainWindowLayout = new QVBoxLayout();
-    mainWindowLayout->setSpacing(0);
-    mainWindowLayout->setContentsMargins(0, 0, 0, 0);
-
-    appListTable = new QTableWidget();
-    appListTable->setColumnCount(2);
-    appListTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    appListTable->horizontalHeader()->hide();
-    appListTable->verticalHeader()->hide();
-    appListTable->setShowGrid(false);
-    appListTable->setFocusPolicy(Qt::NoFocus);
-    // appListTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    appListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    mainWindowLayout->addWidget(appListTable);
-
-    // Add new liquid app button
-    createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
-    createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
-    connect(createNewLiquidAppButton, &QPushButton::clicked, [&]() {
-        LiquidAppConfigDialog LiquidAppConfigDialog(this, "");
-        switch (LiquidAppConfigDialog.exec()) {
-            case QDialog::Accepted:
-                // Give some time to the filesystem before scanning for the newly created Liquid App
-                {
-                    QTime proceedAfter = QTime::currentTime().addMSecs(100);
-                    while (QTime::currentTime() < proceedAfter) {
-                        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-                    }
-                }
-                flushTable();
-                populateTable();
-
-                if (LiquidAppConfigDialog.isPlanningToRun()) {
-                    Liquid::runLiquidApp(LiquidAppConfigDialog.getName());
-                }
-            break;
-        }
-    });
-    mainWindowLayout->addWidget(createNewLiquidAppButton);
-
-    mainWindowWidget->setLayout(mainWindowLayout);
-
-    // Run the liquid app upon double-click on its row in the table
-    connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int row, int col) {
-        Q_UNUSED(col);
-        Liquid::runLiquidApp(appListTable->item(row, 0)->text());
-    });
-
-    // Connect keyboard shortcuts
-    bindShortcuts();
-
-    show();
-    raise();
-    activateWindow();
-
-    // Fill the table
-    populateTable();
 }
 
 MainWindow::~MainWindow()
@@ -120,6 +44,14 @@ void MainWindow::flushTable(void)
     for (int i = appListTable->rowCount(); i > -1 ; i--) {
         appListTable->removeRow(i);
     }
+}
+
+bool MainWindow::isAlreadyRunning(void)
+{
+    const bool raiseExisting = true;
+    const bool isAnotherInstanceRunning = singleInstance->isAlreadyRunning(raiseExisting);
+
+    return isAnotherInstanceRunning;
 }
 
 void MainWindow::populateTable(void)
@@ -238,6 +170,91 @@ void MainWindow::populateTable(void)
 
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);
     }
+}
+
+void MainWindow::run(void)
+{
+    setWindowTitle(LQD_PROG_TITLE);
+
+    setMinimumSize(LQD_WIN_MIN_SIZE_W, LQD_WIN_MIN_SIZE_H);
+    setWidgetResizable(true);
+
+    // Set icon
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
+    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
+#endif
+
+    settings = new QSettings(PROG_NAME, PROG_NAME);
+    if (settings->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
+        QByteArray geometry = QByteArray::fromHex(
+            settings->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
+        );
+        restoreGeometry(geometry);
+    }
+
+    Liquid::applyQtStyleSheets(this);
+
+    QWidget* mainWindowWidget = new QWidget();
+    setWidget(mainWindowWidget);
+
+    QVBoxLayout* mainWindowLayout = new QVBoxLayout();
+    mainWindowLayout->setSpacing(0);
+    mainWindowLayout->setContentsMargins(0, 0, 0, 0);
+
+    appListTable = new QTableWidget();
+    appListTable->setColumnCount(2);
+    appListTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    appListTable->horizontalHeader()->hide();
+    appListTable->verticalHeader()->hide();
+    appListTable->setShowGrid(false);
+    appListTable->setFocusPolicy(Qt::NoFocus);
+    // appListTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    appListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    mainWindowLayout->addWidget(appListTable);
+
+    // Add new liquid app button
+    createNewLiquidAppButton = new QPushButton(tr(LQD_ICON_ADD));
+    createNewLiquidAppButton->setCursor(Qt::PointingHandCursor);
+    connect(createNewLiquidAppButton, &QPushButton::clicked, [&]() {
+        LiquidAppConfigDialog LiquidAppConfigDialog(this, "");
+        switch (LiquidAppConfigDialog.exec()) {
+            case QDialog::Accepted:
+                // Give some time to the filesystem before scanning for the newly created Liquid App
+                {
+                    QTime proceedAfter = QTime::currentTime().addMSecs(100);
+                    while (QTime::currentTime() < proceedAfter) {
+                        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+                    }
+                }
+                flushTable();
+                populateTable();
+
+                if (LiquidAppConfigDialog.isPlanningToRun()) {
+                    Liquid::runLiquidApp(LiquidAppConfigDialog.getName());
+                }
+            break;
+        }
+    });
+    mainWindowLayout->addWidget(createNewLiquidAppButton);
+
+    mainWindowWidget->setLayout(mainWindowLayout);
+
+    // Run the liquid app upon double-click on its row in the table
+    connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int row, int col) {
+        Q_UNUSED(col);
+        Liquid::runLiquidApp(appListTable->item(row, 0)->text());
+    });
+
+    // Reveal Liquid's main window
+    show();
+    raise();
+    activateWindow();
+
+    // Connect keyboard shortcuts
+    bindShortcuts();
+
+    // Fill the table
+    populateTable();
 }
 
 void MainWindow::saveSettings(void)

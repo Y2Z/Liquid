@@ -6,11 +6,16 @@
 #include <QScrollArea>
 #include <QTableWidget>
 
+#include "singleinstance.hpp"
+
 class MainWindow : public QScrollArea
 {
 public:
     MainWindow();
     ~MainWindow();
+
+    bool isAlreadyRunning(void);
+    void run(void);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -24,7 +29,7 @@ private:
 
     QTableWidget* appListTable;
     QPushButton* createNewLiquidAppButton;
-    QSettings* settings;
-
     QAction* quitAction;
+    QSettings* settings;
+    SingleInstance *singleInstance;
 };

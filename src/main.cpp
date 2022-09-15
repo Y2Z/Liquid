@@ -13,29 +13,12 @@
 
 QTextStream cout(stdout);
 
-static QSharedMemory* sharedMemory = Q_NULLPTR;
-
-LiquidAppWindow* liquidAppWindow;
 MainWindow* mainWindow;
+LiquidAppWindow* liquidAppWindow;
 
-QString getUserName()
-{
-    QString name = qgetenv("USER");
-
-    if (name.isEmpty()) {
-        name = qgetenv("USERNAME");
-    }
-
-    return name;
-}
-
+#if defined(Q_OS_UNIX)
 static void onSignalHandler(int signum)
 {
-    if (sharedMemory) {
-        delete sharedMemory;
-        sharedMemory = Q_NULLPTR;
-    }
-
     if (liquidAppWindow) {
         liquidAppWindow->close();
         delete liquidAppWindow;
@@ -52,15 +35,13 @@ static void onSignalHandler(int signum)
 
     exit(128 + signum);
 }
+#endif
 
 int main(int argc, char **argv)
 {
     int ret = EXIT_SUCCESS;
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
-    // Handle any further termination signals to ensure
-    // that the QSharedMemory block is deleted
-    // even if the process crashes
+#if defined(Q_OS_UNIX)
     signal(SIGHUP,  onSignalHandler);
     signal(SIGINT,  onSignalHandler);
     signal(SIGQUIT, onSignalHandler);
@@ -77,32 +58,35 @@ int main(int argc, char **argv)
     signal(SIGXFSZ, onSignalHandler);
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0) 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     // Account for running on high-DPI displays
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
     QApplication app(argc, argv);
 
+    QApplication::setApplicationName(PROG_NAME);
+    QApplication::setApplicationDisplayName("Liquid");
+    QApplication::setApplicationVersion(VERSION);
+    QApplication::setOrganizationDomain("y2z.github.io");
+    QApplication::setOrganizationName("Y2Z");
+
     if (argc < 2) {
+        // Show main program window
+        mainWindow = new MainWindow;
+
         // Allow only one instance
-        sharedMemory = new QSharedMemory(getUserName() + "_Liquid");
-        if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {
-            delete sharedMemory;
+        if (mainWindow->isAlreadyRunning()) {
             qDebug().noquote() << QString("Only one instance of Liquid is allowed");
             exit(EXIT_FAILURE);
         }
 
-        // Show main program window
-        mainWindow = new MainWindow;
+        mainWindow->run();
     } else  { // App name provided
         // CLI flags and options
         QCommandLineParser parser;
-        QCoreApplication::setApplicationName(PROG_NAME);
-        QCoreApplication::setApplicationVersion(VERSION);
 
-        // parser.setApplicationDescription("Test helper");
-        parser.setApplicationDescription("Test helper");
+        parser.setApplicationDescription("Convert web resources into desktop applications");
         parser.addHelpOption();
         parser.addVersionOption();
         parser.addPositionalArgument("app-name", QCoreApplication::translate("main", "Liquid App name"));
@@ -147,16 +131,16 @@ attempt_to_create_or_run_liquid_app:
 
         // Attempt to load app settings from a config file
         if (!parser.isSet(editAppDialogFlag) && tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
-            // // Allow only one instance
-            sharedMemory = new QSharedMemory(getUserName() + "_Liquid_app_" + liquidAppName);
-            if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {
-                delete sharedMemory;
+            // Found existing liquid app settings file, show it
+            liquidAppWindow = new LiquidAppWindow(&liquidAppName);
+
+            // Allow only one instance
+            if (liquidAppWindow->isAlreadyRunning()) {
                 qDebug().noquote() << QString("Only one instance of Liquid app “%1” is allowed").arg(liquidAppName);
                 exit(EXIT_FAILURE);
             }
 
-            // Found existing liquid app settings file, show it
-            liquidAppWindow = new LiquidAppWindow(&liquidAppName);
+            liquidAppWindow->run();
         } else {
             // No such Liquid app found, open Liquid app creation dialog
             LiquidAppConfigDialog LiquidAppConfigDialog(mainWindow, liquidAppName);
@@ -192,10 +176,5 @@ attempt_to_create_or_run_liquid_app:
     ret = app.exec();
 
 done:
-    if (sharedMemory != Q_NULLPTR) {
-        delete sharedMemory;
-        sharedMemory = Q_NULLPTR;
-    }
-
     return ret;
 }
