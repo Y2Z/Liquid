@@ -31,6 +31,7 @@ private:
     void javaScriptAlert(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptConfirm(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptPrompt(const QUrl& securityOrigin, const QString& msg, const QString& defaultValue, QString* result) override;
+    // TODO: windowCloseRequested
 
     LiquidAppWindow* liquidAppWindow = Q_NULLPTR;
     QStringList* allowedDomainsList = new QStringList();

@@ -425,20 +425,55 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         jsTabWidget->setLayout(jsTabWidgetLayout);
         tabWidget->addTab(jsTabWidget, tr("JavaScript"));
 
-        // Enable JavaScript checkbox
+        // Enable JavaScript & enable local storage checkboxes
         {
-            enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"), this);
-            enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
+            // Enable JavaScript checkbox
+            {
+                enableJavaScriptCheckBox = new QCheckBox(tr("Enable JavaScript"), this);
+                enableJavaScriptCheckBox->setCursor(Qt::PointingHandCursor);
 
-            if (isEditingExistingBool) {
-                bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool();
-                enableJavaScriptCheckBox->setChecked(isChecked);
-            } else {
-                // Checked by default (when creating new Liquid app)
-                enableJavaScriptCheckBox->setChecked(true);
+                if (isEditingExistingBool) {
+                    bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool();
+                    enableJavaScriptCheckBox->setChecked(isChecked);
+                } else {
+                    // Checked by default (when creating new Liquid app)
+                    enableJavaScriptCheckBox->setChecked(true);
+                }
+
+                jsTabWidgetLayout->addWidget(enableJavaScriptCheckBox);
             }
 
-            jsTabWidgetLayout->addWidget(enableJavaScriptCheckBox);
+            // Enable local storage checkbox
+            {
+                QHBoxLayout* enableLocalStorageLayout = new QHBoxLayout();
+                enableLocalStorageLayout->setContentsMargins(LQD_UI_MARGIN, 0, 0, 0);
+
+                enableLocalStorageCheckBox = new QCheckBox(tr("Save and restore local storage data"), this);
+                enableLocalStorageCheckBox->setCursor(Qt::PointingHandCursor);
+
+                if (isEditingExistingBool) {
+                    bool isChecked = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PRESERVE_LOCAL_STORAGE).toBool();
+                    enableLocalStorageCheckBox->setChecked(isChecked);
+                } else {
+                    // Checked by default (when creating new Liquid app)
+                    enableLocalStorageCheckBox->setChecked(true);
+                }
+
+                enableLocalStorageLayout->addWidget(enableLocalStorageCheckBox);
+
+                connect(enableJavaScriptCheckBox, &QCheckBox::toggled, [&](const bool isOn){
+                    if (!isOn) {
+                        enableLocalStorageCheckBox->setChecked(false);
+                    }
+                });
+                connect(enableLocalStorageCheckBox, &QCheckBox::toggled, [&](const bool isOn){
+                    if (isOn) {
+                        enableJavaScriptCheckBox->setChecked(isOn);
+                    }
+                });
+
+                jsTabWidgetLayout->addLayout(enableLocalStorageLayout);
+            }
         }
 
         // Additonal JavaScript code text area
@@ -819,6 +854,11 @@ void LiquidAppConfigDialog::save()
     // Enable JS
     {
         tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ENABLE_JS, enableJavaScriptCheckBox->isChecked());
+    }
+
+    // Preserve local storage
+    {
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_PRESERVE_LOCAL_STORAGE, enableLocalStorageCheckBox->isChecked());
     }
 
     // Allow cookies

@@ -551,26 +551,35 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Toggle JavaScript on if enabled in application config
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ENABLE_JS)) {
-        settings()->setAttribute(
-            QWebEngineSettings::JavascriptEnabled,
-            liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool()
-        );
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool()) {
+        settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+        settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+
+        // Restore HTML5 local storage data if preservation is enabled in this Liquid App's config
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_PRESERVE_LOCAL_STORAGE).toBool()) {
+            const QString js = QString("(()=>{"\
+                                           "localStorage.setItem('zkey', 134143);"\
+                                           "alert(JSON.stringify(Object.entries(localStorage)));"\
+                                       "})()");
+            QWebEngineScript script;
+            script.setInjectionPoint(QWebEngineScript::DocumentCreation); // NOTE: this will run every time
+            script.setRunsOnSubFrames(false); // XXX: this probably should be true
+            script.setSourceCode(js);
+            script.setWorldId(QWebEngineScript::ApplicationWorld);
+            liquidAppWebPage->scripts().insert(script);
+        }
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Hide scrollbars
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS)) {
-        settings()->setAttribute(
-            QWebEngineSettings::ShowScrollBars,
-            !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()
-        );
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()) {
+        settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
     }
 #endif
 
     // Mute audio if muted in application config
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
-        page()->setAudioMuted(liquidAppConfig->value(LQD_CFG_KEY_NAME_MUTE_AUDIO).toBool());
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_MUTE_AUDIO).toBool()) {
+        page()->setAudioMuted(true);
     }
 
     // Restore web view zoom level
@@ -609,7 +618,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
                                    "})()").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
         QWebEngineScript script;
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
-        script.setRunsOnSubFrames(false);
+        script.setRunsOnSubFrames(false); // XXX: should it be true?
         script.setSourceCode(js);
         script.setWorldId(QWebEngineScript::ApplicationWorld);
         liquidAppWebPage->scripts().insert(script);
@@ -693,7 +702,7 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
     }
 
     // Save icon data as base64 string
-    {
+    if (iconToSave.availableSizes().size() > 0) {
         QBuffer buffer;
         buffer.open(QIODevice::WriteOnly);
         iconToSave.pixmap(iconToSave.availableSizes()[0]).save(&buffer, "PNG");
@@ -710,6 +719,18 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
         if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM)) {
             liquidAppConfig->remove(LQD_CFG_KEY_NAME_LOCK_WIN_GEOM);
         }
+    }
+
+    // Save LocalStorage data if preservation is enabled in application config
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_PRESERVE_LOCAL_STORAGE).toBool()) {
+        // Restore localStorage items from this Liquid App's config file
+        const QString js = QString("(()=>{"\
+                                       "return JSON.stringify(localStorage);"\
+                                   "})()");
+        page()->runJavaScript(js, QWebEngineScript::ApplicationWorld, [&](const QVariant& res){
+            qDebug().noquote() << res.toString();
+        });
+        Liquid::sleep(100); // Give time for the lambda callback to fire up
     }
 
     liquidAppConfig->sync();
