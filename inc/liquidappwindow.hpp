@@ -10,6 +10,8 @@
 #include <QWebEngineView>
 #include <QWebEngineFullScreenRequest>
 
+#include "singleinstance.hpp"
+
 #include "liquidappwebpage.hpp"
 
 class LiquidAppWebPage;
@@ -22,6 +24,8 @@ public:
     explicit LiquidAppWindow(const QString* name);
     ~LiquidAppWindow(void);
 
+    bool isAlreadyRunning(void);
+    void run(void);
     void setForgiveNextPageLoadError(const bool ok);
 
     QSettings* liquidAppConfig;
@@ -60,6 +64,7 @@ private:
 
     QString liquidAppWindowTitle;
     QIcon iconToSave;
+    SingleInstance *singleInstance;
 
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;

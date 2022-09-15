@@ -1,3 +1,7 @@
+include($${PWD}/modules/modules.pri)
+
+PROG_NAME     = liquid
+
 VERSION_MAJOR = 0
 VERSION_MINOR = 7
 VERSION_PATCH = 11
@@ -9,10 +13,9 @@ CONFIG      += c++11
 TEMPLATE     = app
 
 DESTDIR      = build
-PROG_NAME    = liquid
 
-SRC_DIR      = src
 INC_DIR      = inc
+SRC_DIR      = src
 FORMS_DIR    = ui
 
 OBJECTS_DIR  = .objs
@@ -22,21 +25,21 @@ RCC_DIR      = .qrcs
 
 INCLUDEPATH += $${INC_DIR}
 
-SOURCES     += src/liquid.cpp \
-               src/liquidappcookiejar.cpp \
-               src/liquidappconfigwindow.cpp \
-               src/liquidappwebpage.cpp \
-               src/liquidappwindow.cpp \
-               src/main.cpp \
-               src/mainwindow.cpp \
+HEADERS     += $${INC_DIR}/lqd.h \
+               $${INC_DIR}/liquid.hpp \
+               $${INC_DIR}/liquidappcookiejar.hpp \
+               $${INC_DIR}/liquidappconfigwindow.hpp \
+               $${INC_DIR}/liquidappwebpage.hpp \
+               $${INC_DIR}/liquidappwindow.hpp \
+               $${INC_DIR}/mainwindow.hpp \
 
-HEADERS     += inc/lqd.h \
-               inc/liquid.hpp \
-               inc/liquidappcookiejar.hpp \
-               inc/liquidappconfigwindow.hpp \
-               inc/liquidappwebpage.hpp \
-               inc/liquidappwindow.hpp \
-               inc/mainwindow.hpp \
+SOURCES     += $${SRC_DIR}/liquid.cpp \
+               $${SRC_DIR}/liquidappcookiejar.cpp \
+               $${SRC_DIR}/liquidappconfigwindow.cpp \
+               $${SRC_DIR}/liquidappwebpage.cpp \
+               $${SRC_DIR}/liquidappwindow.cpp \
+               $${SRC_DIR}/main.cpp \
+               $${SRC_DIR}/mainwindow.cpp \
 
 RESOURCES    = res/resources.qrc
 

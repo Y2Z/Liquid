@@ -26,10 +26,14 @@ object_script.*.Debug
 *.pro.user.*
 *.qbs.user
 *.qbs.user.*
+.objs/
+.mocs/
 *.moc
 moc_*.cpp
 moc_*.h
+.qrcs/
 qrc_*.cpp
+.uis/
 ui_*.h
 *.qmlc
 *.jsc

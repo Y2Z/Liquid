@@ -19,118 +19,12 @@
 
 LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 {
-    // Prevent window from getting way too tiny
-    setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    // Ensure dark mode is enabled on the web page in case the system theme is dark
-    if (Liquid::detectDarkMode()) {
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--force-dark-mode --blink-settings=darkMode=4 --blink-settings=forceDarkModeEnabled=true --blink-settings=darkModeEnabled=true");
-    }
-#endif
-
-    // Set default icon
-#if !defined(Q_OS_LINUX) // This doesn't work on X11
-    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
-#endif
-
-    // Disable default QWebEngineView's context menu
-    setContextMenuPolicy(Qt::PreventContextMenu);
-
     liquidAppName = (QString*)name;
 
-    liquidAppConfig = new QSettings(QSettings::IniFormat,
-                                    QSettings::UserScope,
-                                    QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                    *name,
-                                    Q_NULLPTR);
-
-    // These default settings affect everything (including sub-frames)
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings::globalSettings());
-#endif
-
-    liquidAppWebProfile = new QWebEngineProfile(QString(), this);
-    liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
-    liquidAppWebProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
-
-    if (!liquidAppWebProfile->isOffTheRecord()) {
-        qDebug().noquote() << "Web profile is not off-the-record!";
-        // Privacy is paramount for this program, separate apps need to be completely siloed
-        exit(EXIT_FAILURE);
-    }
-
-    Liquid::applyQtStyleSheets(this);
-
-    liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
-    setPage(liquidAppWebPage);
-
-    liquidAppWebSettings = liquidAppWebPage->settings();
-
-    // Set default window title
-    liquidAppWindowTitle = *liquidAppName;
-
-    updateWindowTitle(*liquidAppName);
-
-    // Pre-fill all possible zoom factors to snap desired zoom level to
     {
-        for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP_FINE; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP_FINE && z > 0; z -= LQD_ZOOM_LVL_STEP_FINE) {
-            if (z >= LQD_ZOOM_LVL_MIN) {
-                zoomFactors.prepend(z);
-            } else {
-                zoomFactors.prepend(LQD_ZOOM_LVL_MIN);
-            }
-        }
-
-        if (LQD_ZOOM_LVL_MIN <= 1 && LQD_ZOOM_LVL_MAX >= 1) {
-            zoomFactors.append(1.0);
-        }
-
-        for (qreal z = 1.0 + LQD_ZOOM_LVL_STEP_FINE; z <= LQD_ZOOM_LVL_MAX + LQD_ZOOM_LVL_STEP_FINE; z += LQD_ZOOM_LVL_STEP_FINE) {
-            if (z <= LQD_ZOOM_LVL_MAX) {
-                zoomFactors.append(z);
-            } else {
-                zoomFactors.append(LQD_ZOOM_LVL_MAX);
-            }
-        }
+        QString instanceName = QApplication::applicationName() + "_" + liquidAppName;
+        singleInstance = new SingleInstance((QWidget*)this, &instanceName);
     }
-
-    const QUrl startingUrl(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
-
-    if (!startingUrl.isValid()) {
-        qDebug().noquote() << "Invalid Liquid application URL:" << startingUrl;
-        return;
-    }
-
-    liquidAppWebPage->addAllowedDomain(startingUrl.host());
-
-    loadLiquidAppConfig();
-
-    // Reveal Liquid app's window and bring it to front
-    show();
-    raise();
-    activateWindow();
-
-    // Connect keyboard shortcuts
-    bindKeyboardShortcuts();
-
-    // Initialize context menu
-    setupContextMenu();
-
-    // Trigger window title update if <title> changes
-    connect(this, &QWebEngineView::titleChanged, this, &LiquidAppWindow::updateWindowTitle);
-
-    // Update Liquid app's icon using the one provided by the website
-    connect(liquidAppWebPage, &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
-
-    // Catch loading's start
-    connect(liquidAppWebPage, &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
-
-    // Catch loading's end
-    connect(liquidAppWebPage, &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
-
-    // Load Liquid app's starting URL
-    load(startingUrl);
 }
 
 LiquidAppWindow::~LiquidAppWindow(void)
@@ -434,6 +328,14 @@ void LiquidAppWindow::hardReload(void)
     setUrl(url);
 }
 
+bool LiquidAppWindow::isAlreadyRunning(void)
+{
+    const bool raiseExisting = true;
+    const bool isAnotherInstanceRunning = singleInstance->isAlreadyRunning(raiseExisting);
+
+    return isAnotherInstanceRunning;
+}
+
 void LiquidAppWindow::loadFinished(bool ok)
 {
     pageIsLoading = false;
@@ -672,6 +574,120 @@ void LiquidAppWindow::resizeEvent(QResizeEvent* event)
     }
 
     QWebEngineView::resizeEvent(event);
+}
+
+void LiquidAppWindow::run(void)
+{
+    // Prevent window from getting way too tiny
+    setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    // Ensure dark mode is enabled on the web page in case the system theme is dark
+    if (Liquid::detectDarkMode()) {
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--force-dark-mode --blink-settings=darkMode=4 --blink-settings=forceDarkModeEnabled=true --blink-settings=darkModeEnabled=true");
+    }
+#endif
+
+    // Set default icon
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
+    setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
+#endif
+
+    // Disable default QWebEngineView's context menu
+    setContextMenuPolicy(Qt::PreventContextMenu);
+
+    liquidAppConfig = new QSettings(QSettings::IniFormat,
+                                    QSettings::UserScope,
+                                    QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
+                                    *liquidAppName,
+                                    Q_NULLPTR);
+
+    // These default settings affect everything (including sub-frames)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    LiquidAppWebPage::setWebSettingsToDefault(QWebEngineSettings::globalSettings());
+#endif
+
+    liquidAppWebProfile = new QWebEngineProfile(QString(), this);
+    liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
+    liquidAppWebProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
+
+    if (!liquidAppWebProfile->isOffTheRecord()) {
+        qDebug().noquote() << "Web profile is not off-the-record!";
+        // Privacy is paramount for this program, separate apps need to be completely siloed
+        exit(EXIT_FAILURE);
+    }
+
+    Liquid::applyQtStyleSheets(this);
+
+    liquidAppWebPage = new LiquidAppWebPage(liquidAppWebProfile, this);
+    setPage(liquidAppWebPage);
+
+    liquidAppWebSettings = liquidAppWebPage->settings();
+
+    // Set default window title
+    liquidAppWindowTitle = *liquidAppName;
+
+    updateWindowTitle(*liquidAppName);
+
+    // Pre-fill all possible zoom factors to snap desired zoom level to
+    {
+        for (qreal z = 1.0 - LQD_ZOOM_LVL_STEP_FINE; z >= LQD_ZOOM_LVL_MIN - LQD_ZOOM_LVL_STEP_FINE && z > 0; z -= LQD_ZOOM_LVL_STEP_FINE) {
+            if (z >= LQD_ZOOM_LVL_MIN) {
+                zoomFactors.prepend(z);
+            } else {
+                zoomFactors.prepend(LQD_ZOOM_LVL_MIN);
+            }
+        }
+
+        if (LQD_ZOOM_LVL_MIN <= 1 && LQD_ZOOM_LVL_MAX >= 1) {
+            zoomFactors.append(1.0);
+        }
+
+        for (qreal z = 1.0 + LQD_ZOOM_LVL_STEP_FINE; z <= LQD_ZOOM_LVL_MAX + LQD_ZOOM_LVL_STEP_FINE; z += LQD_ZOOM_LVL_STEP_FINE) {
+            if (z <= LQD_ZOOM_LVL_MAX) {
+                zoomFactors.append(z);
+            } else {
+                zoomFactors.append(LQD_ZOOM_LVL_MAX);
+            }
+        }
+    }
+
+    const QUrl startingUrl(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
+
+    if (!startingUrl.isValid()) {
+        qDebug().noquote() << "Invalid Liquid application URL:" << startingUrl;
+        return;
+    }
+
+    liquidAppWebPage->addAllowedDomain(startingUrl.host());
+
+    loadLiquidAppConfig();
+
+    // Connect keyboard shortcuts
+    bindKeyboardShortcuts();
+
+    // Initialize context menu
+    setupContextMenu();
+
+    // Trigger window title update if <title> changes
+    connect(this, &QWebEngineView::titleChanged, this, &LiquidAppWindow::updateWindowTitle);
+
+    // Update Liquid app's icon using the one provided by the website
+    connect(liquidAppWebPage, &QWebEnginePage::iconChanged, this, &LiquidAppWindow::onIconChanged);
+
+    // Catch loading's start
+    connect(liquidAppWebPage, &QWebEnginePage::loadStarted, this, &LiquidAppWindow::loadStarted);
+
+    // Catch loading's end
+    connect(liquidAppWebPage, &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
+
+    // Reveal Liquid app's window
+    show();
+    raise();
+    activateWindow();
+
+    // Load Liquid app's starting URL
+    load(startingUrl);
 }
 
 void LiquidAppWindow::saveLiquidAppConfig(void)
