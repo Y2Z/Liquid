@@ -50,6 +50,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
     advancedWidget->setLayout(advancedLayout);
 
     QTabWidget* tabWidget = new QTabWidget;
+    tabWidget->tabBar()->setCursor(Qt::PointingHandCursor);
 
     mainLayout->addLayout(basicLayout);
 
