@@ -1,5 +1,5 @@
 QWidget {
-    background: black;
+    background: #111;
     color: white;
 }
 
@@ -24,6 +24,16 @@ QTableWidget::item {
     background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(20, 20, 20, 255));
     border-bottom: 1px solid #181818;
     color: #fff;
+}
+
+QLineEdit[readOnly="true"],
+QPlainTextEdit[readOnly="true"] {
+    color: rgba(255, 255, 255, 0.7);
+}
+/* Empty (placeholder) */
+QLineEdit[text=""],
+QPlainTextEdit[plainText=""] {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 QScrollBar:vertical {

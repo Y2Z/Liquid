@@ -8,7 +8,6 @@ QTableWidget QPushButton {
     height: 100%;
 }
 
-QPlainTextEdit#liquidAppConfigAdditionalCSSTextArea,
-QPlainTextEdit#liquidAppConfigAdditionalJSTextArea {
+.monospace {
     font-family: monospace;
 }
