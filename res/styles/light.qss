@@ -8,6 +8,16 @@ QTableWidget::item {
     color: #000;
 }
 
+QLineEdit[readOnly="true"],
+QPlainTextEdit[readOnly="true"] {
+    color: rgba(0, 0, 0, 0.7);
+}
+/* Empty (placeholder) */
+QLineEdit[text=""],
+QPlainTextEdit[plainText=""] {
+    color: rgba(0, 0, 0, 0.4);
+}
+
 QTableWidget QPushButton {
     color: #000;
 }
@@ -19,8 +29,4 @@ QTableWidget QPushButton.liquidAppsListButtonEdit:hover {
 }
 QTableWidget QPushButton.liquidAppsListButtonRun:hover {
     background-color: rgba(0, 0, 255, 0.1);
-}
-
-QLineEdit[readOnly="true"] {
-    color: rgba(0, 0, 0, 0.75);
 }

@@ -61,6 +61,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         nameInput->setMinimumSize(480, 0);
         nameInput->setPlaceholderText("my-liquid-app-name");
         nameInput->setText(liquidAppName);
+        connect(nameInput, &QLineEdit::textChanged, [=]{ style()->polish(nameInput); });
 
         if (isEditingExistingBool) {
             // TODO: make it possible to edit names for existing Liquid apps
@@ -76,6 +77,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         QLabel* addressInputLabel = new QLabel(tr("URL:"), this);
         addressInput = new QLineEdit;
         addressInput->setPlaceholderText("https://example.com");
+        connect(addressInput, &QLineEdit::textChanged, [=]{ style()->polish(addressInput); });
 
         if (isEditingExistingBool) {
             addressInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString());
@@ -177,6 +179,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             {
                 titleInput = new QLineEdit(this);
                 titleInput->setPlaceholderText(tr("Application Title"));
+                connect(titleInput, &QLineEdit::textChanged, [=]{ style()->polish(titleInput); });
 
                 if (isEditingExistingBool) {
                     titleInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString());
@@ -264,6 +267,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 userAgentInput = new QLineEdit(this);
                 // Set placeholder to what QWebEngineProfile has by default
                 userAgentInput->setPlaceholderText(Liquid::getDefaultUserAgentString());
+                connect(userAgentInput, &QLineEdit::textChanged, [=]{ style()->polish(userAgentInput); });
 
                 if (isEditingExistingBool) {
                     userAgentInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
@@ -282,6 +286,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             QLabel* notesLabel = new QLabel(tr("Notes:"), this);
             notesTextArea = new QPlainTextEdit(this);
             notesTextArea->setPlaceholderText(tr("Intentionally left blank"));
+            connect(notesTextArea, &QPlainTextEdit::textChanged, [=]{ style()->polish(notesTextArea); });
 
             if (isEditingExistingBool) {
                 notesTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_NOTES).toString());
@@ -405,8 +410,9 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 appearanceTabWidgetLayout->addWidget(additionalCssLabel);
             }
             additionalCssTextArea = new QPlainTextEdit(this);
-            additionalCssTextArea->setObjectName("liquidAppConfigAdditionalCSSTextArea");
+            additionalCssTextArea->setProperty("class", "monospace");
             additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
+            connect(additionalCssTextArea, &QPlainTextEdit::textChanged, [=]{ style()->polish(additionalCssTextArea); });
 
             if (isEditingExistingBool) {
                 additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
@@ -448,8 +454,9 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
 
             additionalJsLabel = new QLabel(tr("Additonal JavaScript code:"), this);
             additionalJsTextArea = new QPlainTextEdit(this);
-            additionalJsTextArea->setObjectName("liquidAppConfigAdditionalJSTextArea");
+            additionalJsTextArea->setProperty("class", "monospace");
             additionalJsTextArea->setPlaceholderText(tr("// This code will run even when JS is disabled"));
+            connect(additionalJsTextArea, &QPlainTextEdit::textChanged, [=]{ style()->polish(additionalJsTextArea); });
 
             if (isEditingExistingBool) {
                 additionalJsTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString());
@@ -641,6 +648,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                         {
                             proxyHostInput = new QLineEdit(this);
                             proxyHostInput->setPlaceholderText(LQD_DEFAULT_PROXY_HOST);
+                            connect(proxyHostInput, &QLineEdit::textChanged, [=]{ style()->polish(proxyHostInput); });
 
                             if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_HOST)) {
                                 proxyHostInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_HOST).toString());
@@ -680,6 +688,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                         {
                             proxyUsernameInput = new QLineEdit(this);
                             proxyUsernameInput->setPlaceholderText(tr("Username"));
+                            connect(proxyUsernameInput, &QLineEdit::textChanged, [=]{ style()->polish(proxyUsernameInput); });
 
                             if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
                                 proxyUsernameInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
@@ -693,6 +702,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                             proxyPasswordInput = new QLineEdit(this);
                             proxyPasswordInput->setPlaceholderText(tr("Password"));
                             proxyPasswordInput->setEchoMode(QLineEdit::Password);
+                            connect(proxyPasswordInput, &QLineEdit::textChanged, [=]{ style()->polish(proxyPasswordInput); });
 
                             if (isEditingExistingBool && existingLiquidAppConfig->contains(LQD_CFG_KEY_NAME_PROXY_USER_NAME)) {
                                 proxyPasswordInput->setText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_PROXY_USER_NAME).toString());
