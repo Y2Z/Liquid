@@ -9,5 +9,5 @@ QTableWidget QPushButton {
 }
 
 .monospace {
-    font-family: monospace;
+    font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
 }
