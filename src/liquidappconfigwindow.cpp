@@ -9,7 +9,7 @@
 
 LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
 {
-    setWindowFlags(Qt::Window);
+    setWindowFlags(windowFlags() | Qt::Window);
 
     liquidAppName = liquidAppName.replace(QDir::separator(), "_");
 

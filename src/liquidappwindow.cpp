@@ -513,7 +513,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     // Remove window manager's frame
     {
         if (liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool()) {
-            setWindowFlags(Qt::FramelessWindowHint);
+            setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
         }
     }
 
@@ -527,7 +527,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
                 setAttribute(Qt::WA_TranslucentBackground, true);
                 setAttribute(Qt::WA_OpaquePaintEvent, true);
                 setAttribute(Qt::WA_NativeWindow, true);
-                setWindowFlags(Qt::NoDropShadowWindowHint);
+                setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
             }
             page()->setBackgroundColor(backgroundColor);
         } else {
