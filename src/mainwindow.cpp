@@ -17,7 +17,7 @@ MainWindow::MainWindow() : QScrollArea()
     setMinimumSize(LQD_WIN_MIN_SIZE_W, LQD_WIN_MIN_SIZE_H);
     setWidgetResizable(true);
 
-    // Set icon
+    // Set window icon
 #if !defined(Q_OS_LINUX) // This doesn't work on X11
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
 #endif
