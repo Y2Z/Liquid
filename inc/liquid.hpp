@@ -7,8 +7,9 @@
 class Liquid
 {
 public:
-    static void applyQtStyleSheets(QWidget* window);
+    static void applyQtStyleSheets(QWidget* widget);
     static void createDesktopFile(const QString liquidAppName, const QString liquidAppStartingUrl);
+    static bool detectDarkMode(void);
     static QByteArray generateRandomByteArray(const int byteLength);
     static QDir getAppsDir(void);
     static QDir getConfigDir(void);

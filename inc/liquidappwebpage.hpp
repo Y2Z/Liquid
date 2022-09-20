@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QAuthenticator>
 #include <QDialog>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
@@ -19,6 +20,9 @@ public:
 
     static void setWebSettingsToDefault(QWebEngineSettings* webSettings);
 
+signals:
+    void authenticationRequired(const QUrl& requestUrl, QAuthenticator* authenticator);
+
 protected:
     bool acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame) override;
 
@@ -28,9 +32,8 @@ private:
     bool javaScriptConfirm(const QUrl& securityOrigin, const QString& msg) override;
     bool javaScriptPrompt(const QUrl& securityOrigin, const QString& msg, const QString& defaultValue, QString* result) override;
 
-    QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     LiquidAppWindow* liquidAppWindow = Q_NULLPTR;
     QStringList* allowedDomainsList = new QStringList();
 
-    QDialog* jsDialogWidget = Q_NULLPTR;
+    QDialog* dialogWidget = Q_NULLPTR;
 };

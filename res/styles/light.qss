@@ -1,18 +1,25 @@
 QTableWidget {
     border: 1px solid #ccc;
-    border-radius: 8px;
 }
 
 QTableWidget::item {
+    background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(245, 245, 245, 255), stop:1 rgba(255, 255, 255, 255));
     border-bottom: 1px solid #ccc;
-    background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(245, 245, 245, 245), stop:1 rgba(255, 255, 255, 255));
     color: #000;
 }
 
+QLineEdit[readOnly="true"],
+QPlainTextEdit[readOnly="true"] {
+    color: rgba(0, 0, 0, 0.7);
+}
+/* Empty (placeholder) */
+QLineEdit[text=""],
+QPlainTextEdit[plainText=""] {
+    color: rgba(0, 0, 0, 0.4);
+}
+
 QTableWidget QPushButton {
-    background-color: transparent;
-    border-radius: 0;
-    height: 100%;
+    color: #000;
 }
 QTableWidget QPushButton.liquidAppsListButtonDelete:hover {
     background-color: rgba(255, 0, 0, 0.1);
@@ -22,13 +29,4 @@ QTableWidget QPushButton.liquidAppsListButtonEdit:hover {
 }
 QTableWidget QPushButton.liquidAppsListButtonRun:hover {
     background-color: rgba(0, 0, 255, 0.1);
-}
-
-QLineEdit[readOnly="true"] {
-    color: rgba(0, 0, 0, 0.75);
-}
-
-QPlainTextEdit#liquidAppConfigAdditionalCSSTextArea,
-QPlainTextEdit#liquidAppConfigAdditionalJSTextArea {
-    font-family: monospace;
 }

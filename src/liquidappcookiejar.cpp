@@ -63,7 +63,7 @@ void LiquidAppCookieJar::restoreCookies(QWebEngineCookieStore *cookieStore) {
         liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
         foreach(QString cookieId, liquidAppConfig->allKeys()) {
             const QByteArray rawCookie = liquidAppConfig->value(cookieId).toByteArray();
-            QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(rawCookie);
+            const QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(rawCookie);
             if (cookies.size() > 0) {
                 QNetworkCookie cookie = cookies[0];
 
