@@ -77,10 +77,12 @@ int main(int argc, char **argv)
     signal(SIGXFSZ, onSignalHandler);
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0) 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     // Account for running on high-DPI displays
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
+
+    QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
 
     QApplication app(argc, argv);
 

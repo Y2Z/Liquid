@@ -22,10 +22,23 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     // Prevent window from getting way too tiny
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
+    // Tune web engine
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-features=AutoplayIgnoreWebAudio");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-accelerated-video-decode");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-gpu-compositing");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-gpu-rasterization");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-smooth-scrolling");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--ignore-gpu-blocklist");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--num-raster-threads=4");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--use-fake-ui-for-media-stream");
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     // Ensure dark mode is enabled on the web page in case the system theme is dark
     if (Liquid::detectDarkMode()) {
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--force-dark-mode --blink-settings=darkMode=4 --blink-settings=forceDarkModeEnabled=true --blink-settings=darkModeEnabled=true");
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--force-dark-mode");
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=forceDarkModeEnabled=true");
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkMode=4");
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkModeEnabled=true");
     }
 #endif
 
@@ -511,9 +524,11 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
             if (backgroundColor.alpha() < 255) {
                 // Make window background transparent
-                setAttribute(Qt::WA_TranslucentBackground);
+                setAttribute(Qt::WA_TranslucentBackground, true);
+                setAttribute(Qt::WA_OpaquePaintEvent, true);
+                setAttribute(Qt::WA_NativeWindow, true);
+                setWindowFlags(Qt::NoDropShadowWindowHint);
             }
-
             page()->setBackgroundColor(backgroundColor);
         } else {
             page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);
