@@ -708,7 +708,7 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
     }
 
     // Save icon data as base64 string
-    {
+    if (!iconToSave.isNull()) {
         QBuffer buffer;
         buffer.open(QIODevice::WriteOnly);
         iconToSave.pixmap(iconToSave.availableSizes()[0]).save(&buffer, "PNG");
