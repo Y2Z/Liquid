@@ -16,6 +16,9 @@
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
 #include "lqd.h"
+#ifdef Q_OS_MAC
+#include "SetWindowBackgroundColor.h"
+#endif
 
 LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 {
@@ -121,6 +124,14 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 
     // Reveal Liquid app's window and bring it to front
     show();
+#ifdef Q_OS_MAC
+    // This can only have effect after the window is revealed
+    SetWindowBackgroundColor(effectiveWinId(),
+        page()->backgroundColor().redF(),
+        page()->backgroundColor().greenF(),
+        page()->backgroundColor().blueF(),
+        page()->backgroundColor().alphaF());
+#endif
     raise();
     activateWindow();
 
@@ -525,10 +536,8 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
             if (backgroundColor.alpha() < 255) {
                 // Make window background transparent
                 setAttribute(Qt::WA_TranslucentBackground, true);
-                setAttribute(Qt::WA_OpaquePaintEvent, true);
-                setAttribute(Qt::WA_NativeWindow, true);
-                setWindowFlags(windowFlags() | Qt::NoDropShadowWindowHint);
             }
+
             page()->setBackgroundColor(backgroundColor);
         } else {
             page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);

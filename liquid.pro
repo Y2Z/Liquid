@@ -22,14 +22,6 @@ RCC_DIR      = .qrcs
 
 INCLUDEPATH += $${INC_DIR}
 
-SOURCES     += src/liquid.cpp \
-               src/liquidappcookiejar.cpp \
-               src/liquidappconfigwindow.cpp \
-               src/liquidappwebpage.cpp \
-               src/liquidappwindow.cpp \
-               src/main.cpp \
-               src/mainwindow.cpp \
-
 HEADERS     += inc/lqd.h \
                inc/liquid.hpp \
                inc/liquidappcookiejar.hpp \
@@ -37,6 +29,14 @@ HEADERS     += inc/lqd.h \
                inc/liquidappwebpage.hpp \
                inc/liquidappwindow.hpp \
                inc/mainwindow.hpp \
+
+SOURCES     += src/liquid.cpp \
+               src/liquidappcookiejar.cpp \
+               src/liquidappconfigwindow.cpp \
+               src/liquidappwebpage.cpp \
+               src/liquidappwindow.cpp \
+               src/main.cpp \
+               src/mainwindow.cpp \
 
 RESOURCES    = res/resources.qrc
 
@@ -84,6 +84,11 @@ unix:!mac {
 
 # macOS
 macx: {
+    HEADERS += inc/SetWindowBackgroundColor.h
+    OBJECTIVE_SOURCES += src/SetWindowBackgroundColor.mm
+
+    LIBS += -framework Cocoa
+
     QMAKE_CLEAN += -r $${DESTDIR}/$${TARGET}.app \
                       $${DESTDIR}/$${TARGET}.icns \
                       $${DESTDIR}/$${TARGET}.iconset
