@@ -432,7 +432,7 @@ void LiquidAppWindow::hardReload(void)
                                    "if(e){"\
                                        "e.remove()"\
                                    "}"\
-                               "})()");
+                               "})();");
     page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
 
     // Ensure that while this Liquid App is being reset, the window title remains to be set to this Liquid App's name
@@ -444,7 +444,7 @@ void LiquidAppWindow::hardReload(void)
                                        "let e=document.createElement('title');"\
                                        "e.innerText='%1';"\
                                        "document.appendChild(e)"\
-                                   "})()").arg(liquidAppWindowTitle.replace("'", "\\'"));
+                                   "})();").arg(liquidAppWindowTitle.replace("'", "\\'"));
         page()->runJavaScript(js, QWebEngineScript::ApplicationWorld);
     }
 
@@ -630,7 +630,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
                                        "const cssTextNode = document.createTextNode('%1');"\
                                        "styleEl.appendChild(cssTextNode);"\
                                        "document.head.appendChild(styleEl)"\
-                                   "})()").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
+                                   "})();").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
         QWebEngineScript script;
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
@@ -810,15 +810,15 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
                                 .arg(Liquid::getReadableDateTimeString());
 
     if (vector) {
-        QFile jsFile(":/js/html2svg.js");
-        jsFile.open(QFile::ReadOnly | QFile::Text);
-        const QString js = QString(jsFile.readAll())
+        QFile scriptFile(":/scripts/html2svg.js");
+        scriptFile.open(QFile::ReadOnly | QFile::Text);
+        const QString js = QString(scriptFile.readAll())
                             .arg(snapshotSize.width())
                             .arg(snapshotSize.height())
                             .arg(colorToRgba(page()->backgroundColor()))
                             .arg(fullPage);
 
-        page()->runJavaScript(QString("(()=>{%1})()").arg(js), QWebEngineScript::ApplicationWorld, [path, fileName](const QVariant& res){
+        page()->runJavaScript(QString("(()=>{%1})();").arg(js), QWebEngineScript::ApplicationWorld, [path, fileName](const QVariant& res){
             qDebug().noquote() << res.toString();
 
             // Save vector image to disk
