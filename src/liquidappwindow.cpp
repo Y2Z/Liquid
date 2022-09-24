@@ -811,15 +811,12 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 
     if (vector) {
         QFile jsFile(":/js/html2svg.js");
-        jsFile.open(QIODevice::ReadOnly);
-        auto data = jsFile.readAll();
-        const QString js = QString(data)
+        jsFile.open(QFile::ReadOnly | QFile::Text);
+        const QString js = QString(jsFile.readAll())
                             .arg(snapshotSize.width())
                             .arg(snapshotSize.height())
                             .arg(colorToRgba(page()->backgroundColor()))
                             .arg(fullPage);
-
-        qDebug().noquote() << js;
 
         page()->runJavaScript(QString("(()=>{%1})()").arg(js), QWebEngineScript::ApplicationWorld, [path, fileName](const QVariant& res){
             qDebug().noquote() << res.toString();
