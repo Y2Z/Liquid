@@ -5,77 +5,21 @@ Liquid is a tool that turns web pages into desktop applications.
 
 ## Features
 
-| Transparent websites |    |
-|---------------------:|:--:|
-| Liquid is capable of making websites semi-opaque, utilizing 32 bits of depth instead of typical 24. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
+| | Transparent websites |
+|-:|:-:|
+| Liquid is capable of making websites semi-opaque, utilizing 32 bits of depth instead of typical 24.  Not only this increases the amount of information on the screen, it literally adds one more creative dimension to web design, giving a glance at how websites will appear after mass adaption of transparent OLED screens. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
 
+| Full control and complete isolation | |
+|:-:|:-|
+| [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) | Inspired by software such as Docker and Virtual Box, Liquid apps behave a lot like separate mobile device emulators rather than browser windows, providing full control over the encapsulated website, preventing it from accessing or performing actions without user's permission.<br>Those can be things such as: accessing unwanted network resources, entering full-screen mode, displaying desktop notifications, opening pop-up windows, playing sounds, using third-party cookies, etc. |
 
-## How it works
+| | Next-generation snapshots |
+|-:|:-:|
+| PNG snapshots of Liquid apps that feature semi-opaque background will retain their transparency when saved to disk.<br>Additionally, support for vector (SVG) snapshots is another great feature that will ensure impeccable quality of the saved visual representation of the page.<br>Both raster and vector snapshots can be made in viewport and full-page modes. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
 
-Liquid is capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
-
-You’ll be able to:
- - encapsulate websites the way virtual machines and Docker do it for operating systems
- - safely and securely utilize different browsing identities
- - remain safe from being tracked by third-party websites
- - make sure you stay within specific domain range
-
-What gets stored (if allowed): cookies.
-
-
-## Comparison table
-
-| Feature                                          | :ocean: Liquid | :earth_africa: Browsers | Notes                             |
-|:-------------------------------------------------|:--------------:|:-------------------------------------:|:----------------------------------|
-| Custom User-Agent string                         |       ✅       |            ✅           | Some browsers require a plug-in   |
-| Window transparency                              |       ✅       |            ❌           | See-through websites              |
-| Full-page snapshots                              |       ✅       |            ❌           | Possible with plug-ins            |
-| Transparent snapshots                            |       ✅       |            ❌           | See-through snapshots of websites |
-| Vector snapshots                                 |       ❌       |            ❌           | Experimental feature, SVG         |
-| Ability to save pages as monolithic HTML files   |       ❌       |            ❌           | Possible with plug-ins            |
-| Complete absence of pop-up windows               |       ✅       |            ❌           | Can be optionally disabled in most browsers |
-| Ability to completely disable JS                 |       ✅       |            ✅           |                                   |
-| Ability to disable all cookies                   |       ✅       |            ✅           |                                   |
-| Ability to disable third-party cookies           |       ✅       |            ✅           |                                   |
-| Ability to inject custom JS code into web pages  |       ✅       |            ❌           | Possible with plug-ins            |
-| Support for HTTP basic authentication mechanism  |       ✅       |            ✅           |                                   |
-| Ability to inject custom CSS code into web pages |       ✅       |            ❌           | Possible with plug-ins            |
-| Limit websites to stay within specific domain(s) |       ✅       |            ❌           |                              |
-| Simultaneous usage of multiple user accounts     |       ✅       |            ❌           | Can be achieved using profiles and extensions in some browsers   |
-| Per-website proxy settings                       |       ✅       |            ❌           | Possible with plug-ins            |
-| Ability to hide scroll bars                      |       ✅       |            ❌           |                                   |
-| Window geometry lock                             |       ✅       |            ❌           | Possible with plug-ins            |
-| Ability to remove window frame                   |       ✅       |            ❌           |                                   |
-| Minimalistic tabless design                      |       ✅       |            ❌           |                                   |
-| Fine zoom                                        |       ✅       |            ❌           |                                   |
-| Search within the page                           |       ❌       |            ✅           |                                   |
-| Permanently mute website                         |       ✅       |            ❌           | Browsers automatically unmute, Liquid remembers the state |
-| Ability to go full-screen                        |       ✅       |            ✅           |                                   |
-| Full control over full-screen capabilities       |       ✅       |            ❌           | Liquid acts more like a mobile device simulator when it comes to full-screen |
-| Mandatory off-the-record capabilities            |       ✅       |            ❌           |                                   |
-
-
-## Keyboard shortcuts
-
-| Action                                    | Primary            | Alternative                       |
-|:------------------------------------------|:------------------:|:---------------------------------:|
-| Zoom in                                   | `Ctrl`+`=`         | `Ctrl`+_mouse wheel up_           |
-| Zoom out                                  | `Ctrl`+`-`         | `Ctrl`+_mouse wheel down_         |
-| Fine zoom in                              | `Ctrl`+`Shift`+`=` | `Ctrl`+`Shift`+_mouse wheel up_   |
-| Fine zoom out                             | `Ctrl`+`Shift`+`-` | `Ctrl`+`Shift`+_mouse wheel down_ |
-| Reset zoom level                          | `Ctrl`+`0`         | `Ctrl`+`Shift`+`0`                |
-| Toggle full-screen mode                   | `Ctrl`+`Shift`+`F` | `F11`                             |
-| Stop loading / exit from full-screen mode | `Esc`              |                                   |
-| Take snapshot                             | `Ctrl`+`T`         |                                   |
-| Take full-page snapshot                   | `Ctrl`+`Shift`+`T` |                                   |
-| Toggle window size lock                   | `Ctrl`+`L`         |                                   |
-| Toggle mute                               | `Ctrl`+`M`         |                                   |
-| Refresh current page                      | `Ctrl`+`R`         |                                   |
-| Reload app                                | `Ctrl`+`Shift`+`R` |                                   |
-| Close app                                 | `Ctrl`+`Q`         | `Ctrl`+`W`                        |
-| Go back                                   | `Ctrl`+`←`         | `Backspace`                       |
-| Go forward                                | `Ctrl`+`→`         |                                   |
-| Open link using default web browser       | `Ctrl`+_click_     |                                   |
+| Saving complete web pages as single HTML file | |
+|:-:|:-|
+| [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) | Similarly to MHT and Webarchive formats, Liquid is capable of saving current page as monolithic HTML documents by utilizing data URLs, which makes it much easier to store, share, and edit those files. |
 
 
 ## Working with the codebase
@@ -100,7 +44,7 @@ sudo make uninstall
 ```
 
 
-## Customize
+## Customization
 
 Placing a file named `liquid.qss` into `~/.config/liquid/` will serve as additional stylesheet for the program.
 You can use [base.qss](res/styles/base.qss) as reference.
