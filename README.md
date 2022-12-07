@@ -3,6 +3,13 @@
 Liquid is a tool that turns web pages into desktop applications.
 
 
+## Features
+
+| Transparent websites |    |
+|---------------------:|:--:|
+| Liquid is capable of making websites semi-opaque, utilizing 32 bits of depth instead of typical 24. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
+
+
 ## How it works
 
 Liquid is capable of making websites appear and behave more like native OS applications: isolated, customizable, and running as separate system processes.
