@@ -6,8 +6,8 @@ Liquid is a tool that turns web pages into desktop applications.
 ## Features
 
 | | Transparent websites |
-|-:|:-:|
-| Liquid is capable of making websites semi-opaque, utilizing 32 bits of depth instead of typical 24.  Not only this increases the amount of information on the screen, it literally adds one more creative dimension to web design, giving a glance at how websites will appear after mass adaption of transparent OLED screens. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
+|:-|:-:|
+| Liquid is capable of making websites appear semi-opaque, utilizing 32 bits of depth instead of typical 24.  Not only this increases the amount of information on the screen, it literally adds one more creative dimension to web design, giving a glance at how websites will appear after mass adaption of transparent OLED screens. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
 
 | Full control and complete isolation | |
 |:-:|:-|
@@ -17,7 +17,7 @@ Liquid is a tool that turns web pages into desktop applications.
 |-:|:-:|
 | PNG snapshots of Liquid apps that feature semi-opaque background will retain their transparency when saved to disk.<br>Additionally, support for vector (SVG) snapshots is another great feature that will ensure impeccable quality of the saved visual representation of the page.<br>Both raster and vector snapshots can be made in viewport and full-page modes. | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) |
 
-| Saving complete web pages as single HTML file | |
+| Saving complete web page as single HTML file | |
 |:-:|:-|
 | [![Transparency snapshot](assets/images/transparency-square.png)](assets/images/transparency.png) | Similarly to MHT and Webarchive formats, Liquid is capable of saving current page as monolithic HTML documents by utilizing data URLs, which makes it much easier to store, share, and edit those files. |
 
