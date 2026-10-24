@@ -24,7 +24,7 @@ What gets stored (if allowed): cookies.
 | Window transparency                              |       ✅       |            ❌           | See-through websites              |
 | Full-page snapshots                              |       ✅       |            ❌           | Possible with plug-ins            |
 | Transparent snapshots                            |       ✅       |            ❌           | See-through snapshots of websites |
-| Vector snapshots                                 |       ❌       |            ❌           | Experimental feature, SVG         |
+| Vector snapshots                                 |       ✅       |            ❌           | Experimental feature, SVG with selectable text |
 | Ability to save pages as monolithic HTML files   |       ❌       |            ❌           | Possible with plug-ins            |
 | Complete absence of pop-up windows               |       ✅       |            ❌           | Can be optionally disabled in most browsers |
 | Ability to completely disable JS                 |       ✅       |            ✅           |                                   |
@@ -61,6 +61,7 @@ What gets stored (if allowed): cookies.
 | Stop loading / exit from full-screen mode | `Esc`              |                                   |
 | Take snapshot                             | `Ctrl`+`T`         |                                   |
 | Take full-page snapshot                   | `Ctrl`+`Shift`+`T` |                                   |
+| Take vector snapshot (SVG)                | `Ctrl`+`Shift`+`S` |                                   |
 | Toggle window size lock                   | `Ctrl`+`L`         |                                   |
 | Toggle mute                               | `Ctrl`+`M`         |                                   |
 | Refresh current page                      | `Ctrl`+`R`         |                                   |
