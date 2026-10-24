@@ -11,6 +11,9 @@
 #define LQD_APP_WIN_MIN_SIZE_W 160
 #define LQD_APP_WIN_MIN_SIZE_H 120
 #define LQD_UI_MARGIN          24
+#define LQD_SNAPSHOT_FLASH_HOLD     50 // Milliseconds at full brightness
+#define LQD_SNAPSHOT_FLASH_FADE     300 // Milliseconds to fade out
+#define LQD_SNAPSHOT_FLASH_OPACITY  0.8
 #define LQD_SNAPSHOT_MAX_PIXELS 134217728 // Full-page snapshot size limit, in logical pixels (128 megapixels, 512 MB of RAM)
 #define LQD_ZOOM_LVL_MIN       0.25
 #define LQD_ZOOM_LVL_MAX       5.0 // Limited to 5.0 by Chromium

@@ -4,6 +4,7 @@
 #include <QBuffer>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QKeyEvent>
 #include <QEventLoop>
 #include <QClipboard>
 #include <QNetworkProxy>
@@ -13,6 +14,7 @@
 #include <QSharedPointer>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QVariantAnimation>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
@@ -26,6 +28,74 @@
 #ifdef Q_OS_MAC
 #include "SetWindowBackgroundColor.h"
 #endif
+
+// White overlay that briefly lights up the window and fades away, imitating a camera flash
+class SnapshotFlashOverlay : public QWidget
+{
+public:
+    explicit SnapshotFlashOverlay(QWidget* parent) : QWidget(parent)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents);
+        setAttribute(Qt::WA_NoSystemBackground);
+        hide();
+
+        // Stay at full brightness for a moment, then gradually fade out (think flashbang, just quicker)
+        static const int totalDuration = LQD_SNAPSHOT_FLASH_HOLD + LQD_SNAPSHOT_FLASH_FADE;
+        animation = new QVariantAnimation(this);
+        animation->setDuration(totalDuration);
+        animation->setKeyValueAt(0.0, 1.0);
+        animation->setKeyValueAt((qreal)LQD_SNAPSHOT_FLASH_HOLD / totalDuration, 1.0);
+        animation->setKeyValueAt(1.0, 0.0);
+
+        connect(animation, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
+            intensity = value.toReal();
+            update();
+        });
+        connect(animation, &QVariantAnimation::finished, this, &QWidget::hide);
+    }
+
+    void flash(void)
+    {
+        // Cover the entire window, on top of the web view
+        setGeometry(parentWidget()->rect());
+        raise();
+        show();
+
+        // Paint at full brightness right away: the program may be too busy (e.g. saving the snapshot to disk)
+        // to process events for a while, and the brightest part of the animation would be over by then
+        animation->stop();
+        intensity = 1;
+        repaint();
+
+        // Begin fading out only once the program gets back to processing events
+        // (consecutive flashes simply restart the animation)
+        QTimer::singleShot(0, animation, [this]() {
+            animation->stop();
+            animation->start();
+        });
+    }
+
+    void dismiss(void)
+    {
+        animation->stop();
+        hide();
+    }
+
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        Q_UNUSED(event);
+
+        QPainter painter(this);
+        QColor color(Qt::white);
+        color.setAlphaF(intensity * LQD_SNAPSHOT_FLASH_OPACITY);
+        painter.fillRect(rect(), color);
+    }
+
+private:
+    QVariantAnimation* animation;
+    qreal intensity = 0;
+};
 
 LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 {
@@ -394,10 +464,18 @@ void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 
 bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 {
-    // Ignore all user input while a full-page snapshot is being taken
-    // (clicking, selecting text, scrolling, or triggering keyboard shortcuts would mess it up)
-    if (isCapturingFullPage && isUserInputEvent(event->type())) {
-        return true;
+    if (isCapturingFullPage) {
+        // Hitting Escape cancels taking full-page snapshot
+        if (isEscapeKeyEvent(event)) {
+            fullPageCaptureCancelled = true;
+            return true;
+        }
+
+        // Ignore all other user input while a full-page snapshot is being taken
+        // (clicking, selecting text, scrolling, or triggering keyboard shortcuts would mess it up)
+        if (isUserInputEvent(event->type())) {
+            return true;
+        }
     }
 
     if (watched->parent() == this) {
@@ -925,7 +1003,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 #endif
 
         // Render contents of QWidget into QPainter
-        render(painter);
+        renderSnapshot(painter);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         if (hadScrollBarsShown) {
@@ -946,8 +1024,23 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
         delete image;
     }
 
-    // TODO: add camera flash visual effect
     // TODO: add shutter sound
+}
+
+void LiquidAppWindow::renderSnapshot(QPainter* painter)
+{
+    if (snapshotFlashOverlay == Q_NULLPTR) {
+        snapshotFlashOverlay = new SnapshotFlashOverlay(this);
+    }
+
+    // Make sure that the flash from the previous snapshot (or chunk) doesn't end up in this one
+    snapshotFlashOverlay->hide();
+
+    // Render contents of QWidget into QPainter
+    render(painter);
+
+    // Flash, the way cameras do
+    snapshotFlashOverlay->flash();
 }
 
 QImage LiquidAppWindow::captureFullPage(void)
@@ -967,6 +1060,7 @@ QImage LiquidAppWindow::captureFullPage(void)
 
     // Lock the window down for the duration of the capture: no resizing, and no user input (see eventFilter())
     isCapturingFullPage = true;
+    fullPageCaptureCancelled = false;
     const QSize origMinimumSize = minimumSize();
     const QSize origMaximumSize = maximumSize();
     setFixedSize(size());
@@ -999,6 +1093,11 @@ QImage LiquidAppWindow::captureFullPage(void)
         // Keep scrolling down until the page can't be scrolled any further
         // (measuring the page's height upfront isn't reliable, pages may grow while being scrolled through)
         for (qreal y = 0; ; y += viewportHeight) {
+            // The user may have hit Escape while the program was waiting for the page
+            if (fullPageCaptureCancelled) {
+                break;
+            }
+
             const int destTop = qRound(y * zoom);
 
             if (destTop >= maxImageHeight) {
@@ -1024,6 +1123,10 @@ QImage LiquidAppWindow::captureFullPage(void)
 
             waitForNextFrame();
 
+            if (fullPageCaptureCancelled) {
+                break;
+            }
+
             // Render contents of QWidget into the tile
             tile.fill(Qt::transparent);
             {
@@ -1031,7 +1134,7 @@ QImage LiquidAppWindow::captureFullPage(void)
                 painter.setRenderHint(QPainter::Antialiasing);
                 painter.setRenderHint(QPainter::TextAntialiasing);
                 painter.setRenderHint(QPainter::SmoothPixmapTransform);
-                render(&painter);
+                renderSnapshot(&painter);
             }
 
             QImage logicalTile = (tileSize != logicalTileSize)
@@ -1051,14 +1154,22 @@ QImage LiquidAppWindow::captureFullPage(void)
         }
     }
 
-    // Stitch the pieces together
+    // Stitch the pieces together (unless cancelled, in which case nothing gets saved)
     QImage image;
-    if (imageHeight > 0) {
+    if (fullPageCaptureCancelled) {
+        qDebug().noquote() << "Full-page snapshot cancelled";
+        pieces.clear();
+        if (snapshotFlashOverlay != Q_NULLPTR) {
+            snapshotFlashOverlay->dismiss();
+        }
+    } else if (imageHeight > 0) {
         image = QImage(logicalTileSize.width(), imageHeight, QImage::Format_ARGB32);
     }
 
     if (image.isNull()) {
-        qDebug().noquote() << "Unable to take full-page snapshot";
+        if (!fullPageCaptureCancelled) {
+            qDebug().noquote() << "Unable to take full-page snapshot";
+        }
     } else {
         image.fill(Qt::transparent);
 
@@ -1087,6 +1198,22 @@ QImage LiquidAppWindow::captureFullPage(void)
     isCapturingFullPage = false;
 
     return image;
+}
+
+bool LiquidAppWindow::isEscapeKeyEvent(QEvent* event)
+{
+    switch (event->type()) {
+        case QEvent::KeyPress:
+        case QEvent::ShortcutOverride:
+            return static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape;
+
+        // Escape is bound to "stop loading / exit full-screen mode", so it usually arrives as a shortcut
+        case QEvent::Shortcut:
+            return static_cast<QShortcutEvent*>(event)->key() == QKeySequence(Qt::Key_Escape);
+
+        default:
+            return false;
+    }
 }
 
 bool LiquidAppWindow::isUserInputEvent(const QEvent::Type eventType)

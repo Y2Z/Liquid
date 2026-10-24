@@ -80,6 +80,8 @@ int main(int argc, char **argv)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     // Account for running on high-DPI displays
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    // Make pixmaps assume high-DPI scaling by default (always the case in Qt 6)
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
