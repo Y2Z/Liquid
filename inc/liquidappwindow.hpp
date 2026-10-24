@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QCoreApplication>
+#include <QImage>
 #include <QMenu>
 #include <QNetworkProxy>
 #include <QSettings>
@@ -54,6 +55,10 @@ protected:
 
 private:
     void takeSnapshot(const bool fullPage);
+    QImage captureFullPage(void);
+    static bool isUserInputEvent(const QEvent::Type eventType);
+    QVariant runJavaScriptSync(const QString& js, const int timeoutMs = 5000);
+    void waitForNextFrame(void);
     const QString colorToRgba(const QColor color);
 
     QString* liquidAppName;
@@ -73,6 +78,7 @@ private:
     bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
+    bool isCapturingFullPage = false;
 
     QNetworkProxy* proxy = Q_NULLPTR;
 

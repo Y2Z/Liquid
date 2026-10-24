@@ -3,8 +3,8 @@
 
 #include <QApplication>
 #include <QCoreApplication>
-#include <QDateTime>
 #include <QDebug>
+#include <QFileInfo>
 #include <QProcess>
 #include <QSettings>
 #include <QSysInfo>
@@ -165,9 +165,22 @@ QStringList Liquid::getLiquidAppsList(void)
     return liquidAppsNames;
 }
 
-QString Liquid::getReadableDateTimeString(void)
+QString Liquid::getUniqueFilePath(const QString dirPath, const QString baseName, const QString extension)
 {
-    return QDateTime::currentDateTimeUtc().toString(QLocale().dateTimeFormat());
+    // Produces "<baseName> (N).<extension>", where N is the lowest number not yet taken
+    // (deliberately avoids timestamps, both for privacy and for filesystem compatibility)
+    const QDir dir(dirPath);
+    QString filePath;
+
+    for (int n = 1; ; n++) {
+        filePath = dir.filePath(QString("%1 (%2).%3").arg(baseName).arg(n).arg(extension));
+
+        if (!QFileInfo::exists(filePath)) {
+            break;
+        }
+    }
+
+    return filePath;
 }
 
 void Liquid::removeDesktopFile(const QString liquidAppName)

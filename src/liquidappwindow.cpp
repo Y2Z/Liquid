@@ -1,10 +1,17 @@
+#include <cstring>
+
 #include <QApplication>
 #include <QBuffer>
 #include <QDir>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QClipboard>
 #include <QNetworkProxy>
 #include <QPainter>
+#include <QPointer>
 #include <QScreen>
+#include <QSharedPointer>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QWebEngineHistory>
 #include <QWebEngineScript>
@@ -329,7 +336,14 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(savePageAction);
     connect(savePageAction, &QAction::triggered, this, [this](){
         // TODO: make it save the page along with its custom CSS/JS, as one monolithic HTML file (instead of MHT)
-        page()->save(QString("%1 (%2).mhtml").arg(*liquidAppName).arg(Liquid::getReadableDateTimeString()));
+        // Save into the OS-specific downloads folder (falls back to home directory if there's none)
+        QString path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+        if (path.isEmpty()) {
+            path = QDir::homePath();
+        }
+        QDir().mkpath(path);
+
+        page()->save(Liquid::getUniqueFilePath(path, *liquidAppName, "mhtml"));
     });
 
     // Make it possible to intercept zoom events
@@ -349,6 +363,12 @@ void LiquidAppWindow::certificateError(void)
 
 void LiquidAppWindow::closeEvent(QCloseEvent* event)
 {
+    // Closing the window in the middle of taking a full-page snapshot would pull the rug from under it
+    if (isCapturingFullPage) {
+        event->ignore();
+        return;
+    }
+
     event->accept();
     deleteLater();
 }
@@ -374,6 +394,12 @@ void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 
 bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 {
+    // Ignore all user input while a full-page snapshot is being taken
+    // (clicking, selecting text, scrolling, or triggering keyboard shortcuts would mess it up)
+    if (isCapturingFullPage && isUserInputEvent(event->type())) {
+        return true;
+    }
+
     if (watched->parent() == this) {
         switch (event->type()) {
             case QEvent::Wheel:
@@ -563,15 +589,36 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     }
 
     // Restore window geometry
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
-        restoreGeometry(QByteArray::fromHex(
-            liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
-        ));
-    } else {
-        const QRect currentScreenSize = QGuiApplication::primaryScreen()->availableGeometry();
-        const int currentScreenWidth = currentScreenSize.width();
-        const int currentScreenHeight = currentScreenSize.height();
-        setGeometry(currentScreenWidth / 4, currentScreenHeight / 4, currentScreenWidth / 2, currentScreenHeight / 2);
+    {
+        bool geometryRestored = false;
+
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
+            geometryRestored = restoreGeometry(QByteArray::fromHex(
+                liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
+            ));
+
+            // Discard saved geometry if it doesn't fit on screen (e.g. the screen setup has changed),
+            // windows that are way too large may not show up at all on some platforms (e.g. Wayland)
+            if (geometryRestored) {
+                const QScreen* screen = QGuiApplication::screenAt(geometry().center());
+                if (screen == Q_NULLPTR) {
+                    screen = QGuiApplication::primaryScreen();
+                }
+                const QRect availableGeometry = screen->availableGeometry();
+
+                if (width() > availableGeometry.width() || height() > availableGeometry.height()) {
+                    qDebug().noquote() << "Saved window geometry doesn't fit on screen, using default geometry instead";
+                    geometryRestored = false;
+                }
+            }
+        }
+
+        if (!geometryRestored) {
+            const QRect currentScreenSize = QGuiApplication::primaryScreen()->availableGeometry();
+            const int currentScreenWidth = currentScreenSize.width();
+            const int currentScreenHeight = currentScreenSize.height();
+            setGeometry(currentScreenWidth / 4, currentScreenHeight / 4, currentScreenWidth / 2, currentScreenHeight / 2);
+        }
     }
 
     // Toggle JavaScript on if enabled in application config
@@ -803,11 +850,10 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
             dir.mkdir(".");
         }
     }
-    // Compose snapshot file name
-    const QString fileName = QString("%1 %2 (%3)")
+    // Compose snapshot file base name (a unique number gets appended to it upon saving)
+    const QString baseName = QString("%1 %2")
                                 .arg(*liquidAppName)
-                                .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"))
-                                .arg(Liquid::getReadableDateTimeString());
+                                .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"));
 
     if (vector) {
         QFile scriptFile(":/scripts/html2svg.js");
@@ -818,12 +864,12 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
                             .arg(colorToRgba(page()->backgroundColor()))
                             .arg(fullPage);
 
-        page()->runJavaScript(QString("(()=>{%1})();").arg(js), QWebEngineScript::ApplicationWorld, [path, fileName](const QVariant& res){
+        page()->runJavaScript(QString("(()=>{%1})();").arg(js), QWebEngineScript::ApplicationWorld, [path, baseName](const QVariant& res){
             qDebug().noquote() << res.toString();
 
             // Save vector image to disk
             {
-                QFile file(path + QDir::separator() + fileName + ".svg");
+                QFile file(Liquid::getUniqueFilePath(path, baseName, "svg"));
                 if (file.open(QIODevice::ReadWrite)) {
                     QTextStream stream(&file);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -834,6 +880,13 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
                 }
             }
         });
+    } else if (fullPage) {
+        const QImage image = captureFullPage();
+
+        if (!image.isNull()) {
+            // Save raster image to disk (already in logical pixels, the same way as regular snapshots)
+            image.save(Liquid::getUniqueFilePath(path, baseName, "png"), "PNG");
+        }
     } else {
         const QImage::Format format = QImage::Format_ARGB32;
         QImage* image = new QImage(snapshotSize * ratio, format);
@@ -850,81 +903,43 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
         painter->setRenderHint(QPainter::NonCosmeticDefaultPen);
 #endif
 
-        if (fullPage) {
-            const QSize origWindowSize = size();
-            const bool wasFullScreen = isFullScreen();
-            // Remember initial scroll position to be able to come back to it after the whole page is captured
-            const QPointF origScrollPos = page()->scrollPosition() / ratio;
-
-            // Resize the window to fit all of its content
-            {
-                setAttribute(Qt::WA_DontShowOnScreen, true);
-                show();
-
-                resize(snapshotSize);
-            }
-
-            // Render contents of QWidget into QPainter
-            render(painter);
-
-            // Restore the window back to be exactly how it was
-            {
-                // Resize back to what it was
-                resize(origWindowSize);
-
-                // Reveal the window
-                hide();
-                setAttribute(Qt::WA_DontShowOnScreen, false);
-                show();
-
-                // Restore window's full-screen mode
-                if (wasFullScreen && !isFullScreen()) {
-                    toggleFullScreenMode();
-                }
-
-                // Scroll the web view back to where it was before we started taking full-page snapshot
-                static const QString js = "window.scrollTo(%1, %2);";
-                page()->runJavaScript(QString(js).arg(origScrollPos.x()).arg(origScrollPos.y()), QWebEngineScript::ApplicationWorld);
-            }
-        } else {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-            const bool hadScrollBarsShown = liquidAppWebSettings->testAttribute(QWebEngineSettings::ShowScrollBars);
+        const bool hadScrollBarsShown = liquidAppWebSettings->testAttribute(QWebEngineSettings::ShowScrollBars);
 
-            if (hadScrollBarsShown) {
-                // Hide scrollbars before taking snapshot
-                liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+        if (hadScrollBarsShown) {
+            // Hide scrollbars before taking snapshot
+            liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
 
-                // Wait a little bit for scrollbars to disappear
-                Liquid::sleep(1500);
+            // Wait a little bit for scrollbars to disappear
+            Liquid::sleep(1500);
 
-                // qDebug() << liquidAppWebPage->renderProcessPid; // Qt 5.15 could allow us to trigger immediate page re-render by sending signal to that process
-                // liquidAppWebPage->setVisible(false); liquidAppWebPage->setVisible(true); // Try this out once Qt 5.14 is more widely available
+            // qDebug() << liquidAppWebPage->renderProcessPid; // Qt 5.15 could allow us to trigger immediate page re-render by sending signal to that process
+            // liquidAppWebPage->setVisible(false); liquidAppWebPage->setVisible(true); // Try this out once Qt 5.14 is more widely available
 
-                // This is another approach for temporarily hiding scrollbars
-                // static const QString js = "'undefined' != typeof document.styleSheets && 0 < document.styleSheets.length && document.styleSheets[0].addRule('::-webkit-scrollbar', 'width: 0 !important; height: 0 !important', 0);";
-                // page()->runJavaScript(QString(js), QWebEngineScript::ApplicationWorld, [&](const QVariant& res){
-                //     // Liquid::sleep(100);
-                // });
-            }
-#endif
-
-            // Render contents of QWidget into QPainter
-            render(painter);
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-            if (hadScrollBarsShown) {
-                // Bring scrollbars back after taking snapshot
-                liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
-            }
-#endif
+            // This is another approach for temporarily hiding scrollbars
+            // static const QString js = "'undefined' != typeof document.styleSheets && 0 < document.styleSheets.length && document.styleSheets[0].addRule('::-webkit-scrollbar', 'width: 0 !important; height: 0 !important', 0);";
+            // page()->runJavaScript(QString(js), QWebEngineScript::ApplicationWorld, [&](const QVariant& res){
+            //     // Liquid::sleep(100);
+            // });
         }
+#endif
+
+        // Render contents of QWidget into QPainter
+        render(painter);
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        if (hadScrollBarsShown) {
+            // Bring scrollbars back after taking snapshot
+            liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
+        }
+#endif
 
         painter->end();
         delete painter;
 
         // Save raster image to disk
         image->scaled(snapshotSize.width(), snapshotSize.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
-                .save(path + QDir::separator() + fileName + ".png", "PNG");
+                .save(Liquid::getUniqueFilePath(path, baseName, "png"), "PNG");
 
         // TODO: add EXIF?
 
@@ -933,6 +948,230 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 
     // TODO: add camera flash visual effect
     // TODO: add shutter sound
+}
+
+QImage LiquidAppWindow::captureFullPage(void)
+{
+    // The page gets captured one viewport-sized tile at a time while scrolling it from top to bottom,
+    // which avoids having to resize the window (and hitting GPU texture size limits for long pages)
+
+    const qreal dpr = devicePixelRatioF();
+    const qreal zoom = zoomFactor();
+
+    // Remember initial scroll position to be able to come back to it after the whole page is captured
+    const QVariantList origScrollPos = runJavaScriptSync("[window.scrollX, window.scrollY]").toList();
+    if (origScrollPos.size() != 2) {
+        qDebug().noquote() << "Unable to take full-page snapshot: the page did not respond";
+        return QImage();
+    }
+
+    // Lock the window down for the duration of the capture: no resizing, and no user input (see eventFilter())
+    isCapturingFullPage = true;
+    const QSize origMinimumSize = minimumSize();
+    const QSize origMaximumSize = maximumSize();
+    setFixedSize(size());
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    // Hide scrollbars, otherwise they'd end up in every tile
+    const bool hadScrollBarsShown = liquidAppWebSettings->testAttribute(QWebEngineSettings::ShowScrollBars);
+    if (hadScrollBarsShown) {
+        liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+        waitForNextFrame();
+    }
+
+    // Measure the viewport (in CSS pixels) only after scrollbars are gone, since hiding them may cause the page to reflow
+    const qreal viewportHeight = runJavaScriptSync("window.innerHeight").toReal();
+    const QSize tileSize = size() * dpr;
+    // Tiles get scaled down to logical pixels right away (that's what snapshots get saved in),
+    // otherwise high-DPI screens would use up the size limit several times faster for nothing
+    const QSize logicalTileSize = size();
+
+    // Pieces of the page, along with their vertical offsets within the resulting image
+    QList<QPair<int, QImage>> pieces;
+    int imageHeight = 0;
+
+    if (viewportHeight > 0 && !logicalTileSize.isEmpty()) {
+        const qint64 maxImageHeight = LQD_SNAPSHOT_MAX_PIXELS / logicalTileSize.width();
+
+        QImage tile(tileSize, QImage::Format_ARGB32);
+        tile.setDevicePixelRatio(dpr);
+
+        // Keep scrolling down until the page can't be scrolled any further
+        // (measuring the page's height upfront isn't reliable, pages may grow while being scrolled through)
+        for (qreal y = 0; ; y += viewportHeight) {
+            const int destTop = qRound(y * zoom);
+
+            if (destTop >= maxImageHeight) {
+                qDebug().noquote() << "Page is too long, full-page snapshot will be cut off at the bottom";
+                break;
+            }
+
+            // Scroll instantly (bypassing smooth scrolling), then find out where the page actually ended up
+            // (it can't scroll past its bottom, so the last tile usually overlaps with the previous one)
+            const QVariant actualY = runJavaScriptSync(
+                QString("window.scrollTo({left: 0, top: %1, behavior: 'instant'}); window.scrollY").arg(y)
+            );
+            if (!actualY.isValid()) {
+                qDebug().noquote() << "The page stopped responding, full-page snapshot will be incomplete";
+                break;
+            }
+
+            const int srcTop = qRound((y - actualY.toReal()) * zoom);
+            if (srcTop < 0 || srcTop >= logicalTileSize.height()) {
+                // Nothing new to capture, the previous tile already reached the bottom of the page
+                break;
+            }
+
+            waitForNextFrame();
+
+            // Render contents of QWidget into the tile
+            tile.fill(Qt::transparent);
+            {
+                QPainter painter(&tile);
+                painter.setRenderHint(QPainter::Antialiasing);
+                painter.setRenderHint(QPainter::TextAntialiasing);
+                painter.setRenderHint(QPainter::SmoothPixmapTransform);
+                render(&painter);
+            }
+
+            QImage logicalTile = (tileSize != logicalTileSize)
+                ? tile.scaled(logicalTileSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                : tile;
+            logicalTile.setDevicePixelRatio(1);
+
+            // Keep only the part of the tile that hasn't been captured yet
+            const int rowCount = qMin(logicalTileSize.height() - srcTop, (int)(maxImageHeight - destTop));
+            pieces.append(qMakePair(destTop, logicalTile.copy(0, srcTop, logicalTileSize.width(), rowCount)));
+            imageHeight = destTop + rowCount;
+
+            if (actualY.toReal() < y - 0.5) {
+                // The page couldn't be scrolled as far as requested, meaning that its bottom has been reached
+                break;
+            }
+        }
+    }
+
+    // Stitch the pieces together
+    QImage image;
+    if (imageHeight > 0) {
+        image = QImage(logicalTileSize.width(), imageHeight, QImage::Format_ARGB32);
+    }
+
+    if (image.isNull()) {
+        qDebug().noquote() << "Unable to take full-page snapshot";
+    } else {
+        image.fill(Qt::transparent);
+
+        for (const QPair<int, QImage>& piece : pieces) {
+            for (int row = 0; row < piece.second.height() && piece.first + row < image.height(); row++) {
+                memcpy(image.scanLine(piece.first + row), piece.second.constScanLine(row), image.bytesPerLine());
+            }
+        }
+    }
+
+    // Bring scrollbars back
+    if (hadScrollBarsShown) {
+        liquidAppWebSettings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
+    }
+
+    // Scroll the web view back to where it was before taking the snapshot
+    page()->runJavaScript(
+        QString("window.scrollTo({left: %1, top: %2, behavior: 'instant'});").arg(origScrollPos[0].toReal()).arg(origScrollPos[1].toReal()),
+        QWebEngineScript::ApplicationWorld
+    );
+
+    // Unlock the window
+    QApplication::restoreOverrideCursor();
+    setMinimumSize(origMinimumSize);
+    setMaximumSize(origMaximumSize);
+    isCapturingFullPage = false;
+
+    return image;
+}
+
+bool LiquidAppWindow::isUserInputEvent(const QEvent::Type eventType)
+{
+    switch (eventType) {
+        case QEvent::ContextMenu:
+        case QEvent::DragEnter:
+        case QEvent::DragLeave:
+        case QEvent::DragMove:
+        case QEvent::Drop:
+        case QEvent::HoverEnter:
+        case QEvent::HoverLeave:
+        case QEvent::HoverMove:
+        case QEvent::InputMethod:
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseMove:
+        case QEvent::NativeGesture:
+        case QEvent::Shortcut:
+        case QEvent::ShortcutOverride:
+        case QEvent::TabletMove:
+        case QEvent::TabletPress:
+        case QEvent::TabletRelease:
+        case QEvent::TouchBegin:
+        case QEvent::TouchCancel:
+        case QEvent::TouchEnd:
+        case QEvent::TouchUpdate:
+        case QEvent::Wheel:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+QVariant LiquidAppWindow::runJavaScriptSync(const QString& js, const int timeoutMs)
+{
+    // Shared with the callback, which may get called after this function has already returned (upon timeout)
+    struct Reply {
+        bool received = false;
+        QVariant result;
+    };
+    const QSharedPointer<Reply> reply(new Reply);
+
+    QEventLoop loop;
+    QPointer<QEventLoop> loopPointer(&loop);
+    QTimer::singleShot(timeoutMs, &loop, &QEventLoop::quit);
+
+    // Scripts in ApplicationWorld run even when JavaScript is disabled for the web page
+    page()->runJavaScript(js, QWebEngineScript::ApplicationWorld, [reply, loopPointer](const QVariant& result) {
+        reply->result = result;
+        reply->received = true;
+
+        if (loopPointer) {
+            loopPointer->quit();
+        }
+    });
+
+    if (!reply->received) {
+        loop.exec();
+    }
+
+    // Results in an invalid QVariant upon timeout
+    return reply->result;
+}
+
+void LiquidAppWindow::waitForNextFrame(void)
+{
+    // Ask the page to signal once it has gone through two animation frames
+    // (the first one is still being prepared at the moment of the request, the second one has the changes)
+    runJavaScriptSync("window.lqdFrameReady = false;"
+                      "requestAnimationFrame(() => requestAnimationFrame(() => { window.lqdFrameReady = true; }));");
+
+    QElapsedTimer timer;
+    timer.start();
+
+    while (timer.elapsed() < 1000 && !runJavaScriptSync("window.lqdFrameReady === true").toBool()) {
+        Liquid::sleep(16);
+    }
+
+    // Give the freshly rendered frame a moment to travel from the web engine to the widget
+    Liquid::sleep(100);
 }
 
 void LiquidAppWindow::toggleFullScreenMode(void)

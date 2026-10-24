@@ -15,7 +15,7 @@ public:
     static QDir getConfigDir(void);
     static QString getDefaultUserAgentString(void);
     static QStringList getLiquidAppsList(void);
-    static QString getReadableDateTimeString(void);
+    static QString getUniqueFilePath(const QString dirPath, const QString baseName, const QString extension);
     static void removeDesktopFile(const QString liquidAppName);
     static void runLiquidApp(const QString liquidAppName);
     static void sleep(const int ms);
