@@ -10,32 +10,17 @@
 #include "liquidappconfigwindow.hpp"
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
+#include "singleinstance.hpp"
 
 QTextStream cout(stdout);
 
-static QSharedMemory* sharedMemory = Q_NULLPTR;
+static SingleInstance* singleInstance = Q_NULLPTR;
 
 LiquidAppWindow* liquidAppWindow;
 MainWindow* mainWindow;
 
-QString getUserName()
-{
-    QString name = qgetenv("USER");
-
-    if (name.isEmpty()) {
-        name = qgetenv("USERNAME");
-    }
-
-    return name;
-}
-
 static void onSignalHandler(int signum)
 {
-    if (sharedMemory) {
-        delete sharedMemory;
-        sharedMemory = Q_NULLPTR;
-    }
-
     if (liquidAppWindow) {
         liquidAppWindow->close();
         delete liquidAppWindow;
@@ -58,9 +43,8 @@ int main(int argc, char **argv)
     int ret = EXIT_SUCCESS;
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
-    // Handle any further termination signals to ensure
-    // that the QSharedMemory block is deleted
-    // even if the process crashes
+    // Handle termination signals to make sure that
+    // Liquid app's settings get saved upon exit
     signal(SIGHUP,  onSignalHandler);
     signal(SIGINT,  onSignalHandler);
     signal(SIGQUIT, onSignalHandler);
@@ -89,16 +73,22 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
 
     if (argc < 2) {
-        // Allow only one instance
-        sharedMemory = new QSharedMemory(getUserName() + "_Liquid");
-        if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {
-            delete sharedMemory;
-            qDebug().noquote() << QString("Only one instance of Liquid is allowed");
-            exit(EXIT_FAILURE);
+        // Allow only one instance, bring the already running one to front instead of starting another
+        singleInstance = new SingleInstance(LQD_INSTANCE_ID_MAIN);
+        if (!singleInstance->claim()) {
+            qDebug().noquote() << QString("Liquid is already running");
+            SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, LQD_INSTANCE_MSG_RAISE);
+            goto done;
         }
 
         // Show main program window
         mainWindow = new MainWindow;
+
+        QObject::connect(singleInstance, &SingleInstance::messageReceived, mainWindow, [](const QByteArray& message) {
+            if (message == LQD_INSTANCE_MSG_RAISE) {
+                Liquid::raiseWindow(mainWindow);
+            }
+        });
     } else  { // App name provided
         // CLI flags and options
         QCommandLineParser parser;
@@ -151,16 +141,23 @@ attempt_to_create_or_run_liquid_app:
 
         // Attempt to load app settings from a config file
         if (!parser.isSet(editAppDialogFlag) && tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
-            // // Allow only one instance
-            sharedMemory = new QSharedMemory(getUserName() + "_Liquid_app_" + liquidAppName);
-            if (!sharedMemory->create(4, QSharedMemory::ReadOnly)) {
-                delete sharedMemory;
-                qDebug().noquote() << QString("Only one instance of Liquid app “%1” is allowed").arg(liquidAppName);
-                exit(EXIT_FAILURE);
+            // Allow only one instance per Liquid app, bring the already running one to front instead of starting another
+            const QString instanceId = LQD_INSTANCE_ID_APP_PREFIX + liquidAppName;
+            singleInstance = new SingleInstance(instanceId);
+            if (!singleInstance->claim()) {
+                qDebug().noquote() << QString("Liquid app “%1” is already running").arg(liquidAppName);
+                SingleInstance::sendMessage(instanceId, LQD_INSTANCE_MSG_RAISE);
+                goto done;
             }
 
             // Found existing liquid app settings file, show it
             liquidAppWindow = new LiquidAppWindow(&liquidAppName);
+
+            QObject::connect(singleInstance, &SingleInstance::messageReceived, liquidAppWindow, [](const QByteArray& message) {
+                if (message == LQD_INSTANCE_MSG_RAISE) {
+                    Liquid::raiseWindow(liquidAppWindow);
+                }
+            });
         } else {
             // No such Liquid app found, open Liquid app creation dialog
             LiquidAppConfigDialog LiquidAppConfigDialog(mainWindow, liquidAppName);
@@ -196,9 +193,10 @@ attempt_to_create_or_run_liquid_app:
     ret = app.exec();
 
 done:
-    if (sharedMemory != Q_NULLPTR) {
-        delete sharedMemory;
-        sharedMemory = Q_NULLPTR;
+    if (singleInstance != Q_NULLPTR) {
+        // Stops listening (and removes the socket file, where applicable)
+        delete singleInstance;
+        singleInstance = Q_NULLPTR;
     }
 
     return ret;

@@ -58,12 +58,7 @@ MainWindow::MainWindow() : QScrollArea()
         switch (LiquidAppConfigDialog.exec()) {
             case QDialog::Accepted:
                 // Give some time to the filesystem before scanning for the newly created Liquid App
-                {
-                    QTime proceedAfter = QTime::currentTime().addMSecs(100);
-                    while (QTime::currentTime() < proceedAfter) {
-                        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-                    }
-                }
+                Liquid::sleep(100);
                 flushTable();
                 populateTable();
 
@@ -214,12 +209,7 @@ void MainWindow::populateTable(void)
             switch (LiquidAppConfigDialog.exec()) {
                 case QDialog::Accepted:
                     // Give some time to the filesystem before scanning for the newly created app
-                    {
-                        QTime proceedAfter = QTime::currentTime().addMSecs(100);
-                        while (QTime::currentTime() < proceedAfter) {
-                            QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-                        }
-                    }
+                    Liquid::sleep(100);
                     flushTable();
                     populateTable();
                 break;

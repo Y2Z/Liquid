@@ -4,11 +4,13 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QProcess>
 #include <QSettings>
 #include <QSysInfo>
 #include <QTime>
+#include <QTimer>
 #include <QWebEngineProfile>
 
 #if defined(Q_OS_MAC)
@@ -86,6 +88,18 @@ void Liquid::createDesktopFile(const QString liquidAppName, const QString liquid
 }
 
 bool Liquid::detectDarkMode(void)
+{
+    // Detecting it may involve spawning a process, do it only once per program run
+    static int cachedResult = -1;
+
+    if (cachedResult < 0) {
+        cachedResult = detectDarkModeUncached() ? 1 : 0;
+    }
+
+    return cachedResult == 1;
+}
+
+bool Liquid::detectDarkModeUncached(void)
 {
 #if defined(Q_OS_LINUX)
     QProcess process;
@@ -183,6 +197,19 @@ QString Liquid::getUniqueFilePath(const QString dirPath, const QString baseName,
     return filePath;
 }
 
+void Liquid::raiseWindow(QWidget* window)
+{
+    if (window == Q_NULLPTR) {
+        return;
+    }
+
+    // Un-minimize (without affecting full-screen or maximized state), then bring to front
+    window->setWindowState(window->windowState() & ~Qt::WindowMinimized);
+    window->show();
+    window->raise();
+    window->activateWindow();
+}
+
 void Liquid::removeDesktopFile(const QString liquidAppName)
 {
 #if defined(Q_OS_LINUX)
@@ -209,9 +236,16 @@ void Liquid::runLiquidApp(const QString liquidAppName)
 
 void Liquid::sleep(const int ms)
 {
-    const QTime proceedAfter = QTime::currentTime().addMSecs(ms);
+    // Keep processing events while waiting, but without spinning the CPU:
+    // block until an event arrives, with the timer guaranteeing one when it's time to stop waiting
+    QTimer timer;
+    timer.setSingleShot(true);
+    timer.start(ms);
 
-    while (QTime::currentTime() < proceedAfter) {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, ms / 4);
+    QElapsedTimer elapsed;
+    elapsed.start();
+
+    while (elapsed.elapsed() < ms) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents | QEventLoop::WaitForMoreEvents);
     }
 }
