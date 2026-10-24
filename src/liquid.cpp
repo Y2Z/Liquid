@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QProcess>
 #include <QSettings>
+#include <QSysInfo>
 #include <QTime>
 #include <QWebEngineProfile>
 

@@ -16,41 +16,60 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-18.04
-          - os: ubuntu-20.04
-          - os: macos-10.15
-          - os: macos-11
-          - os: windows-2019
+          # Qt 5.15 from distro packages
+          - os: ubuntu-22.04
+            qt: 5
+          # Qt 6 from distro packages
+          - os: ubuntu-24.04
+            qt: 6
+          # Qt 6 from the Qt online repository
+          - os: macos-14
+            qt: 6
           - os: windows-2022
-
-    continue-on-error: true
+            qt: 6
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: ilammy/msvc-dev-cmd@v1
+    - uses: actions/checkout@v4
 
-    - name: Resolve dependencies (Ubuntu)
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: runner.os == 'Windows'
+
+    - name: Resolve dependencies (Ubuntu, Qt 5)
       run: |
-        sudo apt-get update && \
-        sudo apt-get install qt5-default qtwebengine5-dev
-      if: contains(matrix.os, 'ubuntu')
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qtwebengine5-dev qt5-qmake
+        echo "QMAKE=qmake" >> "$GITHUB_ENV"
+      if: runner.os == 'Linux' && matrix.qt == 5
+
+    - name: Resolve dependencies (Ubuntu, Qt 6)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qt6-base-dev qt6-webengine-dev qmake6 libgl-dev
+        echo "QMAKE=qmake6" >> "$GITHUB_ENV"
+      if: runner.os == 'Linux' && matrix.qt == 6
 
     - name: Resolve dependencies (macOS and Windows)
-      uses: jurplel/install-qt-action@v2
+      uses: jurplel/install-qt-action@v4
       with:
-          modules: 'qtwebengine'
-      if: contains(matrix.os, 'macos') || contains(matrix.os, 'windows')
+        version: '6.8.*'
+        modules: 'qtwebengine qtwebchannel qtpositioning'
+      if: runner.os != 'Linux'
+
+    - name: Resolve dependencies (macOS icon tools)
+      run: brew install imagemagick
+      if: runner.os == 'macOS'
 
     - name: Build (Ubuntu and macOS)
       run: |
-        qmake
+        ${QMAKE:-qmake}
         make -j
-      if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
+      if: runner.os != 'Windows'
 
     - name: Build (Windows)
       run: |
         qmake
         nmake
-      if: contains(matrix.os, 'windows')
+      if: runner.os == 'Windows'
