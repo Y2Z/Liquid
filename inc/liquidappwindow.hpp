@@ -14,6 +14,8 @@
 #include "liquidappwebpage.hpp"
 
 class LiquidAppWebPage;
+class SnapshotFlashOverlay;
+class QPainter;
 
 class LiquidAppWindow : public QWebEngineView
 {
@@ -56,7 +58,9 @@ protected:
 private:
     void takeSnapshot(const bool fullPage);
     QImage captureFullPage(void);
+    void renderSnapshot(QPainter* painter);
     static bool isUserInputEvent(const QEvent::Type eventType);
+    static bool isEscapeKeyEvent(QEvent* event);
     QVariant runJavaScriptSync(const QString& js, const int timeoutMs = 5000);
     void waitForNextFrame(void);
     const QString colorToRgba(const QColor color);
@@ -79,6 +83,7 @@ private:
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
     bool isCapturingFullPage = false;
+    bool fullPageCaptureCancelled = false;
 
     QNetworkProxy* proxy = Q_NULLPTR;
 
@@ -113,6 +118,9 @@ private:
     QAction* contextMenuBackAction;
     QAction* contextMenuForwardAction;
     QAction* contextMenuCloseAction;
+
+    // Camera flash effect for snapshots
+    SnapshotFlashOverlay* snapshotFlashOverlay = Q_NULLPTR;
 
     void bindKeyboardShortcuts(void);
     void loadLiquidAppConfig(void);
