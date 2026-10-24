@@ -10,6 +10,7 @@
 #include <QNetworkProxy>
 #include <QPainter>
 #include <QPointer>
+#include <QSaveFile>
 #include <QScreen>
 #include <QSharedPointer>
 #include <QStandardPaths>
@@ -24,6 +25,7 @@
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
+#include "svgsnapshot.hpp"
 #include "lqd.h"
 #ifdef Q_OS_MAC
 #include "SetWindowBackgroundColor.h"
@@ -410,6 +412,12 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(takeSnapshotFullPageAction);
     connect(takeSnapshotFullPageAction, SIGNAL(triggered()), this, SLOT(takeSnapshotFullPageSlot()));
 
+    // Connect "take vector snapshot" shortcut
+    takeSnapshotVectorAction = new QAction;
+    takeSnapshotVectorAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_TAKE_SNAPSHOT_VECTOR)));
+    addAction(takeSnapshotVectorAction);
+    connect(takeSnapshotVectorAction, &QAction::triggered, this, &LiquidAppWindow::takeVectorSnapshot);
+
     // Connect "save page" shortcut
     savePageAction = new QAction;
     savePageAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_SAVE_PAGE)));
@@ -443,23 +451,14 @@ void LiquidAppWindow::certificateError(void)
 
 void LiquidAppWindow::closeEvent(QCloseEvent* event)
 {
-    // Closing the window in the middle of taking a full-page snapshot would pull the rug from under it
-    if (isCapturingFullPage) {
+    // Closing the window in the middle of taking a snapshot would pull the rug from under it
+    if (isTakingSnapshot) {
         event->ignore();
         return;
     }
 
     event->accept();
     deleteLater();
-}
-
-const QString LiquidAppWindow::colorToRgba(const QColor color)
-{
-    return QString("rgba(%1, %2, %3, %4)")
-            .arg(color.red())
-            .arg(color.green())
-            .arg(color.blue())
-            .arg(color.alphaF());
 }
 
 void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
@@ -474,10 +473,10 @@ void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 
 bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 {
-    if (isCapturingFullPage) {
-        // Hitting Escape cancels taking full-page snapshot
+    if (isTakingSnapshot) {
+        // Hitting Escape cancels taking the snapshot
         if (isEscapeKeyEvent(event)) {
-            fullPageCaptureCancelled = true;
+            snapshotCancelled = true;
             return true;
         }
 
@@ -922,51 +921,28 @@ void LiquidAppWindow::takeSnapshotFullPageSlot(void)
     takeSnapshot(true);
 }
 
-void LiquidAppWindow::takeSnapshot(const bool fullPage)
+QString LiquidAppWindow::getSnapshotsDirPath(void)
 {
-    const bool vector = false; // NOTE: experimental feature
-    const int ratio = QPaintDevice::devicePixelRatio();
-    const QSize snapshotSize = (fullPage) ? (page()->contentsSize().toSize() / ratio) : contentsRect().size();
+    const QString path = QDir::homePath() + QDir::separator() + "Pictures";
 
     // Ensure the target directory exists
-    const QString path = QDir::homePath() + QDir::separator() + "Pictures";
-    {
-        QDir dir(path);
-        if (!dir.exists()) {
-            dir.mkdir(".");
-        }
-    }
+    QDir().mkpath(path);
+
+    return path;
+}
+
+void LiquidAppWindow::takeSnapshot(const bool fullPage)
+{
+    const int ratio = QPaintDevice::devicePixelRatio();
+    const QSize snapshotSize = contentsRect().size();
+    const QString path = getSnapshotsDirPath();
+
     // Compose snapshot file base name (a unique number gets appended to it upon saving)
     const QString baseName = QString("%1 %2")
                                 .arg(*liquidAppName)
                                 .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"));
 
-    if (vector) {
-        QFile scriptFile(":/scripts/html2svg.js");
-        scriptFile.open(QFile::ReadOnly | QFile::Text);
-        const QString js = QString(scriptFile.readAll())
-                            .arg(snapshotSize.width())
-                            .arg(snapshotSize.height())
-                            .arg(colorToRgba(page()->backgroundColor()))
-                            .arg(fullPage);
-
-        page()->runJavaScript(QString("(()=>{%1})();").arg(js), QWebEngineScript::ApplicationWorld, [path, baseName](const QVariant& res){
-            qDebug().noquote() << res.toString();
-
-            // Save vector image to disk
-            {
-                QFile file(Liquid::getUniqueFilePath(path, baseName, "svg"));
-                if (file.open(QIODevice::ReadWrite)) {
-                    QTextStream stream(&file);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-                    stream << res.toString() << Qt::endl;
-#else
-                    stream << res.toString() << endl;
-#endif
-                }
-            }
-        });
-    } else if (fullPage) {
+    if (fullPage) {
         const QImage image = captureFullPage();
 
         if (!image.isNull()) {
@@ -1037,18 +1013,103 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 
 void LiquidAppWindow::renderSnapshot(QPainter* painter)
 {
-    if (snapshotFlashOverlay == Q_NULLPTR) {
-        snapshotFlashOverlay = new SnapshotFlashOverlay(this);
-    }
-
     // Make sure that the flash from the previous snapshot (or chunk) doesn't end up in this one
-    snapshotFlashOverlay->hide();
+    if (snapshotFlashOverlay != Q_NULLPTR) {
+        snapshotFlashOverlay->hide();
+    }
 
     // Render contents of QWidget into QPainter
     render(painter);
 
+    flash();
+}
+
+void LiquidAppWindow::flash(void)
+{
+    if (snapshotFlashOverlay == Q_NULLPTR) {
+        snapshotFlashOverlay = new SnapshotFlashOverlay(this);
+    }
+
     // Flash, the way cameras do
     snapshotFlashOverlay->flash();
+}
+
+void LiquidAppWindow::takeVectorSnapshot(void)
+{
+    if (isTakingSnapshot) {
+        return;
+    }
+
+    QFile scriptFile(":/scripts/html2svg.js");
+    if (!scriptFile.open(QFile::ReadOnly | QFile::Text)) {
+        qDebug().noquote() << "Unable to load html2svg.js";
+        return;
+    }
+    const QString script = QString::fromUtf8(scriptFile.readAll());
+
+    // Ignore user input until done (see eventFilter()), Escape cancels
+    isTakingSnapshot = true;
+    snapshotCancelled = false;
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    bool isDone = false;
+
+    if (waitForDocumentToFinishLoading()) {
+        // The script walks the page asynchronously, and reports back by setting window.lqdHtml2Svg.done to true
+        page()->runJavaScript(script, QWebEngineScript::ApplicationWorld);
+
+        QElapsedTimer timer;
+        timer.start();
+
+        while (!snapshotCancelled && timer.elapsed() < LQD_VECTOR_SNAPSHOT_TIMEOUT) {
+            if (runJavaScriptSync("window.lqdHtml2Svg ? window.lqdHtml2Svg.done === true : false").toBool()) {
+                isDone = true;
+                break;
+            }
+
+            Liquid::sleep(50);
+        }
+    }
+
+    QByteArray svg;
+    QString error;
+
+    if (snapshotCancelled) {
+        qDebug().noquote() << "Vector snapshot cancelled";
+    } else if (!isDone) {
+        qDebug().noquote() << "Timed out taking vector snapshot";
+    } else {
+        const QVariantList outcome = runJavaScriptSync("[window.lqdHtml2Svg.result, window.lqdHtml2Svg.error]", LQD_VECTOR_SNAPSHOT_TIMEOUT).toList();
+
+        if (outcome.size() != 2) {
+            error = "No data received from the page";
+        } else if (!outcome[1].isNull() && outcome[1].isValid()) {
+            error = outcome[1].toString();
+        } else {
+            svg = SvgSnapshot::build(outcome[0].toString().toUtf8(), page()->backgroundColor(), zoomFactor(), &error);
+        }
+
+        if (!error.isEmpty()) {
+            qDebug().noquote() << "Unable to take vector snapshot:" << error;
+        }
+    }
+
+    // Free up the page's memory
+    page()->runJavaScript("delete window.lqdHtml2Svg;", QWebEngineScript::ApplicationWorld);
+
+    if (!svg.isEmpty()) {
+        const QString baseName = QString("%1 %2").arg(*liquidAppName).arg(tr("vector snapshot"));
+        QSaveFile file(Liquid::getUniqueFilePath(getSnapshotsDirPath(), baseName, "svg"));
+
+        if (file.open(QIODevice::WriteOnly) && file.write(svg) == svg.size() && file.commit()) {
+            flash();
+        } else {
+            qDebug().noquote() << "Unable to save vector snapshot:" << file.errorString();
+        }
+    }
+
+    QApplication::restoreOverrideCursor();
+    isTakingSnapshot = false;
 }
 
 QImage LiquidAppWindow::captureFullPage(void)
@@ -1067,12 +1128,15 @@ QImage LiquidAppWindow::captureFullPage(void)
     }
 
     // Lock the window down for the duration of the capture: no resizing, and no user input (see eventFilter())
-    isCapturingFullPage = true;
-    fullPageCaptureCancelled = false;
+    isTakingSnapshot = true;
+    snapshotCancelled = false;
     const QSize origMinimumSize = minimumSize();
     const QSize origMaximumSize = maximumSize();
     setFixedSize(size());
     QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    // Don't start capturing until the entire page is there (if cancelled while waiting, the capture loop exits right away)
+    waitForDocumentToFinishLoading();
 
     // Hide scrollbars, otherwise they'd end up in every tile
     const bool hadScrollBarsShown = liquidAppWebSettings->testAttribute(QWebEngineSettings::ShowScrollBars);
@@ -1102,7 +1166,7 @@ QImage LiquidAppWindow::captureFullPage(void)
         // (measuring the page's height upfront isn't reliable, pages may grow while being scrolled through)
         for (qreal y = 0; ; y += viewportHeight) {
             // The user may have hit Escape while the program was waiting for the page
-            if (fullPageCaptureCancelled) {
+            if (snapshotCancelled) {
                 break;
             }
 
@@ -1131,7 +1195,7 @@ QImage LiquidAppWindow::captureFullPage(void)
 
             waitForNextFrame();
 
-            if (fullPageCaptureCancelled) {
+            if (snapshotCancelled) {
                 break;
             }
 
@@ -1164,7 +1228,7 @@ QImage LiquidAppWindow::captureFullPage(void)
 
     // Stitch the pieces together (unless cancelled, in which case nothing gets saved)
     QImage image;
-    if (fullPageCaptureCancelled) {
+    if (snapshotCancelled) {
         qDebug().noquote() << "Full-page snapshot cancelled";
         pieces.clear();
         if (snapshotFlashOverlay != Q_NULLPTR) {
@@ -1175,7 +1239,7 @@ QImage LiquidAppWindow::captureFullPage(void)
     }
 
     if (image.isNull()) {
-        if (!fullPageCaptureCancelled) {
+        if (!snapshotCancelled) {
             qDebug().noquote() << "Unable to take full-page snapshot";
         }
     } else {
@@ -1203,7 +1267,7 @@ QImage LiquidAppWindow::captureFullPage(void)
     QApplication::restoreOverrideCursor();
     setMinimumSize(origMinimumSize);
     setMaximumSize(origMaximumSize);
-    isCapturingFullPage = false;
+    isTakingSnapshot = false;
 
     return image;
 }
@@ -1260,6 +1324,35 @@ bool LiquidAppWindow::isUserInputEvent(const QEvent::Type eventType)
     }
 }
 
+bool LiquidAppWindow::waitForDocumentToFinishLoading(void)
+{
+    // Large pages (e.g. huge comment threads) arrive in pieces and get laid out as they do,
+    // taking a snapshot before the whole document is there would leave out everything that hasn't arrived yet
+    QElapsedTimer timer;
+    timer.start();
+    bool isWaiting = false;
+
+    while (!snapshotCancelled && timer.elapsed() < LQD_SNAPSHOT_LOAD_WAIT_TIMEOUT) {
+        // Scripts in ApplicationWorld run even when JavaScript is disabled for the web page
+        if (runJavaScriptSync("document.readyState").toString() != "loading") {
+            return true;
+        }
+
+        if (!isWaiting) {
+            qDebug().noquote() << "Waiting for the page to finish loading before taking snapshot";
+            isWaiting = true;
+        }
+
+        Liquid::sleep(100);
+    }
+
+    if (!snapshotCancelled) {
+        qDebug().noquote() << "The page is still loading, snapshot may be incomplete";
+    }
+
+    return !snapshotCancelled;
+}
+
 QVariant LiquidAppWindow::runJavaScriptSync(const QString& js, const int timeoutMs)
 {
     // Shared with the callback, which may get called after this function has already returned (upon timeout)
@@ -1293,6 +1386,13 @@ QVariant LiquidAppWindow::runJavaScriptSync(const QString& js, const int timeout
 
 void LiquidAppWindow::waitForNextFrame(void)
 {
+    // Animation frame callbacks never run when JavaScript is disabled for the page (not even ones that come
+    // from an isolated world), so there's no way to know when the next frame is ready: wait a fixed amount of time
+    if (!liquidAppWebSettings->testAttribute(QWebEngineSettings::JavascriptEnabled)) {
+        Liquid::sleep(LQD_FRAME_WAIT_WITHOUT_JS);
+        return;
+    }
+
     // Ask the page to signal once it has gone through two animation frames
     // (the first one is still being prepared at the moment of the request, the second one has the changes)
     runJavaScriptSync("window.lqdFrameReady = false;"

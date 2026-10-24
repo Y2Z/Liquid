@@ -40,6 +40,7 @@ public slots:
     void stopLoadingOrExitFullScreenMode(void);
     void takeSnapshotSlot(void);
     void takeSnapshotFullPageSlot(void);
+    void takeVectorSnapshot(void);
     void toggleFullScreenMode(void);
     void toggleWindowGeometryLock(void);
     void updateWindowTitle(const QString title);
@@ -60,11 +61,13 @@ private:
     void takeSnapshot(const bool fullPage);
     QImage captureFullPage(void);
     void renderSnapshot(QPainter* painter);
+    void flash(void);
+    static QString getSnapshotsDirPath(void);
     static bool isUserInputEvent(const QEvent::Type eventType);
     static bool isEscapeKeyEvent(QEvent* event);
     QVariant runJavaScriptSync(const QString& js, const int timeoutMs = 5000);
     void waitForNextFrame(void);
-    const QString colorToRgba(const QColor color);
+    bool waitForDocumentToFinishLoading(void);
 
     QString* liquidAppName;
 
@@ -84,8 +87,8 @@ private:
     bool pageHasError = false;
     bool pageIsLoading = false;
     bool windowGeometryIsLocked = false;
-    bool isCapturingFullPage = false;
-    bool fullPageCaptureCancelled = false;
+    bool isTakingSnapshot = false;
+    bool snapshotCancelled = false;
 
     QNetworkProxy* proxy = Q_NULLPTR;
 
@@ -103,6 +106,7 @@ private:
     QAction* stopLoadingOrExitFullScreenModeAction;
     QAction* takeSnapshotAction;
     QAction* takeSnapshotFullPageAction;
+    QAction* takeSnapshotVectorAction;
     QAction* toggleFullScreenModeAction;
     QAction* toggleFullScreenModeAction2;
     QAction* toggleGeometryLockAction;
