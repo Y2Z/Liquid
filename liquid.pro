@@ -29,6 +29,7 @@ HEADERS     += inc/lqd.h \
                inc/liquidappwebpage.hpp \
                inc/liquidappwindow.hpp \
                inc/mainwindow.hpp \
+               inc/singleinstance.hpp \
 
 SOURCES     += src/liquid.cpp \
                src/liquidappcookiejar.cpp \
@@ -37,6 +38,7 @@ SOURCES     += src/liquid.cpp \
                src/liquidappwindow.cpp \
                src/main.cpp \
                src/mainwindow.cpp \
+               src/singleinstance.cpp \
 
 RESOURCES    = res/resources.qrc
 

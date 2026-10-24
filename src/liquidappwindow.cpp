@@ -127,6 +127,16 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
 #endif
 
+    // Remember window geometry only once it settles (see resizeEvent())
+    rememberGeometryTimer = new QTimer(this);
+    rememberGeometryTimer->setSingleShot(true);
+    rememberGeometryTimer->setInterval(200);
+    connect(rememberGeometryTimer, &QTimer::timeout, this, [this]() {
+        if (!isFullScreen()) {
+            liquidAppWindowGeometry = saveGeometry();
+        }
+    });
+
     // Disable default QWebEngineView's context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
 
@@ -812,12 +822,10 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
-    // Remember window size (unless in full-screen mode)
+    // Remember window size (unless in full-screen mode),
+    // once it stops changing (e.g. the user is done dragging, or resize animation is over)
     if (event->spontaneous() && !isFullScreen()) {
-        // Pause here to wait for any kind of window resize animations to finish
-        Liquid::sleep(200);
-
-        liquidAppWindowGeometry = saveGeometry();
+        rememberGeometryTimer->start();
     }
 
     QWebEngineView::resizeEvent(event);

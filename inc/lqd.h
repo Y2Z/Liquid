@@ -20,6 +20,13 @@
 #define LQD_ZOOM_LVL_STEP      0.04
 #define LQD_ZOOM_LVL_STEP_FINE (LQD_ZOOM_LVL_STEP / 10)
 
+/* Instance IDs (for preventing duplicate instances, and for talking to running ones) */
+#define LQD_INSTANCE_ID_MAIN       "main"
+#define LQD_INSTANCE_ID_APP_PREFIX "app/"
+
+/* Messages that can be sent to running instances */
+#define LQD_INSTANCE_MSG_RAISE "raise"
+
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
 #define LQD_ICON_EDIT    "⚙"

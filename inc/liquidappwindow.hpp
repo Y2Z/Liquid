@@ -8,6 +8,7 @@
 #include <QNetworkProxy>
 #include <QSettings>
 #include <QShortcut>
+#include <QTimer>
 #include <QWebEngineView>
 #include <QWebEngineFullScreenRequest>
 
@@ -74,6 +75,7 @@ private:
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     QWebEngineSettings* liquidAppWebSettings = Q_NULLPTR;
     QByteArray liquidAppWindowGeometry;
+    QTimer* rememberGeometryTimer = Q_NULLPTR;
     QList<qreal> zoomFactors;
 
     bool liquidAppWindowTitleIsReadOnly = false;
