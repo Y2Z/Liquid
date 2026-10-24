@@ -24,6 +24,11 @@ LiquidAppWebPage::LiquidAppWebPage(QWebEngineProfile* profile, LiquidAppWindow* 
     });
 
     connect(this, &QWebEnginePage::authenticationRequired, this, &LiquidAppWebPage::authenticationRequired);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Qt 6 turned QWebEnginePage::certificateError() from a virtual method into a signal
+    connect(this, &QWebEnginePage::certificateError, this, &LiquidAppWebPage::handleCertificateError);
+#endif
 }
 
 void LiquidAppWebPage::addAllowedDomain(const QString domain) {
@@ -107,14 +112,26 @@ void LiquidAppWebPage::authenticationRequired(const QUrl& requestUrl, QAuthentic
     dialogWidget = Q_NULLPTR;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 bool LiquidAppWebPage::certificateError(const QWebEngineCertificateError& error)
 {
     Q_UNUSED(error);
 
     emit liquidAppWindow->certificateError();
 
+    // Ignore the error and proceed with loading the page
     return true;
 }
+#else
+void LiquidAppWebPage::handleCertificateError(const QWebEngineCertificateError& error)
+{
+    // Ignore the error and proceed with loading the page
+    QWebEngineCertificateError err = error;
+    err.acceptCertificate();
+
+    emit liquidAppWindow->certificateError();
+}
+#endif
 
 void LiquidAppWebPage::closeJsDialog()
 {

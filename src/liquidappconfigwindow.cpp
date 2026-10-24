@@ -379,7 +379,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 customBackgroundColorButtonLayout->addWidget(customBackgroundColorButton);
 
                 connect(customBackgroundColorButton, &QPushButton::clicked, [&]() {
-                    const QColorDialog::ColorDialogOptions options = QFlag(QColorDialog::ShowAlphaChannel);
+                    const QColorDialog::ColorDialogOptions options = QColorDialog::ShowAlphaChannel;
                     QColor color = QColorDialog::getColor(*backgroundColor, this, tr("Pick custom background color"), options);
 
                     if (color.isValid()) {
@@ -746,7 +746,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 connect(proxyPortInput, QOverload<int>::of(&QSpinBox::valueChanged), [&](){
                     proxyModeCustomRadioButton->setChecked(true);
                 });
-                connect(proxyUseAuthCheckBox, &QCheckBox::stateChanged, [&](){
+                connect(proxyUseAuthCheckBox, &QCheckBox::toggled, [&](){
                     proxyModeCustomRadioButton->setChecked(true);
                 });
                 connect(proxyUsernameInput, &QLineEdit::textChanged, [&](const QString value){

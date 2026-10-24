@@ -73,12 +73,26 @@ What gets stored (if allowed): cookies.
 
 ## Working with the codebase
 
+#### Dependencies
+
+Liquid is built with Qt 6 (Qt 5.15 is still supported) and Qt WebEngine.
+
+On Debian/Ubuntu:
+
+```console
+sudo apt install qt6-base-dev qt6-webengine-dev qmake6 build-essential
+```
+
+On macOS and Windows, install Qt 6 with the Qt WebEngine, Qt WebChannel, and Qt Positioning modules using the [Qt Online Installer](https://www.qt.io/download-qt-installer).
+
 #### Build
 
 ```console
-qmake
+qmake6
 make -j
 ```
+
+Use `qmake` instead of `qmake6` if it already points to Qt 6 (or to Qt 5.15) on your system.
 
 #### Install
 

@@ -4,8 +4,8 @@ VERSION_PATCH = 11
 
 VERSION      = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
-QT          += core gui webenginewidgets
-CONFIG      += c++11
+QT          += core gui network widgets webenginecore webenginewidgets
+CONFIG      += c++17
 TEMPLATE     = app
 
 DESTDIR      = build
@@ -85,7 +85,7 @@ unix:!mac {
 # macOS
 macx: {
     HEADERS += inc/SetWindowBackgroundColor.h
-    OBJECTIVE_SOURCES += src/SetWindowBackgroundColor.mm
+    SOURCES += src/SetWindowBackgroundColor.mm
 
     LIBS += -framework Cocoa
 
@@ -107,5 +107,7 @@ macx: {
         QMAKE_PRE_LINK += iconutil -c icns $${DESTDIR}/$${TARGET}.iconset
     }
 
+    # Qt 6 no longer creates Contents/Resources inside the app bundle on its own
+    QMAKE_POST_LINK += mkdir -p $${DESTDIR}/$${TARGET}.app/Contents/Resources &&
     QMAKE_POST_LINK += cp $${DESTDIR}/$${TARGET}.icns $${DESTDIR}/$${TARGET}.app/Contents/Resources/
 }
