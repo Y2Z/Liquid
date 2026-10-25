@@ -14,6 +14,8 @@
 
 #include "liquidappwebpage.hpp"
 
+class LiquidAppIcon;
+class LiquidAppIconFetcher;
 class LiquidAppWebPage;
 class SnapshotFlashOverlay;
 class QPainter;
@@ -75,11 +77,20 @@ private:
     QVariant runJavaScriptSync(const QString& js, const int timeoutMs = 5000);
     void waitForNextFrame(void);
     bool waitForDocumentToFinishLoading(void);
+    void applyIcon(void);
+    void maybeFetchIcon(void);
+    void useFetchedIcon(const LiquidAppIcon& icon);
+    bool isShowingOwnWebsite(void);
 
     QString liquidAppName;
 
     QString liquidAppWindowTitle;
-    QIcon iconToSave;
+
+    // The icon provided by the page that's currently shown (used only until the Liquid app has an icon of its own)
+    QIcon pageIcon;
+    // Fetching the website's icon happens once per run, and only if the Liquid app doesn't have one yet
+    LiquidAppIconFetcher* iconFetcher = Q_NULLPTR;
+    bool iconFetchAttempted = false;
 
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;

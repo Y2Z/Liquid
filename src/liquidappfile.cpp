@@ -11,7 +11,8 @@ namespace {
 
 const int FORMAT_VERSION = 1;
 const QString ROOT_ELEMENT = QStringLiteral("liquid");
-const QString ICON_DATA_URL_PREFIX = QStringLiteral("data:image/png;base64,");
+// Data URL prefixes of the image types icons can be stored as
+const QStringList ICON_TYPES = { QStringLiteral("image/png"), QStringLiteral("image/svg+xml") };
 const QString COOKIES_KEY_PREFIX = QStringLiteral(LQD_CFG_GROUP_NAME_COOKIES "/");
 
 // Settings stored as text of their own elements
@@ -199,7 +200,12 @@ bool LiquidAppFile::read(QIODevice& device, QSettings::SettingsMap& map)
         } else if (element == "icon") {
             static const QRegularExpression whitespace(QStringLiteral("\\s"));
 
-            map.insert(LQD_CFG_KEY_NAME_ICON, ICON_DATA_URL_PREFIX + xml.readElementText().remove(whitespace));
+            QString type = xml.attributes().value("type").toString();
+            if (!ICON_TYPES.contains(type)) {
+                type = ICON_TYPES.first();
+            }
+
+            map.insert(LQD_CFG_KEY_NAME_ICON, "data:" + type + ";base64," + xml.readElementText().remove(whitespace));
         } else {
             const QXmlStreamAttributes attributes = xml.attributes();
 
@@ -284,9 +290,16 @@ bool LiquidAppFile::write(QIODevice& device, const QSettings::SettingsMap& setti
     }
 
     QString icon;
-    const bool hasIcon = take(map, LQD_CFG_KEY_NAME_ICON, &icon) && icon.startsWith(ICON_DATA_URL_PREFIX);
+    QString iconType;
+    take(map, LQD_CFG_KEY_NAME_ICON, &icon);
+    for (const QString& type : ICON_TYPES) {
+        if (icon.startsWith("data:" + type + ";base64,")) {
+            iconType = type;
+        }
+    }
+    const bool hasIcon = !iconType.isEmpty();
     if (!hasIcon && !icon.isEmpty()) {
-        map.insert(LQD_CFG_KEY_NAME_ICON, icon); // Not a PNG data URL, keep it as a generic setting
+        map.insert(LQD_CFG_KEY_NAME_ICON, icon); // Not an image data URL of a known type, keep it as a generic setting
     }
 
     // Anything else
@@ -325,8 +338,8 @@ bool LiquidAppFile::write(QIODevice& device, const QSettings::SettingsMap& setti
 
     if (hasIcon) {
         xml.writeStartElement("icon");
-        xml.writeAttribute("type", "image/png");
-        xml.writeCharacters(icon.mid(ICON_DATA_URL_PREFIX.size()));
+        xml.writeAttribute("type", iconType);
+        xml.writeCharacters(icon.mid(QString("data:" + iconType + ";base64,").size()));
         xml.writeEndElement();
     }
 

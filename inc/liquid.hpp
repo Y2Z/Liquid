@@ -18,6 +18,8 @@ public:
     static QDir getDataDir(void);
     static QString getLiquidAppFilePath(const QString liquidAppName);
     static QString getDefaultUserAgentString(void);
+    static QString getDesktopFilePath(const QString liquidAppName);
+    static QString getDesktopFileIconValue(const QString liquidAppName);
     static QStringList getLiquidAppsList(void);
     static void raiseWindow(QWidget* window, const QString activationToken = QString());
     static void requestActivationToken(QWidget* window, const std::function<void(const QString&)> callback);
@@ -27,4 +29,5 @@ public:
     static void removeDesktopFile(const QString liquidAppName);
     static void runLiquidApp(const QString liquidAppName, const QString activationToken = QString());
     static void sleep(const int ms);
+    static void updateDesktopFileIcon(const QString liquidAppName);
 };

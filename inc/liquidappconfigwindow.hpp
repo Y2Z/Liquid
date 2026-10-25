@@ -13,6 +13,8 @@
 #include <QtGui>
 #include <QtWidgets>
 
+#include "liquidappicon.hpp"
+
 class LiquidAppConfigDialog : public QDialog
 {
 public:
@@ -49,6 +51,9 @@ private:
     QLineEdit* nameInput;
     QLineEdit* addressInput;
     QCheckBox* createIconCheckBox;
+    QToolButton* iconButton;
+    LiquidAppIcon chosenIcon;
+    bool iconWasEdited = false;
     QCheckBox* planningToRunCheckBox = Q_NULLPTR;
 
     // General tab

@@ -4,7 +4,7 @@ VERSION_PATCH = 11
 
 VERSION      = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
-QT          += core gui network widgets webenginecore webenginewidgets
+QT          += core gui network svg widgets webenginecore webenginewidgets
 CONFIG      += c++17
 TEMPLATE     = app
 
@@ -25,6 +25,7 @@ INCLUDEPATH += $${INC_DIR}
 HEADERS     += inc/lqd.h \
                inc/liquid.hpp \
                inc/liquidappfile.hpp \
+               inc/liquidappicon.hpp \
                inc/liquidappcookiejar.hpp \
                inc/liquidappconfigwindow.hpp \
                inc/liquidappwebpage.hpp \
@@ -35,6 +36,7 @@ HEADERS     += inc/lqd.h \
 
 SOURCES     += src/liquid.cpp \
                src/liquidappfile.cpp \
+               src/liquidappicon.cpp \
                src/liquidappcookiejar.cpp \
                src/liquidappconfigwindow.cpp \
                src/liquidappwebpage.cpp \

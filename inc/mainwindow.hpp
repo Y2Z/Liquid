@@ -15,6 +15,7 @@ public:
     ~MainWindow();
 
     // Starts keeping track of the Liquid app by the given name (called when Liquid apps report being started)
+    void updateLiquidAppIcon(const QString& liquidAppName);
     void watchLiquidApp(const QString& liquidAppName);
 
 protected:

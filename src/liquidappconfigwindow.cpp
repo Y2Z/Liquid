@@ -6,6 +6,7 @@
 
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
+#include "liquidappicon.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -85,6 +86,69 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
 
         basicLayout->addWidget(addressInputLabel, 1, 0);
         basicLayout->addWidget(addressInput, 1, 1);
+    }
+
+    // Icon (gets fetched from the website the first time it loads, unless one is chosen here)
+    {
+        if (isEditingExistingBool) {
+            chosenIcon = LiquidAppIcon::load(existingLiquidAppConfig);
+        }
+
+        iconButton = new QToolButton(this);
+        iconButton->setCursor(Qt::PointingHandCursor);
+        iconButton->setAutoRaise(true);
+        iconButton->setPopupMode(QToolButton::InstantPopup);
+        iconButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        iconButton->setIconSize(QSize(40, 40));
+        iconButton->setFixedSize(52, 52);
+
+        QMenu* iconMenu = new QMenu(iconButton);
+        QAction* chooseIconAction = iconMenu->addAction(tr("Choose image…"));
+        QAction* resetIconAction = iconMenu->addAction(tr("Get from website"));
+        iconButton->setMenu(iconMenu);
+
+        const auto updateIconButton = [this, resetIconAction]() {
+            iconButton->setIcon((chosenIcon.isNull()) ? QIcon(":/images/" PROG_NAME ".svg") : chosenIcon.toIcon());
+            iconButton->setToolTip((chosenIcon.isNull()) ? tr("Icon (will be taken from the website)") : tr("Icon"));
+            resetIconAction->setEnabled(!chosenIcon.isNull());
+        };
+        updateIconButton();
+
+        connect(chooseIconAction, &QAction::triggered, this, [this, updateIconButton]() {
+            QStringList patterns;
+            for (const QByteArray& format : QImageReader::supportedImageFormats()) {
+                patterns << "*." + QString::fromLatin1(format);
+            }
+            patterns << "*.svg" << "*.svgz";
+            patterns.removeDuplicates();
+
+            const QString path = QFileDialog::getOpenFileName(this, tr("Choose icon"), QDir::homePath(),
+                                                              tr("Images (%1)").arg(patterns.join(' ')));
+            if (path.isEmpty()) {
+                return;
+            }
+
+            QFile file(path);
+            const LiquidAppIcon icon = (file.size() <= LQD_ICON_MAX_FILE_SIZE && file.open(QIODevice::ReadOnly))
+                                       ? LiquidAppIcon::fromData(file.readAll()) : LiquidAppIcon();
+            if (icon.isNull()) {
+                QMessageBox::warning(this, tr("Unable to use image"), tr("“%1” couldn't be read as an image.").arg(path));
+                return;
+            }
+
+            chosenIcon = icon;
+            iconWasEdited = true;
+            updateIconButton();
+        });
+
+        // Forgetting the icon makes the Liquid app fetch it again (right away, if it's running)
+        connect(resetIconAction, &QAction::triggered, this, [this, updateIconButton]() {
+            chosenIcon = LiquidAppIcon();
+            iconWasEdited = true;
+            updateIconButton();
+        });
+
+        basicLayout->addWidget(iconButton, 0, 2, 2, 1, Qt::AlignCenter);
     }
 
     // Extra checkboxes visible only in "Create" mode
@@ -1008,6 +1072,15 @@ void LiquidAppConfigDialog::save()
             if (notesTextArea->toPlainText().size() > 0) {
                 tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_NOTES, notesTextArea->toPlainText());
             }
+        }
+    }
+
+    // Icon (has to be in place before the desktop icon gets created, for it to use it)
+    if (iconWasEdited) {
+        if (chosenIcon.isNull()) {
+            LiquidAppIcon::remove(tempLiquidAppConfig, appName);
+        } else {
+            chosenIcon.save(tempLiquidAppConfig, appName);
         }
     }
 
