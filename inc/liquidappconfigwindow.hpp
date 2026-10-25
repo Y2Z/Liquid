@@ -6,6 +6,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QListView>
+#include <QLocalSocket>
 #include <QPlainTextEdit>
 #include <QTableView>
 #include <QTabWidget>
@@ -24,14 +25,22 @@ public:
 
 public slots:
     void save();
+    void reject() override;
 
 private:
     void bindShortcuts(void);
     static QFrame* separator(void);
     static QString getSettingsRequiringRestart(QSettings* liquidAppConfig);
+    void previewBackground(const QColor& color);
+    void sendPreview(const QByteArray& message);
 
     bool isEditingExistingBool = false;
     bool isPlanningToRunBool = false;
+
+    // Connection to the Liquid app being edited (if running), for previewing changes
+    QLocalSocket* liquidAppConnection = Q_NULLPTR;
+    bool hasPreviewedChanges = false;
+    QTimer* cssPreviewTimer = Q_NULLPTR;
 
     QAction* quitAction;
 

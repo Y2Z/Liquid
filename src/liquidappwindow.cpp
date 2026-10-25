@@ -4,6 +4,8 @@
 #include <QBuffer>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QKeyEvent>
 #include <QEventLoop>
 #include <QClipboard>
@@ -636,19 +638,8 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         }
     }
 
-    // Set the page's background color behind the document's body
-    {
-        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
-            const QColor backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString());
-
-            if (backgroundColor.alpha() < 255) {
-                // Make window background transparent (can only be done before the window is shown)
-                setAttribute(Qt::WA_TranslucentBackground, true);
-            }
-        }
-
-        applyBackgroundColor();
-    }
+    // Set the page's background color behind the document's body (and make the window translucent if needed)
+    applyBackgroundColor();
 
     // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
     applyAllowedDomains();
@@ -770,11 +761,61 @@ void LiquidAppWindow::applyAllowedDomains(void)
 
 void LiquidAppWindow::applyBackgroundColor(void)
 {
-    // Set the page's background color behind the document's body
     if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
-        page()->setBackgroundColor(QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString()));
+        setBackground(QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString()));
     } else {
-        page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);
+        setBackground(QColor());
+    }
+}
+
+void LiquidAppWindow::setBackground(const QColor& color)
+{
+    // Invalid color means the default one
+    const QColor backgroundColor = (color.isValid()) ? color : QColor(LQD_DEFAULT_BG_COLOR);
+    const bool needsTranslucency = backgroundColor.alpha() < 255;
+
+    // Set the page's background color behind the document's body
+    page()->setBackgroundColor(backgroundColor);
+
+    // Whether the window can be see-through or not gets decided upon creation of its native window,
+    // so if that needs to change for a window that's already shown, its native window has to be recreated
+    if (testAttribute(Qt::WA_TranslucentBackground) != needsTranslucency) {
+        setAttribute(Qt::WA_TranslucentBackground, needsTranslucency);
+        if (!needsTranslucency) {
+            setAttribute(Qt::WA_NoSystemBackground, false); // Gets set along with translucency, but not unset
+        }
+
+        if (isVisible()) {
+            recreateNativeWindow();
+        }
+    }
+
+#ifdef Q_OS_MAC
+    if (isVisible()) {
+        SetWindowBackgroundColor(effectiveWinId(), backgroundColor.redF(), backgroundColor.greenF(), backgroundColor.blueF(), backgroundColor.alphaF());
+    }
+#endif
+}
+
+void LiquidAppWindow::recreateNativeWindow(void)
+{
+    // Re-applying window flags makes Qt replace the native window (which also hides it); the web view and the page
+    // it shows remain intact (on some platforms, e.g. Wayland, the window may end up at a different position though)
+    const Qt::WindowStates states = windowState();
+
+    setWindowFlags(windowFlags());
+    setWindowState(states);
+    show();
+
+    // The new native window doesn't come up on top of others by itself (window managers treat it as one that just
+    // appeared on its own, out of nowhere, while the user is busy with another window), so bring it to front the same way
+    // a double-click in the main window does, once the window manager has had a moment to put the new one on screen
+    if (!states.testFlag(Qt::WindowMinimized)) {
+        QTimer::singleShot(LQD_RECREATED_WINDOW_RAISE_DELAY, this, [this]() {
+            if (isVisible() && !isMinimized()) {
+                Liquid::raiseWindow(this, QString());
+            }
+        });
     }
 }
 
@@ -783,8 +824,7 @@ void LiquidAppWindow::applyWebSettings(void)
     settings()->setAttribute(QWebEngineSettings::JavascriptEnabled,
                              liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS, false).toBool());
 
-    settings()->setAttribute(QWebEngineSettings::ShowScrollBars,
-                             !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS, false).toBool());
+    setScrollBarsHidden(liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS, false).toBool());
 
     const QString customUserAgent = liquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString();
     liquidAppWebProfile->setHttpUserAgent((customUserAgent.isEmpty()) ? defaultHttpUserAgent : customUserAgent);
@@ -808,18 +848,11 @@ void LiquidAppWindow::applyAdditionalCssAndJs(void)
 
     // Additional user-defined CSS (does't require JavaScript enabled in order to work)
     if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_CSS)) {
-        QString additionalCss = liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString();
-        const QString js = QString("(()=>{"\
-                                       "const styleEl = document.createElement('style');"\
-                                       "const cssTextNode = document.createTextNode('%1');"\
-                                       "styleEl.appendChild(cssTextNode);"\
-                                       "document.head.appendChild(styleEl)"\
-                                   "})();").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
         QWebEngineScript script;
         script.setName(LQD_SCRIPT_NAME_ADDITIONAL_CSS);
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
-        script.setSourceCode(js);
+        script.setSourceCode(getAdditionalCssScript(liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString()));
         script.setWorldId(QWebEngineScript::ApplicationWorld);
         scripts.insert(script);
     }
@@ -836,13 +869,36 @@ void LiquidAppWindow::applyAdditionalCssAndJs(void)
     }
 }
 
+QString LiquidAppWindow::getAdditionalCssScript(const QString& css)
+{
+    // Puts the CSS into a <style> element of its own, creating it if needed, or updating it if it's already there
+    // (the CSS gets encoded as JSON, which makes it safe to embed into JavaScript code, whatever it contains)
+    const QString cssAsJson = QString::fromUtf8(QJsonDocument(QJsonArray() << css).toJson(QJsonDocument::Compact));
+
+    return QString("(() => {"
+                       "const css = %1[0];"
+                       "let styleElement = document.querySelector('style[data-liquid-additional-css]');"
+                       "if (!styleElement) {"
+                           "styleElement = document.createElement('style');"
+                           "styleElement.setAttribute('data-liquid-additional-css', '');"
+                           "(document.head || document.documentElement).appendChild(styleElement);"
+                       "}"
+                       "styleElement.textContent = css;"
+                   "})();").arg(cssAsJson);
+}
+
+void LiquidAppWindow::setAdditionalCss(const QString& css)
+{
+    // Applies to the page currently shown, right away (no reloading needed)
+    page()->runJavaScript(getAdditionalCssScript(css), QWebEngineScript::ApplicationWorld);
+}
+
 void LiquidAppWindow::reloadLiquidAppConfig(void)
 {
     // Remember settings that only take effect upon loading the page, to tell whether it needs to be reloaded
     static const QStringList pageAffectingKeys = {
         LQD_CFG_KEY_NAME_ENABLE_JS,
         LQD_CFG_KEY_NAME_USER_AGENT,
-        LQD_CFG_KEY_NAME_ADDITIONAL_CSS,
         LQD_CFG_KEY_NAME_ADDITIONAL_JS,
     };
     QVariantList previousValues;
@@ -850,7 +906,6 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
         previousValues << liquidAppConfig->value(key);
     }
     const QString previousUrl = liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString();
-    const bool wasFrameless = liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool();
 
     // Pick up changes made to the file by another process (e.g. the main window)
     liquidAppConfig->sync();
@@ -867,12 +922,13 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
     applyWebSettings();
     applyAdditionalCssAndJs();
 
-    // Window frame (changing window flags hides the window, so it has to be shown again)
-    const bool isFrameless = liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool();
-    if (isFrameless != wasFrameless) {
-        setWindowFlag(Qt::FramelessWindowHint, isFrameless);
-        show();
-    }
+    // Custom CSS gets applied to the page that's currently shown without reloading it
+    // (this also undoes whatever CSS has been previewed while editing settings)
+    setAdditionalCss(liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
+
+    // Window frame (compared against the window itself rather than the previously saved value,
+    // so that a frame toggled while previewing settings gets put back too)
+    setFrameless(liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool());
 
     // Load the new starting URL, or reload the page if anything it depends on has changed
     const QString url = liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString();
@@ -1624,4 +1680,62 @@ void LiquidAppWindow::zoomOut(const bool fine = false)
 void LiquidAppWindow::zoomReset(void)
 {
     attemptToSetZoomFactorTo(1.0);
+}
+
+void LiquidAppWindow::setFrameless(const bool frameless)
+{
+    if (windowFlags().testFlag(Qt::FramelessWindowHint) == frameless) {
+        return;
+    }
+
+    // Changing window flags hides the window, so it has to be shown again
+    // (which is why visibility has to be checked beforehand)
+    const bool wasVisible = isVisible();
+    setWindowFlag(Qt::FramelessWindowHint, frameless);
+    if (wasVisible) {
+        recreateNativeWindow();
+    }
+}
+
+void LiquidAppWindow::setScrollBarsHidden(const bool hidden)
+{
+    if (settings()->testAttribute(QWebEngineSettings::ShowScrollBars) == !hidden) {
+        return;
+    }
+
+    // Takes effect on the page that's currently shown, no reloading needed
+    settings()->setAttribute(QWebEngineSettings::ShowScrollBars, !hidden);
+
+    // ...except that the page keeps its existing scrollbars until something makes it lay them out again, so briefly
+    // switch off scrolling of the document (which gets rid of its scrollbars), then put it back, a few frames later
+    // (the original inline style is kept in a variable of Liquid's own JS world, which the page can't see,
+    // and which goes away along with the document, should it get navigated away from in the meantime)
+    if (isVisible()) {
+        page()->runJavaScript(
+            "(function() {"
+                "if (window.liquidOverflow) return;"
+                "const s = document.documentElement.style;"
+                "window.liquidOverflow = [s.getPropertyValue('overflow'), s.getPropertyPriority('overflow')];"
+                "s.setProperty('overflow', 'hidden', 'important');"
+                "void document.documentElement.offsetHeight;"
+            "})()",
+            QWebEngineScript::ApplicationWorld
+        );
+
+        QTimer::singleShot(LQD_SCROLLBARS_RELAYOUT_DELAY, this, [this]() {
+            page()->runJavaScript(
+                "(function() {"
+                    "if (!window.liquidOverflow) return;"
+                    "const s = document.documentElement.style;"
+                    "if (window.liquidOverflow[0]) {"
+                        "s.setProperty('overflow', window.liquidOverflow[0], window.liquidOverflow[1]);"
+                    "} else {"
+                        "s.removeProperty('overflow');"
+                    "}"
+                    "delete window.liquidOverflow;"
+                "})()",
+                QWebEngineScript::ApplicationWorld
+            );
+        });
+    }
 }
