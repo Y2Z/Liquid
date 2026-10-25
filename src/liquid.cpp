@@ -1,5 +1,6 @@
 #include "lqd.h"
 #include "liquid.hpp"
+#include "liquidappicon.hpp"
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 #include "liquidx11.h"
 #endif
@@ -73,7 +74,7 @@ void Liquid::createDesktopFile(const QString liquidAppName, const QString liquid
     context += "[Desktop Entry]\n";
     context += "Type=Application\n";
     context += "Name=" + liquidAppName + "\n";
-    context += "Icon=internet-web-browser\n";
+    context += "Icon=" + getDesktopFileIconValue(liquidAppName) + "\n";
     context += "Exec=liquid " + liquidAppName + "\n";
     context += "Comment=" + liquidAppStartingUrl + "\n";
     context += "Categories=Network;WebBrowser;\n";
@@ -100,6 +101,49 @@ void Liquid::createDesktopFile(const QString liquidAppName, const QString liquid
 #else
     Q_UNUSED(liquidAppName);
     Q_UNUSED(liquidAppStartingUrl);
+#endif
+}
+
+QString Liquid::getDesktopFilePath(const QString liquidAppName)
+{
+    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    return QDir::homePath() + QDir::separator() + "Desktop" + QDir::separator() + liquidAppName + ".desktop";
+}
+
+QString Liquid::getDesktopFileIconValue(const QString liquidAppName)
+{
+    const QString iconFilePath = LiquidAppIcon::getIconFilePath(liquidAppName);
+
+    return (iconFilePath.isEmpty()) ? "internet-web-browser" : iconFilePath;
+}
+
+void Liquid::updateDesktopFileIcon(const QString liquidAppName)
+{
+#if defined(Q_OS_LINUX)
+    // Only the icon gets changed, the rest of the file may have been edited by the user
+    QFile file(getDesktopFilePath(liquidAppName));
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+    QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
+    file.close();
+
+    bool changed = false;
+    for (QString& line : lines) {
+        if (line.startsWith("Icon=")) {
+            const QString newLine = "Icon=" + getDesktopFileIconValue(liquidAppName);
+            changed = changed || line != newLine;
+            line = newLine;
+        }
+    }
+
+    // Writing in place keeps the file's permissions (it has to remain executable)
+    if (changed && file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        file.write(lines.join('\n').toUtf8());
+        file.close();
+    }
+#else
+    Q_UNUSED(liquidAppName);
 #endif
 }
 

@@ -88,11 +88,15 @@ int main(int argc, char **argv)
 
         QObject::connect(singleInstance, &SingleInstance::messageReceived, mainWindow, [](const QByteArray& message) {
             static const QByteArray startedPrefix = QByteArray(LQD_INSTANCE_MSG_STARTED) + " ";
+            static const QByteArray iconChangedPrefix = QByteArray(LQD_INSTANCE_MSG_ICON_CHANGED) + " ";
 
             QString activationToken;
 
             if (Liquid::parseRaiseMessage(message, &activationToken)) {
                 Liquid::raiseWindow(mainWindow, activationToken);
+            } else if (message.startsWith(iconChangedPrefix)) {
+                // A Liquid app has got its icon from its website
+                mainWindow->updateLiquidAppIcon(QString::fromUtf8(message.mid(iconChangedPrefix.size())));
             } else if (message.startsWith(startedPrefix)) {
                 // A Liquid app has started, show it as running
                 mainWindow->watchLiquidApp(QString::fromUtf8(message.mid(startedPrefix.size())));

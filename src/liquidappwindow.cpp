@@ -12,6 +12,7 @@
 #include <QNetworkProxy>
 #include <QPainter>
 #include <QPointer>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QScreen>
 #include <QSharedPointer>
@@ -25,9 +26,11 @@
 
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
+#include "liquidappicon.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
+#include "singleinstance.hpp"
 #include "svgsnapshot.hpp"
 #include "lqd.h"
 #ifdef Q_OS_MAC
@@ -588,6 +591,11 @@ void LiquidAppWindow::loadFinished(bool ok)
     }
 
     updateWindowTitle(title());
+
+    // Get the website's icon, if the Liquid app doesn't have one yet
+    if (ok && !pageHasError) {
+        maybeFetchIcon();
+    }
 }
 
 void LiquidAppWindow::loadLiquidAppConfig(void)
@@ -736,14 +744,9 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     // Additional user-defined CSS and JS
     applyAdditionalCssAndJs();
 
-#if !defined(Q_OS_LINUX) // This doesn't work on X11
-    // Set window icon
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
-        QPixmap pixmap;
-        pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
-        window()->setWindowIcon(QIcon(pixmap));
-    }
-#endif
+    // Liquid app's own icon (if it has one already)
+    applyIcon();
+    LiquidAppIcon::ensureIconFile(liquidAppConfig, liquidAppName);
 }
 
 void LiquidAppWindow::applyAllowedDomains(void)
@@ -922,6 +925,15 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
     applyWebSettings();
     applyAdditionalCssAndJs();
 
+    // Icon (settings may have taken it away, to have it fetched from the website again)
+    if (!liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
+        iconFetchAttempted = false;
+    }
+    applyIcon();
+    if (!pageIsLoading && !pageHasError) {
+        maybeFetchIcon();
+    }
+
     // Custom CSS gets applied to the page that's currently shown without reloading it
     // (this also undoes whatever CSS has been previewed while editing settings)
     setAdditionalCss(liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
@@ -977,10 +989,85 @@ bool LiquidAppWindow::isPositionManagedByWindowSystem(void)
 
 void LiquidAppWindow::onIconChanged(QIcon icon)
 {
-    // Set window icon
-    setWindowIcon(icon);
+    pageIcon = icon;
 
-    iconToSave = icon;
+    if (!liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
+        // Show it until the Liquid app has an icon of its own
+        applyIcon();
+
+        // Fetching may have found nothing usable before the page's own icon arrived
+        if (iconFetchAttempted && iconFetcher == Q_NULLPTR && !icon.isNull() && isShowingOwnWebsite()) {
+            useFetchedIcon(LiquidAppIcon());
+        }
+    }
+}
+
+void LiquidAppWindow::applyIcon(void)
+{
+    const LiquidAppIcon liquidAppIcon = LiquidAppIcon::load(liquidAppConfig);
+
+    if (!liquidAppIcon.isNull()) {
+        const QIcon icon = liquidAppIcon.toIcon();
+
+        setWindowIcon(icon);
+        // Also used for the Dock on macOS, and for whatever new windows (e.g. dialogs) this Liquid app opens
+        QApplication::setWindowIcon(icon);
+    } else if (!pageIcon.isNull()) {
+        setWindowIcon(pageIcon);
+    }
+}
+
+bool LiquidAppWindow::isShowingOwnWebsite(void)
+{
+    // Icons of whatever the Liquid app may pass through first (e.g. sign-in pages elsewhere) are of no interest
+    static const QRegularExpression wwwPrefix("^www\\.");
+    const QString startingHost = QUrl(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString()).host().toLower().remove(wwwPrefix);
+    const QString currentHost = url().host().toLower().remove(wwwPrefix);
+
+    if (startingHost.isEmpty() || currentHost.isEmpty()) {
+        return false;
+    }
+
+    return currentHost == startingHost
+        || currentHost.endsWith("." + startingHost)
+        || startingHost.endsWith("." + currentHost);
+}
+
+void LiquidAppWindow::maybeFetchIcon(void)
+{
+    if (iconFetchAttempted || liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON) || !isShowingOwnWebsite()) {
+        return;
+    }
+
+    iconFetchAttempted = true;
+
+    iconFetcher = new LiquidAppIconFetcher(page(), this);
+    connect(iconFetcher, &LiquidAppIconFetcher::finished, this, [this](const LiquidAppIcon& icon) {
+        iconFetcher->deleteLater();
+        iconFetcher = Q_NULLPTR;
+
+        useFetchedIcon(icon);
+    });
+    iconFetcher->start();
+}
+
+void LiquidAppWindow::useFetchedIcon(const LiquidAppIcon& icon)
+{
+    // The icon the page has provided may be better than anything that got downloaded (e.g. if the website needs cookies)
+    const LiquidAppIcon pageLiquidAppIcon = LiquidAppIcon::fromIcon(pageIcon);
+    const LiquidAppIcon& bestIcon = (pageLiquidAppIcon.score() > icon.score()) ? pageLiquidAppIcon : icon;
+
+    // Settings may have been given an icon in the meantime
+    liquidAppConfig->sync();
+    if (bestIcon.isNull() || liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
+        return;
+    }
+
+    bestIcon.save(liquidAppConfig, liquidAppName);
+    applyIcon();
+
+    // Let the main window (if it's open) show it
+    SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, QByteArray(LQD_INSTANCE_MSG_ICON_CHANGED) + " " + liquidAppName.toUtf8());
 }
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
@@ -1009,14 +1096,6 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
         if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
             liquidAppConfig->remove(LQD_CFG_KEY_NAME_MUTE_AUDIO);
         }
-    }
-
-    // Save icon data as base64 string
-    if (!iconToSave.isNull()) {
-        QBuffer buffer;
-        buffer.open(QIODevice::WriteOnly);
-        iconToSave.pixmap(iconToSave.availableSizes()[0]).save(&buffer, "PNG");
-        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ICON, QString("data:image/png;base64,%1").arg(QString(buffer.data().toBase64())));
     }
 
     // Window geometry

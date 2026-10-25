@@ -4,6 +4,7 @@
 #define LQD_PROG_TITLE         "Liquid"
 #define LQD_APPS_DIR_NAME      "apps"
 #define LQD_APP_FILE_EXTENSION "liquid"
+#define LQD_ICONS_DIR_NAME     "icons" // Copies of Liquid apps' icons, for .desktop files to point at
 #define LQD_DEFAULT_BG_COLOR   Qt::white
 #define LQD_DEFAULT_PROXY_HOST "0.0.0.0"
 #define LQD_DEFAULT_PROXY_PORT 8080
@@ -36,12 +37,18 @@
 #define LQD_INSTANCE_MSG_PREVIEW_CSS      "preview-css"        // Liquid apps only, followed by a space and base64-encoded CSS
 #define LQD_INSTANCE_MSG_PREVIEW_FRAME    "preview-frame"      // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_PREVIEW_SCROLL   "preview-scrollbars" // Liquid apps only, followed by a space and "on" or "off"
+#define LQD_INSTANCE_MSG_ICON_CHANGED    "icon-changed"    // Main window only, followed by a space and Liquid app's name
 #define LQD_INSTANCE_MSG_STARTED         "started"         // Main window only, followed by a space and Liquid app's name
 #define LQD_ACTIVATION_TOKEN_TIMEOUT     500               // Milliseconds to wait for the compositor to issue an activation token
 #define LQD_PREVIEW_CONNECT_TIMEOUT      100               // Milliseconds to wait for connecting to a Liquid app for previewing settings
 #define LQD_RECREATED_WINDOW_RAISE_DELAY 100               // Milliseconds to wait before bringing a re-created native window to front
 #define LQD_SCROLLBARS_RELAYOUT_DELAY    100               // Milliseconds to keep the document unscrollable for, to make it redo its scrollbars
 #define LQD_CSS_PREVIEW_DELAY            150               // Milliseconds to wait after the last keystroke before previewing CSS
+#define LQD_ICON_DOWNLOAD_TIMEOUT        10000             // Milliseconds to wait for an icon (or web app manifest) to download
+#define LQD_ICON_MAX_CANDIDATES          16                // How many icons a website gets to offer at most
+#define LQD_ICON_MAX_FILE_SIZE           (4 * 1024 * 1024) // Bytes
+#define LQD_ICON_MAX_SVG_SIZE            (512 * 1024)      // Bytes, larger SVG icons get rasterized
+#define LQD_ICON_MAX_SIZE                256               // Pixels, larger icons get scaled down before they get stored
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 
 /* Names of scripts Liquid injects into web pages */

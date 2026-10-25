@@ -1,5 +1,6 @@
 #include <QDir>
 #include <QElapsedTimer>
+#include <QScopedPointer>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QLabel>
@@ -9,6 +10,7 @@
 
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
+#include "liquidappicon.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -148,13 +150,7 @@ void MainWindow::populateTable(void)
         QTableWidgetItem* appItemWidgetFirstColumn = new QTableWidgetItem();
         // Make them read-only (no text edit upon double-click)
         appItemWidgetFirstColumn->setFlags(appItemWidgetFirstColumn->flags() ^ Qt::ItemIsEditable);
-        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
-            QPixmap pixmap;
-            pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
-            appItemWidgetFirstColumn->setIcon(QIcon(pixmap));
-        } else {
-            appItemWidgetFirstColumn->setIcon(QIcon(":/images/" PROG_NAME ".svg"));
-        }
+        appItemWidgetFirstColumn->setIcon(LiquidAppIcon::loadIcon(liquidAppConfig));
         appItemWidgetFirstColumn->setText(liquidAppName);
         appListTable->setItem(i, 0, appItemWidgetFirstColumn);
 
@@ -184,6 +180,7 @@ void MainWindow::populateTable(void)
                 }
 
                 Liquid::removeDesktopFile(liquidAppName);
+                LiquidAppIcon::removeIconFile(liquidAppName);
 
                 // Shred and unlink Liquid app settings file
                 QFile liquidAppConfigFile(liquidAppConfig->fileName());
@@ -255,6 +252,18 @@ void MainWindow::populateTable(void)
         // Find out whether it's running (and keep track of it from now on)
         watchLiquidApp(liquidAppName);
         updateRunButton(liquidAppName);
+    }
+}
+
+void MainWindow::updateLiquidAppIcon(const QString& liquidAppName)
+{
+    for (int i = 0; i < appListTable->rowCount(); i++) {
+        QTableWidgetItem* item = appListTable->item(i, 0);
+
+        if (item != Q_NULLPTR && item->text() == liquidAppName) {
+            QScopedPointer<QSettings> liquidAppConfig(LiquidAppFile::open(liquidAppName));
+            item->setIcon(LiquidAppIcon::loadIcon(liquidAppConfig.data()));
+        }
     }
 }
 

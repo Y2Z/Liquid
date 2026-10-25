@@ -76,17 +76,19 @@ What gets stored (if allowed): cookies.
 
 #### Dependencies
 
-Liquid is built with Qt 6 (Qt 5.15 is still supported) and Qt WebEngine.
+Liquid is built with Qt 6 (Qt 5.15 is still supported), Qt WebEngine, and Qt SVG.
 
 On Debian/Ubuntu:
 
 ```console
-sudo apt install qt6-base-dev qt6-webengine-dev qmake6 libx11-dev build-essential
+sudo apt install qt6-base-dev qt6-webengine-dev qt6-svg-dev qmake6 libx11-dev build-essential
 ```
+
+For Qt 5.15, the packages are `qtbase5-dev qtwebengine5-dev libqt5svg5-dev qt5-qmake` instead.
 
 Optionally, also install `qt6-base-private-dev` (requires Qt 6.5 or newer): it lets Liquid bring windows of already running Liquid apps to front on Wayland, instead of the desktop environment merely showing a notification.
 
-On macOS and Windows, install Qt 6 with the Qt WebEngine, Qt WebChannel, and Qt Positioning modules using the [Qt Online Installer](https://www.qt.io/download-qt-installer).
+On macOS and Windows, install Qt 6 with the Qt WebEngine, Qt WebChannel, and Qt Positioning modules (Qt SVG comes with Qt itself) using the [Qt Online Installer](https://www.qt.io/download-qt-installer).
 
 #### Build
 
