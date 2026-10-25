@@ -13,7 +13,8 @@ public:
     static bool detectDarkModeUncached(void);
     static QByteArray generateRandomByteArray(const int byteLength);
     static QDir getAppsDir(void);
-    static QDir getConfigDir(void);
+    static QDir getDataDir(void);
+    static QString getLiquidAppFilePath(const QString liquidAppName);
     static QString getDefaultUserAgentString(void);
     static QStringList getLiquidAppsList(void);
     static void raiseWindow(QWidget* window);

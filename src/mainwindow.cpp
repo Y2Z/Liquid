@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 
 #include "liquid.hpp"
+#include "liquidappfile.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -22,7 +23,7 @@ MainWindow::MainWindow() : QScrollArea()
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
 #endif
 
-    settings = new QSettings(PROG_NAME, PROG_NAME);
+    settings = new QSettings(Liquid::getDataDir().filePath(PROG_NAME ".ini"), QSettings::IniFormat);
     if (settings->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
         QByteArray geometry = QByteArray::fromHex(
             settings->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
@@ -124,11 +125,7 @@ void MainWindow::populateTable(void)
 
         appListTable->insertRow(i);
 
-        QSettings* liquidAppConfig = new QSettings(QSettings::IniFormat,
-                                                   QSettings::UserScope,
-                                                   QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                                   liquidAppName,
-                                                   Q_NULLPTR);
+        QSettings* liquidAppConfig = LiquidAppFile::open(liquidAppName);
 
         //////////////////
         // First column //

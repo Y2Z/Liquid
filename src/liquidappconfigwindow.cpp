@@ -3,6 +3,7 @@
 #include <QWebEngineProfile>
 
 #include "liquid.hpp"
+#include "liquidappfile.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -16,11 +17,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
     Liquid::applyQtStyleSheets(this);
 
     // Attempt to load liquid app's config file
-    QSettings* existingLiquidAppConfig = new QSettings(QSettings::IniFormat,
-                                                       QSettings::UserScope,
-                                                       QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                                       liquidAppName,
-                                                       Q_NULLPTR);
+    QSettings* existingLiquidAppConfig = LiquidAppFile::open(liquidAppName);
 
     // Check to see if Liquid app by this name already has config file
     if (liquidAppName.size() > 0) {
@@ -814,11 +811,7 @@ void LiquidAppConfigDialog::save()
         return;
     }
 
-    QSettings* tempLiquidAppConfig = new QSettings(QSettings::IniFormat,
-                                                   QSettings::UserScope,
-                                                   QString(PROG_NAME) + QDir::separator() + LQD_APPS_DIR_NAME,
-                                                   appName,
-                                                   Q_NULLPTR);
+    QSettings* tempLiquidAppConfig = LiquidAppFile::open(appName);
 
     // URL
     {

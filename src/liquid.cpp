@@ -8,6 +8,7 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QSysInfo>
 #include <QTime>
 #include <QTimer>
@@ -39,7 +40,7 @@ void Liquid::applyQtStyleSheets(QWidget* widget)
 
     // Load user-defined stylesheet
     {
-        QFile customStyleSheetFile(Liquid::getConfigDir().absolutePath() + QDir::separator() + PROG_NAME ".qss");
+        QFile customStyleSheetFile(Liquid::getDataDir().filePath(PROG_NAME ".qss"));
         if (customStyleSheetFile.open(QFile::ReadOnly)) {
             styleSheet += QLatin1String(customStyleSheetFile.readAll());
             customStyleSheetFile.close();
@@ -146,20 +147,31 @@ QByteArray Liquid::generateRandomByteArray(const int byteLength)
 
 QDir Liquid::getAppsDir(void)
 {
-    return QDir(getConfigDir().absolutePath() + QDir::separator() + LQD_APPS_DIR_NAME + QDir::separator());
+    const QString path = getDataDir().filePath(LQD_APPS_DIR_NAME);
+
+    QDir().mkpath(path);
+
+    return QDir(path);
 }
 
-QDir Liquid::getConfigDir(void)
+QDir Liquid::getDataDir(void)
 {
-    const QSettings* settings = new QSettings(QSettings::IniFormat,
-                                              QSettings::UserScope,
-                                              PROG_NAME,
-                                              PROG_NAME,
-                                              Q_NULLPTR);
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
+    // ~/Library/Application Support/Liquid/ on macOS, %LOCALAPPDATA%\Liquid\ on Windows
+    const QString path = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QDir::separator() + LQD_PROG_TITLE;
+#else
+    // ~/.liquid/ on GNU/Linux, BSD, etc (it's home to Liquid apps, not just to Liquid's own configuration)
+    const QString path = QDir::homePath() + QDir::separator() + "." PROG_NAME;
+#endif
 
-    QFileInfo settingsFileInfo(settings->fileName());
+    QDir().mkpath(path);
 
-    return QDir(settingsFileInfo.absolutePath() + QDir::separator());
+    return QDir(path);
+}
+
+QString Liquid::getLiquidAppFilePath(const QString liquidAppName)
+{
+    return getAppsDir().filePath(liquidAppName + "." LQD_APP_FILE_EXTENSION);
 }
 
 QString Liquid::getDefaultUserAgentString(void)
@@ -169,7 +181,7 @@ QString Liquid::getDefaultUserAgentString(void)
 
 QStringList Liquid::getLiquidAppsList(void)
 {
-    const QFileInfoList liquidAppsFileList = getAppsDir().entryInfoList(QStringList() << "*.ini",
+    const QFileInfoList liquidAppsFileList = getAppsDir().entryInfoList(QStringList() << "*." LQD_APP_FILE_EXTENSION,
                                                                         QDir::Files | QDir::NoDotAndDotDot,
                                                                         QDir::Name | QDir::IgnoreCase);
     QStringList liquidAppsNames;

@@ -108,7 +108,20 @@ sudo make uninstall
 ```
 
 
+## Where things are stored
+
+Each Liquid app is a single `.liquid` file: an XML document containing everything about that app
+(settings, custom CSS and JavaScript, window state, cookies, icon).
+Liquid apps reside in the `apps` directory inside of Liquid's data directory, which is located at:
+
+ - GNU/Linux, BSD, and others: `~/.liquid/`
+ - macOS: `~/Library/Application Support/Liquid/`
+ - Windows: `%LOCALAPPDATA%\Liquid\`
+
+Keep in mind that `.liquid` files may contain secrets (cookies, proxy credentials).
+
+
 ## Customize
 
-Placing a file named `liquid.qss` into `~/.config/liquid/` will serve as additional stylesheet for the program.
+Placing a file named `liquid.qss` into Liquid's data directory will serve as additional stylesheet for the program.
 You can use [base.qss](res/styles/base.qss) as reference.
