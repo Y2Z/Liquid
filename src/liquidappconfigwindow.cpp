@@ -1,5 +1,6 @@
 #include <QDir>
 #include <QElapsedTimer>
+#include <QLocalSocket>
 #include <QNetworkCookie>
 #include <QWebEngineProfile>
 
@@ -320,6 +321,11 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 }
             }
 
+            // Show or hide scrollbars in the running Liquid app right away
+            connect(hideScrollBarsCheckBox, &QCheckBox::toggled, this, [this](const bool isChecked) {
+                sendPreview(QByteArray(LQD_INSTANCE_MSG_PREVIEW_SCROLL " ") + ((isChecked) ? "off" : "on"));
+            });
+
             appearanceTabWidgetLayout->addWidget(hideScrollBarsCheckBox);
         }
         #endif
@@ -338,6 +344,11 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                     );
                 }
             }
+
+            // Remove or bring back the running Liquid app's window frame right away
+            connect(removeWindowFrameCheckBox, &QCheckBox::toggled, this, [this](const bool isChecked) {
+                sendPreview(QByteArray(LQD_INSTANCE_MSG_PREVIEW_FRAME " ") + ((isChecked) ? "off" : "on"));
+            });
 
             appearanceTabWidgetLayout->addWidget(removeWindowFrameCheckBox);
         }
@@ -378,16 +389,29 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 customBackgroundColorButtonLayout->addWidget(customBackgroundColorButton);
 
                 connect(customBackgroundColorButton, &QPushButton::clicked, [&]() {
-                    const QColorDialog::ColorDialogOptions options = QColorDialog::ShowAlphaChannel;
-                    QColor color = QColorDialog::getColor(*backgroundColor, this, tr("Pick custom background color"), options);
+                    QColorDialog colorDialog(*backgroundColor, this);
+                    colorDialog.setWindowTitle(tr("Pick custom background color"));
+                    colorDialog.setOptions(QColorDialog::ShowAlphaChannel);
 
-                    if (color.isValid()) {
-                        if (!useCustomBackgroundCheckBox->isChecked()) {
-                            useCustomBackgroundCheckBox->setChecked(true);
-                        }
+                    // Show colors in the running Liquid app as they're being picked
+                    connect(&colorDialog, &QColorDialog::currentColorChanged, this, [this](const QColor& color) {
+                        previewBackground(color);
+                    });
+
+                    if (colorDialog.exec() == QDialog::Accepted && colorDialog.selectedColor().isValid()) {
+                        const QColor color = colorDialog.selectedColor();
 
                         *backgroundColor = color;
                         customBackgroundColorButton->setStyleSheet(buttonStyle.arg(backgroundColor->name(QColor::HexArgb)).arg(fontSize));
+
+                        if (!useCustomBackgroundCheckBox->isChecked()) {
+                            useCustomBackgroundCheckBox->setChecked(true); // Previews the color too
+                        } else {
+                            previewBackground(color);
+                        }
+                    } else if (hasPreviewedChanges) {
+                        // Picking got cancelled, go back to previewing whatever was there before
+                        previewBackground((useCustomBackgroundCheckBox->isChecked()) ? *backgroundColor : QColor());
                     }
                 });
             }
@@ -398,6 +422,10 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 bool enabledInConfig = existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool();
                 useCustomBackgroundCheckBox->setChecked(enabledInConfig);
             }
+
+            connect(useCustomBackgroundCheckBox, &QCheckBox::toggled, this, [this](const bool isChecked) {
+                previewBackground((isChecked) ? *backgroundColor : QColor());
+            });
         }
 
         // Additional CSS text area
@@ -413,9 +441,21 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             additionalCssTextArea->setPlaceholderText(tr("/* put your custom CSS here */"));
             connect(additionalCssTextArea, &QPlainTextEdit::textChanged, [=]{ style()->polish(additionalCssTextArea); });
 
+            // Repaint the running Liquid app as its CSS is being edited (shortly after typing stops)
+            cssPreviewTimer = new QTimer(this);
+            cssPreviewTimer->setSingleShot(true);
+            cssPreviewTimer->setInterval(LQD_CSS_PREVIEW_DELAY);
+            connect(cssPreviewTimer, &QTimer::timeout, this, [this]() {
+                // Base64, since messages are newline-terminated and CSS may have line breaks in it
+                sendPreview(QByteArray(LQD_INSTANCE_MSG_PREVIEW_CSS " ") + additionalCssTextArea->toPlainText().toUtf8().toBase64());
+            });
+
             if (isEditingExistingBool) {
                 additionalCssTextArea->setPlainText(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_CSS).toString());
             }
+
+            // Connected only now, to not preview what's been loaded from the file
+            connect(additionalCssTextArea, &QPlainTextEdit::textChanged, cssPreviewTimer, QOverload<>::of(&QTimer::start));
 
             appearanceTabWidgetLayout->addWidget(additionalCssTextArea);
         }
@@ -1153,6 +1193,9 @@ void LiquidAppConfigDialog::save()
 
     tempLiquidAppConfig->sync();
 
+    // A pending CSS preview is no longer needed, the saved CSS gets applied below
+    cssPreviewTimer->stop();
+
     // Apply new settings to the Liquid app if it's running
     if (isEditingExistingBool) {
         const QString instanceId = LQD_INSTANCE_ID_APP_PREFIX + appName;
@@ -1181,10 +1224,50 @@ void LiquidAppConfigDialog::save()
     accept();
 }
 
+void LiquidAppConfigDialog::previewBackground(const QColor& color)
+{
+    const QByteArray colorName = (color.isValid()) ? color.name(QColor::HexArgb).toUtf8() : QByteArray("none");
+
+    sendPreview(QByteArray(LQD_INSTANCE_MSG_PREVIEW_BG " ") + colorName);
+}
+
+void LiquidAppConfigDialog::sendPreview(const QByteArray& message)
+{
+    // Only applies to Liquid apps that already exist (and are running)
+    if (!isEditingExistingBool) {
+        return;
+    }
+
+    if (liquidAppConnection == Q_NULLPTR) {
+        liquidAppConnection = new QLocalSocket(this);
+        liquidAppConnection->connectToServer(SingleInstance::serverName(LQD_INSTANCE_ID_APP_PREFIX + nameInput->text()));
+        liquidAppConnection->waitForConnected(LQD_PREVIEW_CONNECT_TIMEOUT);
+    }
+
+    if (liquidAppConnection->state() == QLocalSocket::ConnectedState) {
+        liquidAppConnection->write(message + "\n");
+        liquidAppConnection->flush();
+        hasPreviewedChanges = true;
+    }
+}
+
+void LiquidAppConfigDialog::reject()
+{
+    // Don't let a pending CSS preview arrive after the settings have been restored
+    cssPreviewTimer->stop();
+
+    // Bring back what's been previewed so far to how it is in the saved settings
+    if (hasPreviewedChanges && liquidAppConnection != Q_NULLPTR && liquidAppConnection->state() == QLocalSocket::ConnectedState) {
+        liquidAppConnection->write(LQD_INSTANCE_MSG_RELOAD_SETTINGS "\n");
+        liquidAppConnection->flush();
+    }
+
+    QDialog::reject();
+}
+
 QString LiquidAppConfigDialog::getSettingsRequiringRestart(QSettings* liquidAppConfig)
 {
-    // Proxy settings get picked up by the web engine only upon start,
-    // and window transparency can't be turned on or off once the window is shown
+    // Proxy settings get picked up by the web engine only upon start
     static const QStringList keys = {
         LQD_CFG_KEY_NAME_USE_PROXY,
         LQD_CFG_KEY_NAME_PROXY_USE_SOCKS,
@@ -1199,10 +1282,6 @@ QString LiquidAppConfigDialog::getSettingsRequiringRestart(QSettings* liquidAppC
     for (const QString& key : keys) {
         values << ((liquidAppConfig->contains(key)) ? liquidAppConfig->value(key).toString() : QStringLiteral("<unset>"));
     }
-
-    const bool isTranslucent = liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool()
-                               && QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString()).alpha() < 255;
-    values << ((isTranslucent) ? "translucent" : "opaque");
 
     return values.join('\n');
 }

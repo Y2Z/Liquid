@@ -167,6 +167,20 @@ attempt_to_create_or_run_liquid_app:
                     liquidAppWindow->close();
                 } else if (message == LQD_INSTANCE_MSG_RELOAD_SETTINGS) {
                     liquidAppWindow->reloadLiquidAppConfig();
+                } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_CSS " ")) {
+                    // Temporary, while the settings are being edited (reloading settings brings back the saved one)
+                    const QByteArray css = QByteArray::fromBase64(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_CSS " ")));
+                    liquidAppWindow->setAdditionalCss(QString::fromUtf8(css));
+                } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_BG " ")) {
+                    // Temporary, while the settings are being edited (reloading settings brings back the saved one)
+                    const QString color = QString::fromUtf8(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_BG " "))).trimmed();
+                    liquidAppWindow->setBackground((color == "none") ? QColor() : QColor(color));
+                } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_FRAME " ")) {
+                    // Temporary, while the settings are being edited (reloading settings brings back the saved one)
+                    liquidAppWindow->setFrameless(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_FRAME " ")).trimmed() == "off");
+                } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_SCROLL " ")) {
+                    // Temporary, while the settings are being edited (reloading settings brings back the saved one)
+                    liquidAppWindow->setScrollBarsHidden(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_SCROLL " ")).trimmed() == "off");
                 }
             });
 

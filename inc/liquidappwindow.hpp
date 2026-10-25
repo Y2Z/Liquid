@@ -37,6 +37,10 @@ public slots:
     void loadFinished(bool ok);
     void loadStarted(void);
     void reloadLiquidAppConfig(void);
+    void setBackground(const QColor& color);
+    void setAdditionalCss(const QString& css);
+    void setFrameless(const bool frameless);
+    void setScrollBarsHidden(const bool hidden);
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode(void);
     void takeSnapshotSlot(void);
@@ -137,7 +141,9 @@ private:
     void saveLiquidAppConfig(void);
     void applyAllowedDomains(void);
     void applyBackgroundColor(void);
+    void recreateNativeWindow(void);
     void applyWebSettings(void);
     void applyAdditionalCssAndJs(void);
+    static QString getAdditionalCssScript(const QString& css);
     void setupContextMenu(void);
 };

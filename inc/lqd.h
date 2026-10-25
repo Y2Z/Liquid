@@ -32,8 +32,16 @@
 #define LQD_INSTANCE_MSG_RAISE           "raise"
 #define LQD_INSTANCE_MSG_QUIT            "quit"            // Liquid apps only
 #define LQD_INSTANCE_MSG_RELOAD_SETTINGS "reload-settings" // Liquid apps only
+#define LQD_INSTANCE_MSG_PREVIEW_BG       "preview-background" // Liquid apps only, followed by a space and #AARRGGBB (or "none")
+#define LQD_INSTANCE_MSG_PREVIEW_CSS      "preview-css"        // Liquid apps only, followed by a space and base64-encoded CSS
+#define LQD_INSTANCE_MSG_PREVIEW_FRAME    "preview-frame"      // Liquid apps only, followed by a space and "on" or "off"
+#define LQD_INSTANCE_MSG_PREVIEW_SCROLL   "preview-scrollbars" // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_STARTED         "started"         // Main window only, followed by a space and Liquid app's name
 #define LQD_ACTIVATION_TOKEN_TIMEOUT     500               // Milliseconds to wait for the compositor to issue an activation token
+#define LQD_PREVIEW_CONNECT_TIMEOUT      100               // Milliseconds to wait for connecting to a Liquid app for previewing settings
+#define LQD_RECREATED_WINDOW_RAISE_DELAY 100               // Milliseconds to wait before bringing a re-created native window to front
+#define LQD_SCROLLBARS_RELAYOUT_DELAY    100               // Milliseconds to keep the document unscrollable for, to make it redo its scrollbars
+#define LQD_CSS_PREVIEW_DELAY            150               // Milliseconds to wait after the last keystroke before previewing CSS
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 
 /* Names of scripts Liquid injects into web pages */
