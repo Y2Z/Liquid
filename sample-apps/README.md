@@ -1,8 +1,13 @@
 # Sample Liquid apps
 
-Copy files from directory `apps` into `~/.config/liquid/apps/`
-and then load them by running `liquid <app-name>`, e.g.:
+Copy `.liquid` files from this directory into Liquid's `apps` directory, and then run them using `liquid <app-name>`:
 
-    mkdir -p ~/.config/liquid/apps/
-    cp -n apps/* ~/.config/liquid/apps/
+    mkdir -p ~/.liquid/apps/
+    cp -n *.liquid ~/.liquid/apps/
     liquid hackernews
+
+Liquid's `apps` directory is located at:
+
+ - GNU/Linux, BSD, and others: `~/.liquid/apps/`
+ - macOS: `~/Library/Application Support/Liquid/apps/`
+ - Windows: `%LOCALAPPDATA%\Liquid\apps\`

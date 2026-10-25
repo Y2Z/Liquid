@@ -59,6 +59,8 @@ protected:
 
 private:
     void takeSnapshot(const bool fullPage);
+    void rememberGeometry(void);
+    static bool isPositionManagedByWindowSystem(void);
     QImage captureFullPage(void);
     void renderSnapshot(QPainter* painter);
     void flash(void);
@@ -69,7 +71,7 @@ private:
     void waitForNextFrame(void);
     bool waitForDocumentToFinishLoading(void);
 
-    QString* liquidAppName;
+    QString liquidAppName;
 
     QString liquidAppWindowTitle;
     QIcon iconToSave;
@@ -77,7 +79,7 @@ private:
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     QWebEngineSettings* liquidAppWebSettings = Q_NULLPTR;
-    QByteArray liquidAppWindowGeometry;
+    QRect rememberedGeometry; // Window geometry while in normal state (neither maximized nor full-screen)
     QTimer* rememberGeometryTimer = Q_NULLPTR;
     QList<qreal> zoomFactors;
 

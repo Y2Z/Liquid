@@ -7,6 +7,7 @@
 
 #include "lqd.h"
 #include "liquid.hpp"
+#include "liquidappfile.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "liquidappwindow.hpp"
 #include "mainwindow.hpp"
@@ -133,11 +134,7 @@ int main(int argc, char **argv)
 
 attempt_to_create_or_run_liquid_app:
         // Attempt to load Liquid app's config file
-        QSettings* tempAppSettings = new QSettings(QSettings::IniFormat,
-                                                   QSettings::UserScope,
-                                                   QString(PROG_NAME) + QDir::separator() + LQD_APPS_DIR_NAME,
-                                                   liquidAppName,
-                                                   Q_NULLPTR);
+        QSettings* tempAppSettings = LiquidAppFile::open(liquidAppName);
 
         // Attempt to load app settings from a config file
         if (!parser.isSet(editAppDialogFlag) && tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {

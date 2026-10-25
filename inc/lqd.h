@@ -3,6 +3,7 @@
 /* Various globals */
 #define LQD_PROG_TITLE         "Liquid"
 #define LQD_APPS_DIR_NAME      "apps"
+#define LQD_APP_FILE_EXTENSION "liquid"
 #define LQD_DEFAULT_BG_COLOR   Qt::white
 #define LQD_DEFAULT_PROXY_HOST "0.0.0.0"
 #define LQD_DEFAULT_PROXY_PORT 8080
@@ -76,7 +77,13 @@
 #define LQD_CFG_KEY_NAME_USE_CUSTOM_BG           "UseCustomBackground" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_USER_AGENT              "UserAgent" // text
 #define LQD_CFG_KEY_NAME_URL                     "URL" // text, required
-#define LQD_CFG_KEY_NAME_WIN_GEOM                "WindowGeometry" // text
+#define LQD_CFG_KEY_NAME_WIN_GEOM                "WindowGeometry" // text (used only by the main window)
+#define LQD_CFG_KEY_NAME_WIN_X                   "WindowX" // number
+#define LQD_CFG_KEY_NAME_WIN_Y                   "WindowY" // number
+#define LQD_CFG_KEY_NAME_WIN_WIDTH               "WindowWidth" // number
+#define LQD_CFG_KEY_NAME_WIN_HEIGHT              "WindowHeight" // number
+#define LQD_CFG_KEY_NAME_WIN_MAXIMIZED           "WindowMaximized" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_WIN_FULLSCREEN          "WindowFullScreen" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_ZOOM_LVL                "ZoomLevel" // number, defaults to 1
 
 /* Keyboard shortcuts (all windows and dialog boxes) */

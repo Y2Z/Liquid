@@ -22,6 +22,7 @@
 #include <QWebEngineSettings>
 
 #include "liquid.hpp"
+#include "liquidappfile.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
@@ -105,12 +106,12 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     setMinimumSize(LQD_APP_WIN_MIN_SIZE_W, LQD_APP_WIN_MIN_SIZE_H);
 
     // Tune web engine
+    // NOTE: GPU rasterization and the GPU blocklist are deliberately left up to the web engine:
+    //       forcing GPU rasterization on drivers known to mishandle it (e.g. nouveau) garbles text
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-features=AutoplayIgnoreWebAudio");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-accelerated-video-decode");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-gpu-compositing");
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-gpu-rasterization");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--enable-smooth-scrolling");
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--ignore-gpu-blocklist");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--num-raster-threads=4");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--use-fake-ui-for-media-stream");
 
@@ -133,22 +134,15 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     rememberGeometryTimer = new QTimer(this);
     rememberGeometryTimer->setSingleShot(true);
     rememberGeometryTimer->setInterval(200);
-    connect(rememberGeometryTimer, &QTimer::timeout, this, [this]() {
-        if (!isFullScreen()) {
-            liquidAppWindowGeometry = saveGeometry();
-        }
-    });
+    connect(rememberGeometryTimer, &QTimer::timeout, this, &LiquidAppWindow::rememberGeometry);
 
     // Disable default QWebEngineView's context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
 
-    liquidAppName = (QString*)name;
+    // Keep a copy, the string pointed at may not outlive this window
+    liquidAppName = *name;
 
-    liquidAppConfig = new QSettings(QSettings::IniFormat,
-                                    QSettings::UserScope,
-                                    QString(PROG_NAME "%1" LQD_APPS_DIR_NAME).arg(QDir::separator()),
-                                    *name,
-                                    Q_NULLPTR);
+    liquidAppConfig = LiquidAppFile::open(*name);
 
     // These default settings affect everything (including sub-frames)
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -173,9 +167,9 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     liquidAppWebSettings = liquidAppWebPage->settings();
 
     // Set default window title
-    liquidAppWindowTitle = *liquidAppName;
+    liquidAppWindowTitle = liquidAppName;
 
-    updateWindowTitle(*liquidAppName);
+    updateWindowTitle(liquidAppName);
 
     // Pre-fill all possible zoom factors to snap desired zoom level to
     {
@@ -431,7 +425,7 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
         }
         QDir().mkpath(path);
 
-        page()->save(Liquid::getUniqueFilePath(path, *liquidAppName, "mhtml"));
+        page()->save(Liquid::getUniqueFilePath(path, liquidAppName, "mhtml"));
     });
 
     // Make it possible to intercept zoom events
@@ -551,7 +545,7 @@ void LiquidAppWindow::hardReload(void)
     // Ensure that while this Liquid App is being reset, the window title remains to be set to this Liquid App's name
     // to mimic the same experience that happens when the user initially runs this Liquid app
     if (!liquidAppWindowTitleIsReadOnly) {
-        liquidAppWindowTitle = *liquidAppName;
+        liquidAppWindowTitle = liquidAppName;
 
         const QString js = QString("(()=>{"\
                                        "let e=document.createElement('title');"\
@@ -677,34 +671,51 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
     // Restore window geometry
     {
-        bool geometryRestored = false;
+        const QRect primaryScreenArea = QGuiApplication::primaryScreen()->availableGeometry();
+        // Defaults to a quarter of the primary screen, centered
+        QRect windowGeometry(0, 0, primaryScreenArea.width() / 2, primaryScreenArea.height() / 2);
+        windowGeometry.moveCenter(primaryScreenArea.center());
 
-        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_GEOM)) {
-            geometryRestored = restoreGeometry(QByteArray::fromHex(
-                liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_GEOM).toByteArray()
-            ));
+        if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_WIDTH) && liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_HEIGHT)) {
+            const int savedWidth = liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_WIDTH).toInt();
+            const int savedHeight = liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_HEIGHT).toInt();
 
-            // Discard saved geometry if it doesn't fit on screen (e.g. the screen setup has changed),
-            // windows that are way too large may not show up at all on some platforms (e.g. Wayland)
-            if (geometryRestored) {
-                const QScreen* screen = QGuiApplication::screenAt(geometry().center());
-                if (screen == Q_NULLPTR) {
-                    screen = QGuiApplication::primaryScreen();
-                }
-                const QRect availableGeometry = screen->availableGeometry();
-
-                if (width() > availableGeometry.width() || height() > availableGeometry.height()) {
-                    qDebug().noquote() << "Saved window geometry doesn't fit on screen, using default geometry instead";
-                    geometryRestored = false;
-                }
+            if (savedWidth > 0 && savedHeight > 0) {
+                windowGeometry.setSize(QSize(savedWidth, savedHeight).expandedTo(minimumSize()));
+                windowGeometry.moveCenter(primaryScreenArea.center());
             }
         }
 
-        if (!geometryRestored) {
-            const QRect currentScreenSize = QGuiApplication::primaryScreen()->availableGeometry();
-            const int currentScreenWidth = currentScreenSize.width();
-            const int currentScreenHeight = currentScreenSize.height();
-            setGeometry(currentScreenWidth / 4, currentScreenHeight / 4, currentScreenWidth / 2, currentScreenHeight / 2);
+        if (!isPositionManagedByWindowSystem()
+            && liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_X) && liquidAppConfig->contains(LQD_CFG_KEY_NAME_WIN_Y)) {
+            windowGeometry.moveTopLeft(QPoint(liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_X).toInt(),
+                                              liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_Y).toInt()));
+        }
+
+        // Make sure the window ends up on a screen, and fits on it (the screen setup may have changed since,
+        // windows that are way too large may not show up at all on some platforms, e.g. Wayland)
+        QScreen* screen = QGuiApplication::screenAt(windowGeometry.center());
+        if (screen == Q_NULLPTR) {
+            screen = QGuiApplication::primaryScreen();
+            windowGeometry.moveCenter(screen->availableGeometry().center());
+        }
+
+        const QRect screenArea = screen->availableGeometry();
+        if (windowGeometry.width() > screenArea.width() || windowGeometry.height() > screenArea.height()) {
+            qDebug().noquote() << "Saved window size doesn't fit on screen, shrinking it";
+            windowGeometry.setSize(windowGeometry.size().boundedTo(screenArea.size()));
+            windowGeometry.moveCenter(screenArea.center());
+        }
+
+        setGeometry(windowGeometry);
+        rememberedGeometry = windowGeometry;
+
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_MAXIMIZED, false).toBool()) {
+            setWindowState(windowState() | Qt::WindowMaximized);
+        }
+
+        if (liquidAppConfig->value(LQD_CFG_KEY_NAME_WIN_FULLSCREEN, false).toBool()) {
+            setWindowState(windowState() | Qt::WindowFullScreen);
         }
     }
 
@@ -805,10 +816,24 @@ void LiquidAppWindow::loadStarted(void)
 
 void LiquidAppWindow::moveEvent(QMoveEvent *event)
 {
-    // Remember window position
-    liquidAppWindowGeometry = saveGeometry();
+    // Remember window position once it settles (window state may not be up to date yet while getting maximized)
+    rememberGeometryTimer->start();
 
     QWebEngineView::moveEvent(event);
+}
+
+void LiquidAppWindow::rememberGeometry(void)
+{
+    // Only the "normal" geometry gets remembered, maximized and full-screen states are saved separately
+    if (!(windowState() & (Qt::WindowMaximized | Qt::WindowFullScreen | Qt::WindowMinimized))) {
+        rememberedGeometry = geometry();
+    }
+}
+
+bool LiquidAppWindow::isPositionManagedByWindowSystem(void)
+{
+    // On Wayland, programs can neither know nor choose where their windows are
+    return QGuiApplication::platformName().startsWith("wayland");
 }
 
 void LiquidAppWindow::onIconChanged(QIcon icon)
@@ -821,9 +846,8 @@ void LiquidAppWindow::onIconChanged(QIcon icon)
 
 void LiquidAppWindow::resizeEvent(QResizeEvent* event)
 {
-    // Remember window size (unless in full-screen mode),
-    // once it stops changing (e.g. the user is done dragging, or resize animation is over)
-    if (event->spontaneous() && !isFullScreen()) {
+    // Remember window size once it stops changing (e.g. the user is done dragging, or resize animation is over)
+    if (event->spontaneous()) {
         rememberGeometryTimer->start();
     }
 
@@ -856,8 +880,29 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
         liquidAppConfig->setValue(LQD_CFG_KEY_NAME_ICON, QString("data:image/png;base64,%1").arg(QString(buffer.data().toBase64())));
     }
 
-    if (!isFullScreen()) {
-        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_GEOM, QString(liquidAppWindowGeometry.toHex()));
+    // Window geometry
+    rememberGeometry();
+    if (rememberedGeometry.isValid()) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_WIDTH, rememberedGeometry.width());
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_HEIGHT, rememberedGeometry.height());
+
+        // Position remains untouched where it's unknown (it may still be of use on a different machine)
+        if (!isPositionManagedByWindowSystem()) {
+            liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_X, rememberedGeometry.x());
+            liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_Y, rememberedGeometry.y());
+        }
+    }
+
+    if (isMaximized()) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_MAXIMIZED, true);
+    } else {
+        liquidAppConfig->remove(LQD_CFG_KEY_NAME_WIN_MAXIMIZED);
+    }
+
+    if (isFullScreen()) {
+        liquidAppConfig->setValue(LQD_CFG_KEY_NAME_WIN_FULLSCREEN, true);
+    } else {
+        liquidAppConfig->remove(LQD_CFG_KEY_NAME_WIN_FULLSCREEN);
     }
 
     if (windowGeometryIsLocked) {
@@ -939,7 +984,7 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
 
     // Compose snapshot file base name (a unique number gets appended to it upon saving)
     const QString baseName = QString("%1 %2")
-                                .arg(*liquidAppName)
+                                .arg(liquidAppName)
                                 .arg(tr((fullPage) ? "full-page snapshot" : "snapshot"));
 
     if (fullPage) {
@@ -1098,7 +1143,7 @@ void LiquidAppWindow::takeVectorSnapshot(void)
     page()->runJavaScript("delete window.lqdHtml2Svg;", QWebEngineScript::ApplicationWorld);
 
     if (!svg.isEmpty()) {
-        const QString baseName = QString("%1 %2").arg(*liquidAppName).arg(tr("vector snapshot"));
+        const QString baseName = QString("%1 %2").arg(liquidAppName).arg(tr("vector snapshot"));
         QSaveFile file(Liquid::getUniqueFilePath(getSnapshotsDirPath(), baseName, "svg"));
 
         if (file.open(QIODevice::WriteOnly) && file.write(svg) == svg.size() && file.commit()) {
@@ -1454,7 +1499,7 @@ void LiquidAppWindow::updateWindowTitle(const QString title)
         if (title.size() > 0) {
             liquidAppWindowTitle = title;
         } else {
-            liquidAppWindowTitle = *liquidAppName;
+            liquidAppWindowTitle = liquidAppName;
         }
     }
 
