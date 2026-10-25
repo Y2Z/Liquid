@@ -66,6 +66,20 @@ bool SingleInstance::claim(void)
     return true;
 }
 
+bool SingleInstance::isRunning(const QString& instanceId)
+{
+    QLocalSocket socket;
+    socket.connectToServer(serverName(instanceId));
+
+    if (!socket.waitForConnected(CONNECT_TIMEOUT_MS)) {
+        return false;
+    }
+
+    socket.disconnectFromServer();
+
+    return true;
+}
+
 bool SingleInstance::sendMessage(const QString& instanceId, const QByteArray& message)
 {
     QLocalSocket socket;

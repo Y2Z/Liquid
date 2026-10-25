@@ -1,8 +1,10 @@
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
+#include <QStyle>
 #include <QVBoxLayout>
 
 #include "liquid.hpp"
@@ -10,6 +12,7 @@
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
+#include "singleinstance.hpp"
 
 MainWindow::MainWindow() : QScrollArea()
 {
@@ -73,10 +76,19 @@ MainWindow::MainWindow() : QScrollArea()
 
     mainWindowWidget->setLayout(mainWindowLayout);
 
-    // Run the liquid app upon double-click on its row in the table
+    // Run the liquid app upon double-click on its row in the table (or bring it to front if it's already running)
     connect(appListTable, &QTableWidget::cellDoubleClicked, [&](int row, int col) {
         Q_UNUSED(col);
-        Liquid::runLiquidApp(appListTable->item(row, 0)->text());
+        const QString liquidAppName = appListTable->item(row, 0)->text();
+
+        // The token lets the Liquid app's window come to front on Wayland
+        Liquid::requestActivationToken(this, [this, liquidAppName](const QString& activationToken) {
+            if (isLiquidAppRunning(liquidAppName)) {
+                sendToLiquidApp(liquidAppName, Liquid::makeRaiseMessage(activationToken));
+            } else {
+                Liquid::runLiquidApp(liquidAppName, activationToken);
+            }
+        });
     });
 
     // Connect keyboard shortcuts
@@ -113,6 +125,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::flushTable(void)
 {
+    runButtons.clear();
+
     for (int i = appListTable->rowCount(); i > -1 ; i--) {
         appListTable->removeRow(i);
     }
@@ -162,6 +176,13 @@ void MainWindow::populateTable(void)
             const QString text = QString("Are you sure you want to delete Liquid app “%1”?").arg(liquidAppName);
             const QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation", text, QMessageBox::Yes | QMessageBox::No);
             if (reply == QMessageBox::Yes) {
+                // Close the Liquid app first (otherwise it'd write its file back to disk upon quitting)
+                if (isLiquidAppRunning(liquidAppName) && !stopLiquidApp(liquidAppName, true)) {
+                    QMessageBox::warning(this, tr("Unable to delete"),
+                                         tr("Liquid app “%1” didn't quit (it may be busy), please try again.").arg(liquidAppName));
+                    return;
+                }
+
                 Liquid::removeDesktopFile(liquidAppName);
 
                 // Shred and unlink Liquid app settings file
@@ -214,17 +235,115 @@ void MainWindow::populateTable(void)
         });
         appItemLayout->addWidget(editButton);
 
-        // Run button
+        // Run/Stop button
         QPushButton* runButton = new QPushButton(tr(LQD_ICON_RUN), this);
         runButton->setCursor(Qt::PointingHandCursor);
-        runButton->setProperty("class", "liquidAppsListButtonRun");
         appItemLayout->addWidget(runButton);
-        connect(runButton, &QPushButton::clicked, [liquidAppName]() {
-            Liquid::runLiquidApp(liquidAppName);
+        connect(runButton, &QPushButton::clicked, [this, liquidAppName]() {
+            if (isLiquidAppRunning(liquidAppName)) {
+                stopLiquidApp(liquidAppName, false);
+            } else {
+                Liquid::requestActivationToken(this, [liquidAppName](const QString& activationToken) {
+                    Liquid::runLiquidApp(liquidAppName, activationToken);
+                });
+            }
         });
+        runButtons.insert(liquidAppName, runButton);
 
         appListTable->setCellWidget(i, 1, appItemActionButtonsWidget);
+
+        // Find out whether it's running (and keep track of it from now on)
+        watchLiquidApp(liquidAppName);
+        updateRunButton(liquidAppName);
     }
+}
+
+void MainWindow::watchLiquidApp(const QString& liquidAppName)
+{
+    if (liquidAppConnections.contains(liquidAppName)) {
+        return;
+    }
+
+    // A Liquid app that's not in the table yet (e.g. just created via CLI)
+    if (!runButtons.contains(liquidAppName) && Liquid::getLiquidAppsList().contains(liquidAppName)) {
+        flushTable();
+        populateTable();
+
+        if (liquidAppConnections.contains(liquidAppName)) {
+            return; // Populating the table has taken care of it
+        }
+    }
+
+    QLocalSocket* connection = new QLocalSocket(this);
+    liquidAppConnections.insert(liquidAppName, connection);
+
+    connect(connection, &QLocalSocket::connected, this, [this, liquidAppName]() {
+        updateRunButton(liquidAppName);
+    });
+
+    // Happens once the Liquid app quits or crashes (or right away, if it isn't running)
+    const auto forget = [this, liquidAppName, connection]() {
+        if (liquidAppConnections.value(liquidAppName) == connection) {
+            liquidAppConnections.remove(liquidAppName);
+            connection->deleteLater();
+            updateRunButton(liquidAppName);
+        }
+    };
+    connect(connection, &QLocalSocket::disconnected, this, forget);
+    connect(connection, &QLocalSocket::errorOccurred, this, forget);
+
+    connection->connectToServer(SingleInstance::serverName(LQD_INSTANCE_ID_APP_PREFIX + liquidAppName));
+}
+
+bool MainWindow::isLiquidAppRunning(const QString& liquidAppName)
+{
+    const QLocalSocket* connection = liquidAppConnections.value(liquidAppName, Q_NULLPTR);
+
+    return connection != Q_NULLPTR && connection->state() == QLocalSocket::ConnectedState;
+}
+
+void MainWindow::sendToLiquidApp(const QString& liquidAppName, const QByteArray& message)
+{
+    if (isLiquidAppRunning(liquidAppName)) {
+        QLocalSocket* connection = liquidAppConnections.value(liquidAppName);
+        connection->write(message + "\n");
+        connection->flush();
+    }
+}
+
+bool MainWindow::stopLiquidApp(const QString& liquidAppName, const bool waitUntilStopped)
+{
+    sendToLiquidApp(liquidAppName, LQD_INSTANCE_MSG_QUIT);
+
+    if (waitUntilStopped) {
+        QElapsedTimer timer;
+        timer.start();
+
+        while (isLiquidAppRunning(liquidAppName) && timer.elapsed() < LQD_INSTANCE_STOP_TIMEOUT) {
+            Liquid::sleep(50);
+        }
+    }
+
+    return !isLiquidAppRunning(liquidAppName);
+}
+
+void MainWindow::updateRunButton(const QString& liquidAppName)
+{
+    QPushButton* runButton = runButtons.value(liquidAppName, Q_NULLPTR);
+
+    if (runButton == Q_NULLPTR) {
+        return;
+    }
+
+    const bool isRunning = isLiquidAppRunning(liquidAppName);
+
+    runButton->setText((isRunning) ? tr(LQD_ICON_STOP) : tr(LQD_ICON_RUN));
+    runButton->setToolTip((isRunning) ? tr("Stop") : tr("Run"));
+    runButton->setProperty("class", (isRunning) ? "liquidAppsListButtonStop" : "liquidAppsListButtonRun");
+
+    // Make the stylesheet take the new class into account
+    runButton->style()->unpolish(runButton);
+    runButton->style()->polish(runButton);
 }
 
 void MainWindow::saveSettings(void)

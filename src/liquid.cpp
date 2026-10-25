@@ -1,5 +1,8 @@
 #include "lqd.h"
 #include "liquid.hpp"
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+#include "liquidx11.h"
+#endif
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -13,6 +16,18 @@
 #include <QTime>
 #include <QTimer>
 #include <QWebEngineProfile>
+#include <QWindow>
+#include <QGuiApplication>
+
+#if defined(LQD_WAYLAND_ACTIVATION) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#include <memory>
+#include <QGuiApplication>
+#include <QtGui/qpa/qplatformwindow_p.h>
+// Qt 6.5 makes the interface available on all Unix-like systems, later versions only when built with Wayland support
+#if !defined(QT_FEATURE_wayland) || QT_FEATURE_wayland == 1
+#define LQD_CAN_REQUEST_ACTIVATION_TOKEN
+#endif
+#endif
 
 #if defined(Q_OS_MAC)
 #include <CoreFoundation/CoreFoundation.h>
@@ -209,10 +224,16 @@ QString Liquid::getUniqueFilePath(const QString dirPath, const QString baseName,
     return filePath;
 }
 
-void Liquid::raiseWindow(QWidget* window)
+void Liquid::raiseWindow(QWidget* window, const QString activationToken)
 {
     if (window == Q_NULLPTR) {
         return;
+    }
+
+    // On Wayland, windows may only be brought to front using a token obtained by whoever the user is interacting with
+    // (otherwise the compositor shows an "is ready" notification instead); Qt picks it up from this environment variable
+    if (!activationToken.isEmpty()) {
+        qputenv("XDG_ACTIVATION_TOKEN", activationToken.toUtf8());
     }
 
     // Un-minimize (without affecting full-screen or maximized state), then bring to front
@@ -220,6 +241,15 @@ void Liquid::raiseWindow(QWidget* window)
     window->show();
     window->raise();
     window->activateWindow();
+
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+    // X11 window managers (e.g. GNOME's) ignore activation requests Qt makes on behalf of windows that weren't interacted
+    // with recently (showing an "is ready" notification instead), so ask them the same way taskbars do
+    // (Qt 5 always ends up using X11 on GNOME, even in Wayland sessions)
+    if (QGuiApplication::platformName() == "xcb") {
+        liquidX11ActivateWindow(window->effectiveWinId());
+    }
+#endif
 }
 
 void Liquid::removeDesktopFile(const QString liquidAppName)
@@ -241,9 +271,94 @@ void Liquid::removeDesktopFile(const QString liquidAppName)
 #endif
 }
 
-void Liquid::runLiquidApp(const QString liquidAppName)
+void Liquid::runLiquidApp(const QString liquidAppName, const QString activationToken)
 {
-    QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList() << QStringLiteral("%1").arg(liquidAppName));
+    QProcess process;
+    process.setProgram(QCoreApplication::applicationFilePath());
+    process.setArguments(QStringList() << liquidAppName);
+
+    // Lets the new Liquid app's window show up in front on Wayland (see raiseWindow())
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    environment.remove("XDG_ACTIVATION_TOKEN");
+    if (!activationToken.isEmpty()) {
+        environment.insert("XDG_ACTIVATION_TOKEN", activationToken);
+    }
+    process.setProcessEnvironment(environment);
+
+    process.startDetached();
+}
+
+void Liquid::requestActivationToken(QWidget* window, const std::function<void(const QString&)> callback)
+{
+#if defined(LQD_CAN_REQUEST_ACTIVATION_TOKEN)
+    // Ask the compositor for a token on behalf of the window the user is interacting with (requires private Qt API)
+    using QNativeInterface::Private::QWaylandWindow;
+
+    QWindow* windowHandle = (window != Q_NULLPTR) ? window->window()->windowHandle() : Q_NULLPTR;
+    QWaylandWindow* waylandWindow = (windowHandle != Q_NULLPTR) ? windowHandle->nativeInterface<QWaylandWindow>() : Q_NULLPTR;
+    auto* waylandApplication = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
+
+    if (waylandWindow != Q_NULLPTR && waylandApplication != Q_NULLPTR) {
+        // The callback gets called exactly once: either with the token, or without one if the compositor doesn't respond
+        const auto isDone = std::make_shared<bool>(false);
+        const auto connection = std::make_shared<QMetaObject::Connection>();
+
+        *connection = QObject::connect(waylandWindow, &QWaylandWindow::xdgActivationTokenCreated, window,
+                                       [isDone, connection, callback](const QString& token) {
+            QObject::disconnect(*connection);
+
+            if (!*isDone) {
+                *isDone = true;
+                callback(token);
+            }
+        });
+
+        QTimer::singleShot(LQD_ACTIVATION_TOKEN_TIMEOUT, window, [isDone, connection, callback]() {
+            QObject::disconnect(*connection);
+
+            if (!*isDone) {
+                *isDone = true;
+                callback(QString());
+            }
+        });
+
+        waylandWindow->requestXdgActivationToken(waylandApplication->lastInputSerial());
+        return;
+    }
+#else
+    Q_UNUSED(window);
+#endif
+
+    callback(QString());
+}
+
+bool Liquid::parseRaiseMessage(const QByteArray& message, QString* activationToken)
+{
+    // Either just "raise", or "raise <activation token>"
+    static const QByteArray prefix = QByteArray(LQD_INSTANCE_MSG_RAISE) + " ";
+
+    if (message == LQD_INSTANCE_MSG_RAISE) {
+        activationToken->clear();
+        return true;
+    }
+
+    if (message.startsWith(prefix)) {
+        *activationToken = QString::fromUtf8(message.mid(prefix.size())).trimmed();
+        return true;
+    }
+
+    return false;
+}
+
+QByteArray Liquid::makeRaiseMessage(const QString& activationToken)
+{
+    QByteArray message = LQD_INSTANCE_MSG_RAISE;
+
+    if (!activationToken.isEmpty()) {
+        message += " " + activationToken.toUtf8();
+    }
+
+    return message;
 }
 
 void Liquid::sleep(const int ms)

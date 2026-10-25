@@ -40,14 +40,14 @@ jobs:
     - name: Resolve dependencies (Ubuntu, Qt 5)
       run: |
         sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qtwebengine5-dev qt5-qmake
+        sudo apt-get install -y qtbase5-dev qtwebengine5-dev qt5-qmake libx11-dev
         echo "QMAKE=qmake" >> "$GITHUB_ENV"
       if: runner.os == 'Linux' && matrix.qt == 5
 
     - name: Resolve dependencies (Ubuntu, Qt 6)
       run: |
         sudo apt-get update
-        sudo apt-get install -y qt6-base-dev qt6-webengine-dev qmake6 libgl-dev
+        sudo apt-get install -y qt6-base-dev qt6-webengine-dev qmake6 libgl-dev libx11-dev
         echo "QMAKE=qmake6" >> "$GITHUB_ENV"
       if: runner.os == 'Linux' && matrix.qt == 6
 

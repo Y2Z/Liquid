@@ -29,7 +29,16 @@
 #define LQD_INSTANCE_ID_APP_PREFIX "app/"
 
 /* Messages that can be sent to running instances */
-#define LQD_INSTANCE_MSG_RAISE "raise"
+#define LQD_INSTANCE_MSG_RAISE           "raise"
+#define LQD_INSTANCE_MSG_QUIT            "quit"            // Liquid apps only
+#define LQD_INSTANCE_MSG_RELOAD_SETTINGS "reload-settings" // Liquid apps only
+#define LQD_INSTANCE_MSG_STARTED         "started"         // Main window only, followed by a space and Liquid app's name
+#define LQD_ACTIVATION_TOKEN_TIMEOUT     500               // Milliseconds to wait for the compositor to issue an activation token
+#define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
+
+/* Names of scripts Liquid injects into web pages */
+#define LQD_SCRIPT_NAME_ADDITIONAL_CSS "liquid-additional-css"
+#define LQD_SCRIPT_NAME_ADDITIONAL_JS  "liquid-additional-js"
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -41,6 +50,7 @@
 #define LQD_ICON_WARNING "⚠️"
 #define LQD_ICON_DELETE  "✖"
 #define LQD_ICON_RUN     "➤"
+#define LQD_ICON_STOP    "■"
 
 /* Liquid App config file group names */
 #define LQD_CFG_GROUP_NAME_COOKIES               "Cookies"

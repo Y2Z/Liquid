@@ -17,6 +17,7 @@ public:
 
     void addAllowedDomain(const QString domain);
     void addAllowedDomains(const QStringList domainList);
+    void setAllowedDomains(const QStringList domainList);
     void closeJsDialog();
 
     static void setWebSettingsToDefault(QWebEngineSettings* webSettings);

@@ -36,6 +36,7 @@ public slots:
     void hardReload(void);
     void loadFinished(bool ok);
     void loadStarted(void);
+    void reloadLiquidAppConfig(void);
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode(void);
     void takeSnapshotSlot(void);
@@ -79,6 +80,7 @@ private:
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
     QWebEngineSettings* liquidAppWebSettings = Q_NULLPTR;
+    QString defaultHttpUserAgent;
     QRect rememberedGeometry; // Window geometry while in normal state (neither maximized nor full-screen)
     QTimer* rememberGeometryTimer = Q_NULLPTR;
     QList<qreal> zoomFactors;
@@ -133,5 +135,9 @@ private:
     void bindKeyboardShortcuts(void);
     void loadLiquidAppConfig(void);
     void saveLiquidAppConfig(void);
+    void applyAllowedDomains(void);
+    void applyBackgroundColor(void);
+    void applyWebSettings(void);
+    void applyAdditionalCssAndJs(void);
     void setupContextMenu(void);
 };

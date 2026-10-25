@@ -81,8 +81,10 @@ Liquid is built with Qt 6 (Qt 5.15 is still supported) and Qt WebEngine.
 On Debian/Ubuntu:
 
 ```console
-sudo apt install qt6-base-dev qt6-webengine-dev qmake6 build-essential
+sudo apt install qt6-base-dev qt6-webengine-dev qmake6 libx11-dev build-essential
 ```
+
+Optionally, also install `qt6-base-private-dev` (requires Qt 6.5 or newer): it lets Liquid bring windows of already running Liquid apps to front on Wayland, instead of the desktop environment merely showing a notification.
 
 On macOS and Windows, install Qt 6 with the Qt WebEngine, Qt WebChannel, and Qt Positioning modules using the [Qt Online Installer](https://www.qt.io/download-qt-installer).
 
