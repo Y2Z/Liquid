@@ -41,6 +41,11 @@ void LiquidAppWebPage::addAllowedDomains(const QStringList domainsList) {
     // TODO: remove duplicates from allowedDomainsList
 }
 
+void LiquidAppWebPage::setAllowedDomains(const QStringList domainsList) {
+    *allowedDomainsList = domainsList;
+    allowedDomainsList->removeDuplicates();
+}
+
 bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEnginePage::NavigationType navReqType, const bool isMainFrame)
 {
     const bool isDomainAllowed = allowedDomainsList->contains(reqUrl.host());

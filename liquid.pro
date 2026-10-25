@@ -65,6 +65,21 @@ DEFINES     += VERSION=\\\"$${VERSION}\\\"
 
 # GNU/Linux, FreeBSD, and similar
 unix:!mac {
+    # Needed for bringing windows to front under X11
+    HEADERS += inc/liquidx11.h
+    SOURCES += src/liquidx11.cpp
+    LIBS    += -lX11
+
+    # Bringing windows to front on Wayland requires private Qt API (6.5+), use it if available
+    greaterThan(QT_MAJOR_VERSION, 5) {
+        exists($$[QT_INSTALL_HEADERS]/QtGui/$$[QT_VERSION]/QtGui/qpa/qplatformwindow_p.h) {
+            QT      += gui-private
+            DEFINES += LQD_WAYLAND_ACTIVATION
+        } else {
+            message("Qt's private headers not found (e.g. qt6-base-private-dev), windows won't be raised on Wayland")
+        }
+    }
+
     isEmpty(PREFIX) {
         PREFIX = /usr
     }

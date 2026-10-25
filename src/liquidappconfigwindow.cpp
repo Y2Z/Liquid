@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QElapsedTimer>
 #include <QNetworkCookie>
 #include <QWebEngineProfile>
 
@@ -7,6 +8,7 @@
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
+#include "singleinstance.hpp"
 
 LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppName) : QDialog(parent)
 {
@@ -813,6 +815,9 @@ void LiquidAppConfigDialog::save()
 
     QSettings* tempLiquidAppConfig = LiquidAppFile::open(appName);
 
+    // Some settings can't be changed while the Liquid app is running, remember them to tell whether it needs a restart
+    const QString settingsRequiringRestartBefore = getSettingsRequiringRestart(tempLiquidAppConfig);
+
     // URL
     {
         QUrl url(QUrl::fromUserInput(addressInput->text()));
@@ -1148,7 +1153,58 @@ void LiquidAppConfigDialog::save()
 
     tempLiquidAppConfig->sync();
 
+    // Apply new settings to the Liquid app if it's running
+    if (isEditingExistingBool) {
+        const QString instanceId = LQD_INSTANCE_ID_APP_PREFIX + appName;
+
+        if (getSettingsRequiringRestart(tempLiquidAppConfig) != settingsRequiringRestartBefore) {
+            // Restart it (wait for it to quit first, it's not possible to have two instances running at once)
+            if (SingleInstance::sendMessage(instanceId, LQD_INSTANCE_MSG_QUIT)) {
+                QElapsedTimer timer;
+                timer.start();
+
+                while (SingleInstance::isRunning(instanceId) && timer.elapsed() < LQD_INSTANCE_STOP_TIMEOUT) {
+                    Liquid::sleep(100);
+                }
+
+                if (!SingleInstance::isRunning(instanceId)) {
+                    Liquid::runLiquidApp(appName);
+                }
+            }
+        } else {
+            SingleInstance::sendMessage(instanceId, LQD_INSTANCE_MSG_RELOAD_SETTINGS);
+        }
+    }
+
+    delete tempLiquidAppConfig;
+
     accept();
+}
+
+QString LiquidAppConfigDialog::getSettingsRequiringRestart(QSettings* liquidAppConfig)
+{
+    // Proxy settings get picked up by the web engine only upon start,
+    // and window transparency can't be turned on or off once the window is shown
+    static const QStringList keys = {
+        LQD_CFG_KEY_NAME_USE_PROXY,
+        LQD_CFG_KEY_NAME_PROXY_USE_SOCKS,
+        LQD_CFG_KEY_NAME_PROXY_HOST,
+        LQD_CFG_KEY_NAME_PROXY_PORT,
+        LQD_CFG_KEY_NAME_PROXY_USE_AUTH,
+        LQD_CFG_KEY_NAME_PROXY_USER_NAME,
+        LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD,
+    };
+
+    QStringList values;
+    for (const QString& key : keys) {
+        values << ((liquidAppConfig->contains(key)) ? liquidAppConfig->value(key).toString() : QStringLiteral("<unset>"));
+    }
+
+    const bool isTranslucent = liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool()
+                               && QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString()).alpha() < 255;
+    values << ((isTranslucent) ? "translucent" : "opaque");
+
+    return values.join('\n');
 }
 
 void LiquidAppConfigDialog::bindShortcuts(void)

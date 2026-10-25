@@ -22,12 +22,16 @@ public:
     // Delivers a message to the running instance; returns false if there's none running
     static bool sendMessage(const QString& instanceId, const QByteArray& message);
 
+    // Tells whether an instance with the given ID is currently running
+    static bool isRunning(const QString& instanceId);
+
+    // Name of the local socket (named pipe on Windows) the instance with the given ID listens on
+    static QString serverName(const QString& instanceId);
+
 signals:
     void messageReceived(const QByteArray& message);
 
 private:
-    static QString serverName(const QString& instanceId);
-
     QString instanceId;
     QLocalServer* server = Q_NULLPTR;
 };

@@ -28,6 +28,7 @@ public slots:
 private:
     void bindShortcuts(void);
     static QFrame* separator(void);
+    static QString getSettingsRequiringRestart(QSettings* liquidAppConfig);
 
     bool isEditingExistingBool = false;
     bool isPlanningToRunBool = false;

@@ -152,6 +152,7 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
     liquidAppWebProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
+    defaultHttpUserAgent = liquidAppWebProfile->httpUserAgent();
 
     if (!liquidAppWebProfile->isOffTheRecord()) {
         qDebug().noquote() << "Web profile is not off-the-record!";
@@ -641,22 +642,16 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
             const QColor backgroundColor = QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString());
 
             if (backgroundColor.alpha() < 255) {
-                // Make window background transparent
+                // Make window background transparent (can only be done before the window is shown)
                 setAttribute(Qt::WA_TranslucentBackground, true);
             }
-
-            page()->setBackgroundColor(backgroundColor);
-        } else {
-            page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);
         }
+
+        applyBackgroundColor();
     }
 
     // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS)) {
-        liquidAppWebPage->addAllowedDomains(
-            liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS).toString().split(" ")
-        );
-    }
+    applyAllowedDomains();
 
     // Deal with Cookies
     {
@@ -719,23 +714,8 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         }
     }
 
-    // Toggle JavaScript on if enabled in application config
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ENABLE_JS)) {
-        settings()->setAttribute(
-            QWebEngineSettings::JavascriptEnabled,
-            liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS).toBool()
-        );
-    }
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
-    // Hide scrollbars
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS)) {
-        settings()->setAttribute(
-            QWebEngineSettings::ShowScrollBars,
-            !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS).toBool()
-        );
-    }
-#endif
+    // JavaScript, scrollbars, user-agent string
+    applyWebSettings();
 
     // Mute audio if muted in application config
     if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_MUTE_AUDIO)) {
@@ -762,9 +742,68 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
         }
     }
 
-    // Custom user-agent string
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_USER_AGENT)) {
-        liquidAppWebProfile->setHttpUserAgent(liquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString());
+    // Additional user-defined CSS and JS
+    applyAdditionalCssAndJs();
+
+#if !defined(Q_OS_LINUX) // This doesn't work on X11
+    // Set window icon
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
+        QPixmap pixmap;
+        pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
+        window()->setWindowIcon(QIcon(pixmap));
+    }
+#endif
+}
+
+void LiquidAppWindow::applyAllowedDomains(void)
+{
+    // Determine where this Liquid app is allowed to navigate, and what should be opened in external browser
+    QStringList domains;
+    domains << QUrl(liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString()).host();
+
+    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS)) {
+        domains << liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS).toString().split(' ', Qt::SkipEmptyParts);
+    }
+
+    liquidAppWebPage->setAllowedDomains(domains);
+}
+
+void LiquidAppWindow::applyBackgroundColor(void)
+{
+    // Set the page's background color behind the document's body
+    if (liquidAppConfig->value(LQD_CFG_KEY_NAME_USE_CUSTOM_BG, false).toBool() && liquidAppConfig->contains(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR)) {
+        page()->setBackgroundColor(QColor(liquidAppConfig->value(LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR).toString()));
+    } else {
+        page()->setBackgroundColor(LQD_DEFAULT_BG_COLOR);
+    }
+}
+
+void LiquidAppWindow::applyWebSettings(void)
+{
+    settings()->setAttribute(QWebEngineSettings::JavascriptEnabled,
+                             liquidAppConfig->value(LQD_CFG_KEY_NAME_ENABLE_JS, false).toBool());
+
+    settings()->setAttribute(QWebEngineSettings::ShowScrollBars,
+                             !liquidAppConfig->value(LQD_CFG_KEY_NAME_HIDE_SCROLLBARS, false).toBool());
+
+    const QString customUserAgent = liquidAppConfig->value(LQD_CFG_KEY_NAME_USER_AGENT).toString();
+    liquidAppWebProfile->setHttpUserAgent((customUserAgent.isEmpty()) ? defaultHttpUserAgent : customUserAgent);
+}
+
+void LiquidAppWindow::applyAdditionalCssAndJs(void)
+{
+    QWebEngineScriptCollection& scripts = liquidAppWebPage->scripts();
+
+    // Remove previously added ones
+    for (const QString& name : { QStringLiteral(LQD_SCRIPT_NAME_ADDITIONAL_CSS), QStringLiteral(LQD_SCRIPT_NAME_ADDITIONAL_JS) }) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        const QList<QWebEngineScript> existingScripts = scripts.find(name);
+#else
+        const QList<QWebEngineScript> existingScripts = scripts.findScripts(name);
+#endif
+        for (const QWebEngineScript& existingScript : existingScripts) {
+            scripts.remove(existingScript);
+        }
     }
 
     // Additional user-defined CSS (does't require JavaScript enabled in order to work)
@@ -777,32 +816,76 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
                                        "document.head.appendChild(styleEl)"\
                                    "})();").arg(additionalCss.replace("\n", " ").replace("'", "\\'"));
         QWebEngineScript script;
+        script.setName(LQD_SCRIPT_NAME_ADDITIONAL_CSS);
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
         script.setSourceCode(js);
         script.setWorldId(QWebEngineScript::ApplicationWorld);
-        liquidAppWebPage->scripts().insert(script);
+        scripts.insert(script);
     }
 
     // Additional user-defined JS (does't require JavaScript enabled in order to work)
     if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ADDITIONAL_JS)) {
-        QString js = liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString();
         QWebEngineScript script;
+        script.setName(LQD_SCRIPT_NAME_ADDITIONAL_JS);
         script.setInjectionPoint(QWebEngineScript::DocumentReady);
         script.setRunsOnSubFrames(false);
-        script.setSourceCode(js);
+        script.setSourceCode(liquidAppConfig->value(LQD_CFG_KEY_NAME_ADDITIONAL_JS).toString());
         script.setWorldId(QWebEngineScript::ApplicationWorld);
-        liquidAppWebPage->scripts().insert(script);
+        scripts.insert(script);
+    }
+}
+
+void LiquidAppWindow::reloadLiquidAppConfig(void)
+{
+    // Remember settings that only take effect upon loading the page, to tell whether it needs to be reloaded
+    static const QStringList pageAffectingKeys = {
+        LQD_CFG_KEY_NAME_ENABLE_JS,
+        LQD_CFG_KEY_NAME_USER_AGENT,
+        LQD_CFG_KEY_NAME_ADDITIONAL_CSS,
+        LQD_CFG_KEY_NAME_ADDITIONAL_JS,
+    };
+    QVariantList previousValues;
+    for (const QString& key : pageAffectingKeys) {
+        previousValues << liquidAppConfig->value(key);
+    }
+    const QString previousUrl = liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString();
+    const bool wasFrameless = liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool();
+
+    // Pick up changes made to the file by another process (e.g. the main window)
+    liquidAppConfig->sync();
+
+    // Window title
+    liquidAppWindowTitleIsReadOnly = liquidAppConfig->contains(LQD_CFG_KEY_NAME_TITLE);
+    if (liquidAppWindowTitleIsReadOnly) {
+        liquidAppWindowTitle = liquidAppConfig->value(LQD_CFG_KEY_NAME_TITLE).toString();
+    }
+    updateWindowTitle(title());
+
+    applyAllowedDomains();
+    applyBackgroundColor();
+    applyWebSettings();
+    applyAdditionalCssAndJs();
+
+    // Window frame (changing window flags hides the window, so it has to be shown again)
+    const bool isFrameless = liquidAppConfig->value(LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME, false).toBool();
+    if (isFrameless != wasFrameless) {
+        setWindowFlag(Qt::FramelessWindowHint, isFrameless);
+        show();
     }
 
-#if !defined(Q_OS_LINUX) // This doesn't work on X11
-    // Set window icon
-    if (liquidAppConfig->contains(LQD_CFG_KEY_NAME_ICON)) {
-        QPixmap pixmap;
-        pixmap.loadFromData(QByteArray::fromBase64(liquidAppConfig->value(LQD_CFG_KEY_NAME_ICON).toByteArray().remove(0, 22)), "PNG");
-        window()->setWindowIcon(QIcon(pixmap));
+    // Load the new starting URL, or reload the page if anything it depends on has changed
+    const QString url = liquidAppConfig->value(LQD_CFG_KEY_NAME_URL).toString();
+    if (url != previousUrl) {
+        load(QUrl(url));
+    } else {
+        for (int i = 0; i < pageAffectingKeys.size(); i++) {
+            if (liquidAppConfig->value(pageAffectingKeys[i]) != previousValues[i]) {
+                reload();
+                break;
+            }
+        }
     }
-#endif
 }
 
 void LiquidAppWindow::loadStarted(void)

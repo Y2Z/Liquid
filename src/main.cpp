@@ -78,7 +78,8 @@ int main(int argc, char **argv)
         singleInstance = new SingleInstance(LQD_INSTANCE_ID_MAIN);
         if (!singleInstance->claim()) {
             qDebug().noquote() << QString("Liquid is already running");
-            SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, LQD_INSTANCE_MSG_RAISE);
+            // Pass on the activation token this process may have been launched with (e.g. by the desktop environment)
+            SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, Liquid::makeRaiseMessage(qEnvironmentVariable("XDG_ACTIVATION_TOKEN")));
             goto done;
         }
 
@@ -86,8 +87,15 @@ int main(int argc, char **argv)
         mainWindow = new MainWindow;
 
         QObject::connect(singleInstance, &SingleInstance::messageReceived, mainWindow, [](const QByteArray& message) {
-            if (message == LQD_INSTANCE_MSG_RAISE) {
-                Liquid::raiseWindow(mainWindow);
+            static const QByteArray startedPrefix = QByteArray(LQD_INSTANCE_MSG_STARTED) + " ";
+
+            QString activationToken;
+
+            if (Liquid::parseRaiseMessage(message, &activationToken)) {
+                Liquid::raiseWindow(mainWindow, activationToken);
+            } else if (message.startsWith(startedPrefix)) {
+                // A Liquid app has started, show it as running
+                mainWindow->watchLiquidApp(QString::fromUtf8(message.mid(startedPrefix.size())));
             }
         });
     } else  { // App name provided
@@ -143,7 +151,7 @@ attempt_to_create_or_run_liquid_app:
             singleInstance = new SingleInstance(instanceId);
             if (!singleInstance->claim()) {
                 qDebug().noquote() << QString("Liquid app “%1” is already running").arg(liquidAppName);
-                SingleInstance::sendMessage(instanceId, LQD_INSTANCE_MSG_RAISE);
+                SingleInstance::sendMessage(instanceId, Liquid::makeRaiseMessage(qEnvironmentVariable("XDG_ACTIVATION_TOKEN")));
                 goto done;
             }
 
@@ -151,10 +159,19 @@ attempt_to_create_or_run_liquid_app:
             liquidAppWindow = new LiquidAppWindow(&liquidAppName);
 
             QObject::connect(singleInstance, &SingleInstance::messageReceived, liquidAppWindow, [](const QByteArray& message) {
-                if (message == LQD_INSTANCE_MSG_RAISE) {
-                    Liquid::raiseWindow(liquidAppWindow);
+                QString activationToken;
+
+                if (Liquid::parseRaiseMessage(message, &activationToken)) {
+                    Liquid::raiseWindow(liquidAppWindow, activationToken);
+                } else if (message == LQD_INSTANCE_MSG_QUIT) {
+                    liquidAppWindow->close();
+                } else if (message == LQD_INSTANCE_MSG_RELOAD_SETTINGS) {
+                    liquidAppWindow->reloadLiquidAppConfig();
                 }
             });
+
+            // Let the main window (if it's open) know that this Liquid app is now running
+            SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, QByteArray(LQD_INSTANCE_MSG_STARTED) + " " + liquidAppName.toUtf8());
         } else {
             // No such Liquid app found, open Liquid app creation dialog
             LiquidAppConfigDialog LiquidAppConfigDialog(mainWindow, liquidAppName);

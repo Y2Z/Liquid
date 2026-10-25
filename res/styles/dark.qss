@@ -19,6 +19,9 @@ QTableWidget QPushButton.liquidAppsListButtonEdit:hover {
 QTableWidget QPushButton.liquidAppsListButtonRun:hover {
     color: rgba(0, 125, 255, 0.8);
 }
+QTableWidget QPushButton.liquidAppsListButtonStop:hover {
+    color: rgba(255, 140, 0, 0.9);
+}
 
 QTableWidget::item {
     background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(20, 20, 20, 255));
