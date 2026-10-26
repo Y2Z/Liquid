@@ -1,4 +1,8 @@
 #include <QDir>
+#include <QFileSystemWatcher>
+#include <QScopedPointer>
+#include <QScrollBar>
+#include <QJsonObject>
 #include <QElapsedTimer>
 #include <QLocalSocket>
 #include <QNetworkCookie>
@@ -7,6 +11,7 @@
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplocalstorage.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -571,14 +576,14 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
     }
 
     /////////////////
-    // Cookies tab //
+    // Storage tab //
     /////////////////
 
     {
         QWidget* cookiesTabWidget = new QWidget(this);
         QVBoxLayout* cookiesTabWidgetLayout = new QVBoxLayout();
         cookiesTabWidget->setLayout(cookiesTabWidgetLayout);
-        tabWidget->addTab(cookiesTabWidget, tr("Cookies"));
+        tabWidget->addTab(cookiesTabWidget, tr("Storage"));
 
         // Allow cookies & allow third-party cookies checkboxes
         {
@@ -628,59 +633,165 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             }
         }
 
-        // Cookies list view
+        // Cookies list
         {
             cookiesTabWidgetLayout->addWidget(separator());
+            cookiesTabWidgetLayout->addWidget(new QLabel(tr("Cookies:"), this));
 
-            // Cookies list label
-            {
-                QLabel* cookiesListLabel = new QLabel(tr("Cookie jar:"), this);
-                cookiesTabWidgetLayout->addWidget(cookiesListLabel);
-            }
+            cookiesTableView = new QTableView(this);
+            cookiesModel = new QStandardItemModel(this);
 
-            // Cookies list
-            {
-                cookiesTableView = new QTableView(this);
-                cookiesModel = new QStandardItemModel(this);
+            cookiesModel->setHorizontalHeaderLabels({ tr("Name"), tr("Value"), tr("Domain"), tr("Path"), tr("Expires"), tr("HttpOnly"), tr("Secure"), QString() });
+            setUpStorageTableView(cookiesTableView, cookiesModel, 1);
+            // The cookie jar belongs to the Liquid app, it's only shown here (and can have cookies removed)
+            cookiesTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-                cookiesModel->setHorizontalHeaderItem(0, new QStandardItem(tr("Name")));
-                cookiesModel->setHorizontalHeaderItem(1, new QStandardItem(tr("Value")));
-                cookiesModel->setHorizontalHeaderItem(2, new QStandardItem(tr("Domain")));
-                cookiesModel->setHorizontalHeaderItem(3, new QStandardItem(tr("Path")));
-                cookiesModel->setHorizontalHeaderItem(4, new QStandardItem(tr("Expires")));
-                cookiesModel->setHorizontalHeaderItem(5, new QStandardItem(tr("HttpOnly")));
-                cookiesModel->setHorizontalHeaderItem(6, new QStandardItem(tr("Secure")));
-
-                // Assign model
-                cookiesTableView->setModel(cookiesModel);
-
-                // Fill model items
-                if (isEditingExistingBool) {
-                    existingLiquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
-                    int i = 0;
-                    foreach(QString cookieId, existingLiquidAppConfig->allKeys()) {
-                        const QByteArray rawCookie = existingLiquidAppConfig->value(cookieId).toByteArray();
-                        QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(rawCookie);
-                        if (cookies.size() > 0) {
-                            QNetworkCookie cookie = cookies[0];
-
-                            cookiesModel->appendRow(new QStandardItem());
-                            cookiesModel->setItem(i, 0, new QStandardItem(QString(cookie.name())));
-                            cookiesModel->setItem(i, 1, new QStandardItem(QString(cookie.value())));
-                            cookiesModel->setItem(i, 2, new QStandardItem(cookie.domain()));
-                            cookiesModel->setItem(i, 3, new QStandardItem(cookie.path()));
-                            cookiesModel->setItem(i, 4, new QStandardItem(cookie.expirationDate().toString()));
-                            cookiesModel->setItem(i, 5, new QStandardItem(cookie.isHttpOnly() ? "true" : "false"));
-                            cookiesModel->setItem(i, 6, new QStandardItem(cookie.isSecure() ? "true" : "false"));
-
-                            i++;
-                        }
-                    }
-                    existingLiquidAppConfig->endGroup();
-                }
+            if (isEditingExistingBool) {
+                fillCookiesModel(existingLiquidAppConfig);
             }
 
             cookiesTabWidgetLayout->addWidget(cookiesTableView);
+        }
+
+        // Session storage list (only while the Liquid app is running: it's never stored anywhere, so it comes from there)
+        {
+            cookiesTabWidgetLayout->addWidget(separator());
+            cookiesTabWidgetLayout->addWidget(new QLabel(tr("Session storage:"), this));
+
+            sessionStorageTableView = new QTableView(this);
+            sessionStorageModel = new QStandardItemModel(this);
+
+            sessionStorageModel->setHorizontalHeaderLabels({ tr("Website"), tr("Key"), tr("Value"), QString() });
+            setUpStorageTableView(sessionStorageTableView, sessionStorageModel, 2);
+            sessionStorageTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+            sessionStorageTableView->setToolTip(tr("Session storage of the page the Liquid app is showing (while it's running)"));
+
+            cookiesTabWidgetLayout->addWidget(sessionStorageTableView);
+        }
+
+        // Local storage list
+        {
+            cookiesTabWidgetLayout->addWidget(separator());
+
+            QLabel* localStorageListLabel = new QLabel(tr("Local storage:"), this);
+            cookiesTabWidgetLayout->addWidget(localStorageListLabel);
+
+            localStorageTableView = new QTableView(this);
+            localStorageModel = new QStandardItemModel(this);
+
+            localStorageModel->setHorizontalHeaderLabels({ tr("Website"), tr("Key"), tr("Value"), QString() });
+            setUpStorageTableView(localStorageTableView, localStorageModel, 2);
+
+            if (isEditingExistingBool) {
+                fillLocalStorageModel(existingLiquidAppConfig);
+            }
+
+            cookiesTabWidgetLayout->addWidget(localStorageTableView);
+
+            // Remember local storage checkbox (local storage works regardless, this is about keeping it after quitting)
+            rememberLocalStorageCheckBox = new QCheckBox(tr("Remember local storage"), this);
+            rememberLocalStorageCheckBox->setCursor(Qt::PointingHandCursor);
+            rememberLocalStorageCheckBox->setToolTip(tr("Keep what websites store in their local storage after quitting"));
+            if (isEditingExistingBool) {
+                rememberLocalStorageCheckBox->setChecked(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_REMEMBER_LOCAL_STORAGE, false).toBool());
+            } else {
+                // Checked by default (when creating new Liquid App)
+                rememberLocalStorageCheckBox->setChecked(true);
+            }
+            cookiesTabWidgetLayout->addWidget(rememberLocalStorageCheckBox);
+
+            // Editing within the list (edits are kept on top of what the Liquid app stores, which keeps getting shown)
+            connect(localStorageModel, &QStandardItemModel::itemChanged, this, [this](QStandardItem* item) {
+                // Only keys and values can be edited
+                if (item->column() != 1 && item->column() != 2) {
+                    return;
+                }
+
+                const int row = item->row();
+                QStandardItem* originItem = localStorageModel->item(row, 0);
+                const QString origin = originItem->text();
+                const QString key = localStorageModel->item(row, 1)->text();
+                const QString previousId = originItem->data(Qt::UserRole).toString();
+                const QString id = getStorageItemId(origin, key);
+
+                // A renamed key is the old item removed, and a new one added
+                if (id != previousId) {
+                    removedLocalStorageIds.insert(previousId);
+                    localStorageEdits.remove(previousId);
+
+                    const QSignalBlocker blocker(localStorageModel);
+                    originItem->setData(id, Qt::UserRole);
+                }
+
+                QJsonObject edit;
+                edit.insert("origin", origin);
+                edit.insert("key", key);
+                edit.insert("value", localStorageModel->item(row, 2)->text());
+                localStorageEdits.insert(id, edit);
+                removedLocalStorageIds.remove(id);
+            });
+
+            // The list only matters if local storage gets remembered (otherwise it gets forgotten upon saving)
+            const auto onRememberToggled = [this, localStorageListLabel](const bool isOn) {
+                localStorageListLabel->setEnabled(isOn);
+                localStorageTableView->setEnabled(isOn);
+            };
+            onRememberToggled(rememberLocalStorageCheckBox->isChecked());
+            connect(rememberLocalStorageCheckBox, &QCheckBox::toggled, this, onRememberToggled);
+        }
+
+        // The Delete key removes selected items (just like clicking their "✖")
+        for (QTableView* tableView : { cookiesTableView, sessionStorageTableView, localStorageTableView }) {
+            QShortcut* removeShortcut = new QShortcut(QKeySequence::Delete, tableView, Q_NULLPTR, Q_NULLPTR, Qt::WidgetShortcut);
+            connect(removeShortcut, &QShortcut::activated, this, [this, tableView]() {
+                QList<int> rows;
+                for (const QModelIndex& index : tableView->selectionModel()->selectedRows()) {
+                    rows << index.row();
+                }
+
+                // From the bottom up, so that the remaining rows' numbers stay valid
+                std::sort(rows.begin(), rows.end(), std::greater<int>());
+                for (const int row : rows) {
+                    removeStorageItem(tableView, row);
+                }
+            });
+        }
+
+        // Keep the lists up to date while the Liquid app runs
+        if (isEditingExistingBool) {
+            const QString liquidAppFilePath = Liquid::getLiquidAppFilePath(liquidAppName);
+
+            // It keeps writing cookies and local storage to its file
+            storageRefreshTimer = new QTimer(this);
+            storageRefreshTimer->setSingleShot(true);
+            storageRefreshTimer->setInterval(LQD_STORAGE_REFRESH_DELAY);
+            connect(storageRefreshTimer, &QTimer::timeout, this, [this, liquidAppName]() {
+                refreshStorage(liquidAppName);
+            });
+
+            // The file gets replaced rather than overwritten when saved, which makes the watcher lose track of it,
+            // so its directory gets watched too
+            liquidAppFileWatcher = new QFileSystemWatcher(this);
+            liquidAppFileWatcher->addPath(liquidAppFilePath);
+            liquidAppFileWatcher->addPath(QFileInfo(liquidAppFilePath).absolutePath());
+            const auto onChanged = [this, liquidAppFilePath]() {
+                if (!liquidAppFileWatcher->files().contains(liquidAppFilePath) && QFile::exists(liquidAppFilePath)) {
+                    liquidAppFileWatcher->addPath(liquidAppFilePath);
+                }
+
+                storageRefreshTimer->start();
+            };
+            connect(liquidAppFileWatcher, &QFileSystemWatcher::fileChanged, this, onChanged);
+            connect(liquidAppFileWatcher, &QFileSystemWatcher::directoryChanged, this, onChanged);
+
+            // Session storage gets sent over by the Liquid app itself
+            if (connectToLiquidApp()) {
+                liquidAppConnection->write(LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE "\n");
+                liquidAppConnection->flush();
+            }
+            sessionStorageTableView->setEnabled(liquidAppConnection != Q_NULLPTR && liquidAppConnection->state() == QLocalSocket::ConnectedState);
+        } else {
+            sessionStorageTableView->setEnabled(false);
         }
     }
 
@@ -897,6 +1008,12 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
 
 LiquidAppConfigDialog::~LiquidAppConfigDialog(void)
 {
+    // Qt deletes child widgets before it cuts their connections, and some children signal things while getting deleted:
+    // most notably, the connection to the Liquid app (which goes last) signals that it's been disconnected,
+    // by which time the lists it updates are long gone; nothing should reach this half-destroyed dialog
+    for (QObject* child : findChildren<QObject*>()) {
+        disconnect(child, Q_NULLPTR, this, Q_NULLPTR);
+    }
 }
 
 void LiquidAppConfigDialog::save()
@@ -942,6 +1059,66 @@ void LiquidAppConfigDialog::save()
     // Allow third-party cookies
     {
         tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES, allowThirdPartyCookiesCheckBox->isChecked());
+    }
+
+    // Cookies removed in settings (only those, the Liquid app may have stored new ones in the meantime)
+    if (!removedCookieIds.isEmpty()) {
+        tempLiquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
+        for (const QString& cookieId : removedCookieIds) {
+            tempLiquidAppConfig->remove(cookieId);
+        }
+        tempLiquidAppConfig->endGroup();
+    }
+
+    // Local storage
+    {
+        tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_REMEMBER_LOCAL_STORAGE, rememberLocalStorageCheckBox->isChecked());
+
+        if (!rememberLocalStorageCheckBox->isChecked()) {
+            // Not to be remembered, forget it
+            tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_LOCAL_STORAGE);
+        } else if (!removedLocalStorageIds.isEmpty() || !localStorageEdits.isEmpty()) {
+            // Only what's been removed or edited here: the Liquid app (if running) may have stored more in the meantime
+            QJsonObject localStorage = LiquidAppLocalStorage::load(tempLiquidAppConfig);
+
+            for (const QString& id : removedLocalStorageIds) {
+                const QString origin = id.section(QChar(0x1F), 0, 0);
+                QJsonObject items = localStorage.value(origin).toObject();
+                items.remove(id.section(QChar(0x1F), 1));
+                if (items.isEmpty()) {
+                    localStorage.remove(origin);
+                } else {
+                    localStorage.insert(origin, items);
+                }
+            }
+
+            for (const QJsonObject& edit : localStorageEdits) {
+                const QString origin = edit.value("origin").toString();
+                QJsonObject items = localStorage.value(origin).toObject();
+                items.insert(edit.value("key").toString(), edit.value("value"));
+                localStorage.insert(origin, items);
+            }
+
+            LiquidAppLocalStorage::save(tempLiquidAppConfig, localStorage);
+        }
+    }
+
+    // Session storage items removed here get removed from the running Liquid app's page
+    if (!removedSessionStorageIds.isEmpty() && connectToLiquidApp()) {
+        QMap<QString, QJsonArray> keysByOrigin;
+        for (const QString& id : removedSessionStorageIds) {
+            keysByOrigin[id.section(QChar(0x1F), 0, 0)].append(id.section(QChar(0x1F), 1));
+        }
+
+        for (QMap<QString, QJsonArray>::const_iterator it = keysByOrigin.constBegin(); it != keysByOrigin.constEnd(); ++it) {
+            QJsonObject removal;
+            removal.insert("origin", it.key());
+            removal.insert("keys", it.value());
+
+            liquidAppConnection->write(QByteArray(LQD_INSTANCE_MSG_REMOVE_SESSION_STORAGE " ")
+                                       + QJsonDocument(removal).toJson(QJsonDocument::Compact).toBase64() + "\n");
+        }
+        liquidAppConnection->flush();
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
@@ -1310,17 +1487,7 @@ void LiquidAppConfigDialog::previewBackground(const QColor& color)
 void LiquidAppConfigDialog::sendPreview(const QByteArray& message)
 {
     // Only applies to Liquid apps that already exist (and are running)
-    if (!isEditingExistingBool) {
-        return;
-    }
-
-    if (liquidAppConnection == Q_NULLPTR) {
-        liquidAppConnection = new QLocalSocket(this);
-        liquidAppConnection->connectToServer(SingleInstance::serverName(LQD_INSTANCE_ID_APP_PREFIX + nameInput->text()));
-        liquidAppConnection->waitForConnected(LQD_PREVIEW_CONNECT_TIMEOUT);
-    }
-
-    if (liquidAppConnection->state() == QLocalSocket::ConnectedState) {
+    if (connectToLiquidApp()) {
         liquidAppConnection->write(message + "\n");
         liquidAppConnection->flush();
         hasPreviewedChanges = true;
@@ -1409,4 +1576,300 @@ void LiquidAppConfigDialog::setOpenedFromLiquidApp(const bool state)
 bool LiquidAppConfigDialog::isRestartRequired(void)
 {
     return isRestartRequiredBool;
+}
+
+namespace {
+
+// Rows are told apart by the text of some of their columns, so that the selection survives refilling the list
+QString getRowId(const QStandardItemModel* model, const int row, const QList<int>& idColumns)
+{
+    QStringList parts;
+    for (const int column : idColumns) {
+        parts << model->item(row, column)->text();
+    }
+
+    return parts.join(QChar(0x1F));
+}
+
+struct TableViewState {
+    QSet<QString> selectedRowIds;
+    QString currentRowId;
+    int verticalScroll;
+    int horizontalScroll;
+};
+
+TableViewState saveTableViewState(const QTableView* view, const QStandardItemModel* model, const QList<int>& idColumns)
+{
+    TableViewState state;
+
+    for (const QModelIndex& index : view->selectionModel()->selectedRows()) {
+        state.selectedRowIds.insert(getRowId(model, index.row(), idColumns));
+    }
+    if (view->currentIndex().isValid()) {
+        state.currentRowId = getRowId(model, view->currentIndex().row(), idColumns);
+    }
+    state.verticalScroll = view->verticalScrollBar()->value();
+    state.horizontalScroll = view->horizontalScrollBar()->value();
+
+    return state;
+}
+
+void restoreTableViewState(QTableView* view, const QStandardItemModel* model, const QList<int>& idColumns, const TableViewState& state)
+{
+    QItemSelection selection;
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const QString rowId = getRowId(model, row, idColumns);
+
+        if (rowId == state.currentRowId) {
+            view->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::NoUpdate);
+        }
+        if (state.selectedRowIds.contains(rowId)) {
+            selection.select(model->index(row, 0), model->index(row, model->columnCount() - 1));
+        }
+    }
+
+    view->selectionModel()->select(selection, QItemSelectionModel::ClearAndSelect);
+    view->verticalScrollBar()->setValue(state.verticalScroll);
+    view->horizontalScrollBar()->setValue(state.horizontalScroll);
+}
+
+} // namespace
+
+QString LiquidAppConfigDialog::getStorageItemId(const QString& origin, const QString& key)
+{
+    return origin + QChar(0x1F) + key;
+}
+
+void LiquidAppConfigDialog::setUpStorageTableView(QTableView* tableView, QStandardItemModel* model, const int stretchingColumn)
+{
+    tableView->setModel(model);
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    tableView->setWordWrap(false);
+    tableView->verticalHeader()->hide();
+
+    // The last column has the "✖" buttons
+    QHeaderView* header = tableView->horizontalHeader();
+    const int removeColumn = model->columnCount() - 1;
+    header->setStretchLastSection(false);
+    header->setSectionResizeMode(stretchingColumn, QHeaderView::Stretch);
+    header->setSectionResizeMode(removeColumn, QHeaderView::Fixed);
+    header->resizeSection(removeColumn, LQD_UI_REMOVE_BUTTON_COLUMN_WIDTH);
+}
+
+QStandardItem* LiquidAppConfigDialog::newRemoveButtonItem(void)
+{
+    // An empty cell for the "✖" button to sit in (it has to be part of the row from the start: setting items of rows
+    // that already exist counts as editing them)
+    QStandardItem* item = new QStandardItem();
+    item->setEditable(false);
+
+    return item;
+}
+
+void LiquidAppConfigDialog::addRemoveButtons(QTableView* tableView, QStandardItemModel* model)
+{
+    const int removeColumn = model->columnCount() - 1;
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        QToolButton* removeButton = new QToolButton(tableView);
+        removeButton->setText(LQD_ICON_DELETE);
+        removeButton->setToolTip(tr("Remove"));
+        removeButton->setCursor(Qt::PointingHandCursor);
+        removeButton->setAutoRaise(true);
+
+        // Rows move around as others get removed, the index keeps track of where this one is
+        const QPersistentModelIndex index(model->index(row, 0));
+        connect(removeButton, &QToolButton::clicked, this, [this, tableView, index]() {
+            if (index.isValid()) {
+                removeStorageItem(tableView, index.row());
+            }
+        });
+
+        tableView->setIndexWidget(model->index(row, removeColumn), removeButton);
+    }
+}
+
+void LiquidAppConfigDialog::removeStorageItem(QTableView* tableView, const int row)
+{
+    // Removed items are remembered (the lists get refilled as the Liquid app stores things), and get removed for real
+    // only upon saving (until then, they're merely hidden)
+    if (tableView == cookiesTableView) {
+        removedCookieIds.insert(cookiesModel->item(row, 0)->data(Qt::UserRole).toString());
+        cookiesModel->removeRow(row);
+    } else if (tableView == sessionStorageTableView) {
+        removedSessionStorageIds.insert(sessionStorageModel->item(row, 0)->data(Qt::UserRole).toString());
+        sessionStorageModel->removeRow(row);
+    } else if (tableView == localStorageTableView) {
+        const QString id = localStorageModel->item(row, 0)->data(Qt::UserRole).toString();
+        removedLocalStorageIds.insert(id);
+        localStorageEdits.remove(id);
+        localStorageModel->removeRow(row);
+    }
+}
+
+void LiquidAppConfigDialog::fillCookiesModel(QSettings* liquidAppConfig)
+{
+    static const QList<int> idColumns = { 0, 2, 3 }; // Name, domain, path
+    const TableViewState state = saveTableViewState(cookiesTableView, cookiesModel, idColumns);
+
+    cookiesModel->removeRows(0, cookiesModel->rowCount());
+
+    liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
+    for (const QString& cookieId : liquidAppConfig->allKeys()) {
+        const QList<QNetworkCookie> cookies = QNetworkCookie::parseCookies(liquidAppConfig->value(cookieId).toByteArray());
+
+        // Removed here, but the Liquid app doesn't know it yet (it will once settings get saved)
+        if (cookies.size() > 0 && !removedCookieIds.contains(cookieId)) {
+            const QNetworkCookie& cookie = cookies[0];
+
+            QStandardItem* nameItem = new QStandardItem(QString(cookie.name()));
+            nameItem->setData(cookieId, Qt::UserRole);
+
+            cookiesModel->appendRow({
+                nameItem,
+                new QStandardItem(QString(cookie.value())),
+                new QStandardItem(cookie.domain()),
+                new QStandardItem(cookie.path()),
+                new QStandardItem(cookie.expirationDate().toString()),
+                new QStandardItem(cookie.isHttpOnly() ? "true" : "false"),
+                new QStandardItem(cookie.isSecure() ? "true" : "false"),
+                newRemoveButtonItem(),
+            });
+        }
+    }
+    liquidAppConfig->endGroup();
+
+    addRemoveButtons(cookiesTableView, cookiesModel);
+    restoreTableViewState(cookiesTableView, cookiesModel, idColumns, state);
+}
+
+void LiquidAppConfigDialog::fillLocalStorageModel(QSettings* liquidAppConfig)
+{
+    static const QList<int> idColumns = { 0, 1 }; // Website, key
+    const TableViewState state = saveTableViewState(localStorageTableView, localStorageModel, idColumns);
+
+    // What the Liquid app has stored, with what's been removed or edited here on top of it
+    QMap<QString, QJsonObject> rows;
+    const QJsonObject localStorage = LiquidAppLocalStorage::load(liquidAppConfig);
+    for (QJsonObject::const_iterator origin = localStorage.constBegin(); origin != localStorage.constEnd(); ++origin) {
+        const QJsonObject items = origin.value().toObject();
+
+        for (QJsonObject::const_iterator item = items.constBegin(); item != items.constEnd(); ++item) {
+            const QString id = getStorageItemId(origin.key(), item.key());
+
+            if (!removedLocalStorageIds.contains(id)) {
+                QJsonObject row;
+                row.insert("origin", origin.key());
+                row.insert("key", item.key());
+                row.insert("value", item.value());
+                rows.insert(id, row);
+            }
+        }
+    }
+    for (QMap<QString, QJsonObject>::const_iterator edit = localStorageEdits.constBegin(); edit != localStorageEdits.constEnd(); ++edit) {
+        rows.insert(edit.key(), edit.value());
+    }
+
+    localStorageModel->removeRows(0, localStorageModel->rowCount());
+
+    for (QMap<QString, QJsonObject>::const_iterator row = rows.constBegin(); row != rows.constEnd(); ++row) {
+        QStandardItem* originItem = new QStandardItem(row.value().value("origin").toString());
+        originItem->setEditable(false);
+        originItem->setData(row.key(), Qt::UserRole);
+
+        QStandardItem* valueItem = new QStandardItem(row.value().value("value").toString());
+        valueItem->setToolTip(valueItem->text().left(LQD_UI_TOOLTIP_MAX_LENGTH));
+
+        // Appending whole rows doesn't count as editing them (unlike setting items of rows that already exist)
+        localStorageModel->appendRow({ originItem, new QStandardItem(row.value().value("key").toString()), valueItem, newRemoveButtonItem() });
+    }
+
+    addRemoveButtons(localStorageTableView, localStorageModel);
+
+    restoreTableViewState(localStorageTableView, localStorageModel, idColumns, state);
+}
+
+void LiquidAppConfigDialog::fillSessionStorageModel(void)
+{
+    static const QList<int> idColumns = { 0, 1 }; // Website, key
+    const TableViewState state = saveTableViewState(sessionStorageTableView, sessionStorageModel, idColumns);
+
+    sessionStorageModel->removeRows(0, sessionStorageModel->rowCount());
+
+    const QString origin = sessionStorage.value("origin").toString();
+    const QJsonObject items = sessionStorage.value("items").toObject();
+    for (QJsonObject::const_iterator item = items.constBegin(); item != items.constEnd(); ++item) {
+        const QString id = getStorageItemId(origin, item.key());
+
+        if (!removedSessionStorageIds.contains(id)) {
+            QStandardItem* originItem = new QStandardItem(origin);
+            originItem->setData(id, Qt::UserRole);
+
+            QStandardItem* valueItem = new QStandardItem(item.value().toString());
+            valueItem->setToolTip(valueItem->text().left(LQD_UI_TOOLTIP_MAX_LENGTH));
+
+            sessionStorageModel->appendRow({ originItem, new QStandardItem(item.key()), valueItem, newRemoveButtonItem() });
+        }
+    }
+
+    addRemoveButtons(sessionStorageTableView, sessionStorageModel);
+    restoreTableViewState(sessionStorageTableView, sessionStorageModel, idColumns, state);
+}
+
+void LiquidAppConfigDialog::refreshStorage(const QString& liquidAppName)
+{
+    QScopedPointer<QSettings> liquidAppConfig(LiquidAppFile::open(liquidAppName));
+
+    fillCookiesModel(liquidAppConfig.data());
+
+    // Don't pull the rug from under an edit in progress, try again once it's done
+    // (cells get edited in editor widgets placed within the list)
+    const QWidget* focusWidget = QApplication::focusWidget();
+    const bool isEditingCell = focusWidget != Q_NULLPTR && focusWidget != localStorageTableView
+                               && localStorageTableView->isAncestorOf(focusWidget) && qobject_cast<const QToolButton*>(focusWidget) == Q_NULLPTR;
+    if (isEditingCell) {
+        storageRefreshTimer->start();
+        return;
+    }
+
+    fillLocalStorageModel(liquidAppConfig.data());
+}
+
+bool LiquidAppConfigDialog::connectToLiquidApp(void)
+{
+    // Only Liquid apps that already exist (and are running) can be talked to
+    if (!isEditingExistingBool) {
+        return false;
+    }
+
+    if (liquidAppConnection == Q_NULLPTR) {
+        liquidAppConnection = new QLocalSocket(this);
+        liquidAppConnection->connectToServer(SingleInstance::serverName(LQD_INSTANCE_ID_APP_PREFIX + nameInput->text()));
+        liquidAppConnection->waitForConnected(LQD_PREVIEW_CONNECT_TIMEOUT);
+
+        // Things the Liquid app sends back (newline-terminated, like everything else sent between instances)
+        connect(liquidAppConnection, &QLocalSocket::readyRead, this, [this]() {
+            static const QByteArray sessionStoragePrefix = QByteArray(LQD_INSTANCE_MSG_SESSION_STORAGE) + " ";
+
+            while (liquidAppConnection->canReadLine()) {
+                const QByteArray message = liquidAppConnection->readLine().trimmed();
+
+                if (message.startsWith(sessionStoragePrefix)) {
+                    sessionStorage = QJsonDocument::fromJson(QByteArray::fromBase64(message.mid(sessionStoragePrefix.size()))).object();
+                    fillSessionStorageModel();
+                }
+            }
+        });
+
+        // The Liquid app has quit, its session storage is gone
+        connect(liquidAppConnection, &QLocalSocket::disconnected, this, [this]() {
+            sessionStorage = QJsonObject();
+            fillSessionStorageModel();
+            sessionStorageTableView->setEnabled(false);
+        });
+    }
+
+    return liquidAppConnection->state() == QLocalSocket::ConnectedState;
 }

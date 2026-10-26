@@ -6,6 +6,8 @@
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QLocalSocket>
 #include <QKeyEvent>
 #include <QEventLoop>
 #include <QClipboard>
@@ -27,6 +29,7 @@
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplocalstorage.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
@@ -242,6 +245,16 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
 
     // Catch loading's end
     connect(liquidAppWebPage, &QWebEnginePage::loadFinished, this, &LiquidAppWindow::loadFinished);
+
+    // Put saved local storage items in place before the first page gets loaded
+    liquidAppLocalStorage = new LiquidAppLocalStorage(liquidAppWebPage, liquidAppConfig, this);
+    connect(liquidAppLocalStorage, &LiquidAppLocalStorage::sessionStorageChanged, this, [this]() {
+        for (const QPointer<QLocalSocket>& connection : sessionStorageWatchers) {
+            if (connection) {
+                sendSessionStorage(connection);
+            }
+        }
+    });
 
     // Load Liquid app's starting URL
     load(startingUrl);
@@ -469,6 +482,12 @@ void LiquidAppWindow::closeEvent(QCloseEvent* event)
         settingsDialog->reject();
     }
 
+    // Whatever has changed in local storage since it's last been checked
+    if (liquidAppLocalStorage->isEnabled()) {
+        const QVariant result = runJavaScriptSync(LiquidAppLocalStorage::getCaptureScript(), LQD_LOCAL_STORAGE_QUIT_TIMEOUT);
+        liquidAppLocalStorage->onCaptured(result.toString());
+    }
+
     event->accept();
     deleteLater();
 }
@@ -678,7 +697,7 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
 
     // Deal with Cookies
     {
-        LiquidAppCookieJar *liquidAppCookieJar = new LiquidAppCookieJar(this);
+        liquidAppCookieJar = new LiquidAppCookieJar(this);
         QWebEngineCookieStore *cookieStore = page()->profile()->cookieStore();
 
         connect(cookieStore, &QWebEngineCookieStore::cookieAdded, liquidAppCookieJar, &LiquidAppCookieJar::upsertCookie);
@@ -957,6 +976,12 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
     if (!pageIsLoading && !pageHasError) {
         maybeFetchIcon();
     }
+
+    // Local storage (may have been allowed or disallowed to be remembered, or had its items edited)
+    liquidAppLocalStorage->reloadConfig();
+
+    // Cookies removed in settings
+    liquidAppCookieJar->removeCookiesMissingFromConfig(page()->profile()->cookieStore());
 
     // Custom CSS gets applied to the page that's currently shown without reloading it
     // (this also undoes whatever CSS has been previewed while editing settings)
@@ -1900,4 +1925,40 @@ void LiquidAppWindow::setScrollBarsHidden(const bool hidden)
             );
         });
     }
+}
+
+void LiquidAppWindow::watchSessionStorage(QLocalSocket* connection)
+{
+    sessionStorageWatchers << QPointer<QLocalSocket>(connection);
+
+    connect(connection, &QLocalSocket::disconnected, this, [this]() {
+        sessionStorageWatchers.removeAll(QPointer<QLocalSocket>());
+        for (int i = sessionStorageWatchers.size() - 1; i >= 0; i--) {
+            if (sessionStorageWatchers[i]->state() != QLocalSocket::ConnectedState) {
+                sessionStorageWatchers.removeAt(i);
+            }
+        }
+
+        liquidAppLocalStorage->setWatchingSessionStorage(!sessionStorageWatchers.isEmpty());
+    });
+
+    // What's known so far, more comes as it changes
+    sendSessionStorage(connection);
+    liquidAppLocalStorage->setWatchingSessionStorage(true);
+}
+
+void LiquidAppWindow::sendSessionStorage(QLocalSocket* connection)
+{
+    QJsonObject sessionStorage;
+    sessionStorage.insert("origin", liquidAppLocalStorage->getSessionStorageOrigin());
+    sessionStorage.insert("items", liquidAppLocalStorage->getSessionStorageItems());
+
+    connection->write(QByteArray(LQD_INSTANCE_MSG_SESSION_STORAGE " ")
+                      + QJsonDocument(sessionStorage).toJson(QJsonDocument::Compact).toBase64() + "\n");
+    connection->flush();
+}
+
+void LiquidAppWindow::removeSessionStorageItems(const QString& origin, const QStringList& keys)
+{
+    liquidAppLocalStorage->removeSessionStorageItems(origin, keys);
 }

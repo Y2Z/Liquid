@@ -1,3 +1,5 @@
+#include <QRegularExpression>
+
 #include "lqd.h"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwindow.hpp"
@@ -102,13 +104,43 @@ void LiquidAppCookieJar::save(void)
     }
     // Save all cookies
     foreach(QNetworkCookie cookie, allCookies()) {
-        QByteArray cookieId = QByteArray(cookie.domain().toLatin1() +
-                                         "_" + cookie.path().toLatin1() +
-                                         "_" + cookie.name());
         QString rawCookie = QString(cookie.toRawForm(QNetworkCookie::Full));
         // TODO: save Session cookies?
-        liquidAppConfig->setValue(cookieId, rawCookie);
+        liquidAppConfig->setValue(getCookieId(cookie), rawCookie);
     }
     liquidAppConfig->endGroup();
     liquidAppConfig->sync();
+}
+
+QString LiquidAppCookieJar::getCookieId(const QNetworkCookie& cookie)
+{
+    const QString cookieId = cookie.domain() + "_" + cookie.path() + "_" + QString::fromLatin1(cookie.name());
+
+    // The same as it ends up being as a key in settings (where slashes separate groups, and get normalized)
+    static const QRegularExpression multipleSlashes(QStringLiteral("/{2,}"));
+    QString key = cookieId;
+    key.replace(multipleSlashes, QStringLiteral("/"));
+    while (key.startsWith('/')) {
+        key.remove(0, 1);
+    }
+    while (key.endsWith('/')) {
+        key.chop(1);
+    }
+
+    return key;
+}
+
+void LiquidAppCookieJar::removeCookiesMissingFromConfig(QWebEngineCookieStore* cookieStore)
+{
+    liquidAppConfig->beginGroup(LQD_CFG_GROUP_NAME_COOKIES);
+    const QStringList cookieIds = liquidAppConfig->allKeys();
+    liquidAppConfig->endGroup();
+
+    // The file always lists all of the cookies this jar has (it gets rewritten upon every change),
+    // so whatever's missing from it has been removed in settings; removing it from the store removes it from here too
+    foreach(QNetworkCookie cookie, allCookies()) {
+        if (!cookieIds.contains(getCookieId(cookie))) {
+            cookieStore->deleteCookie(cookie);
+        }
+    }
 }

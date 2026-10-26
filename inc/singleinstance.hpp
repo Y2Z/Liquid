@@ -5,6 +5,7 @@
 #include <QString>
 
 class QLocalServer;
+class QLocalSocket;
 
 // Ensures that only one instance (of the main window, or of each Liquid app) runs at a time,
 // and lets other processes talk to the one that's running, using local sockets (named pipes on Windows).
@@ -30,6 +31,8 @@ public:
 
 signals:
     void messageReceived(const QByteArray& message);
+    // The same, along with the connection it came through (for replying, or for keeping on sending things over it)
+    void messageReceivedFrom(QLocalSocket* connection, const QByteArray& message);
 
 private:
     QString instanceId;
