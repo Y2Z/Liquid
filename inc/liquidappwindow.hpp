@@ -15,8 +15,11 @@
 
 #include "liquidappwebpage.hpp"
 
+class LiquidAppCookieJar;
+class QLocalSocket;
 class LiquidAppIcon;
 class LiquidAppIconFetcher;
+class LiquidAppLocalStorage;
 class LiquidAppWebPage;
 class SnapshotFlashOverlay;
 class QPainter;
@@ -43,6 +46,9 @@ public slots:
     void setBackground(const QColor& color);
     void setAdditionalCss(const QString& css);
     void setFrameless(const bool frameless);
+    // Keeps sending session storage of the page that's currently shown over the connection, until it closes
+    void watchSessionStorage(QLocalSocket* connection);
+    void removeSessionStorageItems(const QString& origin, const QStringList& keys);
     void setScrollBarsHidden(const bool hidden);
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode(void);
@@ -92,6 +98,14 @@ private:
     QIcon pageIcon;
     // Fetching the website's icon happens once per run, and only if the Liquid app doesn't have one yet
     LiquidAppIconFetcher* iconFetcher = Q_NULLPTR;
+
+    // Remembers what websites keep in local storage (if allowed to)
+    LiquidAppLocalStorage* liquidAppLocalStorage = Q_NULLPTR;
+    QList<QPointer<QLocalSocket>> sessionStorageWatchers;
+    void sendSessionStorage(QLocalSocket* connection);
+
+    // Keeps cookies in the Liquid app's file
+    LiquidAppCookieJar* liquidAppCookieJar = Q_NULLPTR;
     bool iconFetchAttempted = false;
 
     // Settings dialog, while it's open

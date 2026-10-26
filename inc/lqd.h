@@ -38,6 +38,9 @@
 #define LQD_INSTANCE_MSG_PREVIEW_FRAME    "preview-frame"      // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_PREVIEW_SCROLL   "preview-scrollbars" // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_ICON_CHANGED    "icon-changed"    // Main window only, followed by a space and Liquid app's name
+#define LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE  "watch-session-storage"  // Liquid apps only; they keep sending session storage back
+#define LQD_INSTANCE_MSG_SESSION_STORAGE        "session-storage"        // Sent back to watchers, followed by a space and base64-encoded JSON
+#define LQD_INSTANCE_MSG_REMOVE_SESSION_STORAGE "remove-session-storage" // Liquid apps only, followed by a space and base64-encoded JSON
 #define LQD_INSTANCE_MSG_STARTED         "started"         // Main window only, followed by a space and Liquid app's name
 #define LQD_ACTIVATION_TOKEN_TIMEOUT     500               // Milliseconds to wait for the compositor to issue an activation token
 #define LQD_PREVIEW_CONNECT_TIMEOUT      100               // Milliseconds to wait for connecting to a Liquid app for previewing settings
@@ -49,11 +52,17 @@
 #define LQD_ICON_MAX_FILE_SIZE           (4 * 1024 * 1024) // Bytes
 #define LQD_ICON_MAX_SVG_SIZE            (512 * 1024)      // Bytes, larger SVG icons get rasterized
 #define LQD_ICON_MAX_SIZE                256               // Pixels, larger icons get scaled down before they get stored
+#define LQD_LOCAL_STORAGE_CAPTURE_INTERVAL 2000            // Milliseconds between checks of what websites keep in local storage
+#define LQD_UI_REMOVE_BUTTON_COLUMN_WIDTH 28              // Pixels
+#define LQD_UI_TOOLTIP_MAX_LENGTH        2000              // Characters of long values shown in tooltips
+#define LQD_STORAGE_REFRESH_DELAY        300               // Milliseconds to wait for the .liquid file to settle before re-reading it in settings
+#define LQD_LOCAL_STORAGE_QUIT_TIMEOUT   1000              // Milliseconds to wait for reading local storage before quitting
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 
 /* Names of scripts Liquid injects into web pages */
 #define LQD_SCRIPT_NAME_ADDITIONAL_CSS "liquid-additional-css"
 #define LQD_SCRIPT_NAME_ADDITIONAL_JS  "liquid-additional-js"
+#define LQD_SCRIPT_NAME_LOCAL_STORAGE  "liquid-local-storage"
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -87,6 +96,7 @@
 #define LQD_CFG_KEY_NAME_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_HIDE_SCROLLBARS         "HideScrollBars" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_ICON                    "Icon" // text
+#define LQD_CFG_KEY_NAME_LOCAL_STORAGE           "LocalStorage" // text, JSON: { "origin": { "key": "value", ... }, ... }
 #define LQD_CFG_KEY_NAME_LOCK_WIN_GEOM           "LockWindowGeometry" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_MUTE_AUDIO              "MuteAudio" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_NOTES                   "Notes" // text
@@ -96,6 +106,7 @@
 #define LQD_CFG_KEY_NAME_PROXY_USE_SOCKS         LQD_CFG_GROUP_NAME_PROXY "/" "UseSocks" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_PROXY_USER_NAME         LQD_CFG_GROUP_NAME_PROXY "/" "UserName" // text
 #define LQD_CFG_KEY_NAME_PROXY_USER_PASSWORD     LQD_CFG_GROUP_NAME_PROXY "/" "UserPassword" // text
+#define LQD_CFG_KEY_NAME_REMEMBER_LOCAL_STORAGE  "RememberLocalStorage" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_REMOVE_WINDOW_FRAME     "RemoveWindowFrame" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_TITLE                   "Title" // text
 #define LQD_CFG_KEY_NAME_USE_PROXY               "UseProxy" // boolean, defaults to FALSE

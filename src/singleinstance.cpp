@@ -52,6 +52,7 @@ bool SingleInstance::claim(void)
 
                     if (!message.isEmpty()) {
                         emit messageReceived(message);
+                        emit messageReceivedFrom(client, message);
                     }
                 }
             });

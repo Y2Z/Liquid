@@ -1,4 +1,6 @@
 #include <QIODevice>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
@@ -97,6 +99,12 @@ QString sanitize(const QString& text)
     return result;
 }
 
+// Whether the text can't be stored as-is in an XML document (line breaks made of "\r" wouldn't survive either)
+bool needsEncoding(const QString& text)
+{
+    return text.contains('\r') || sanitize(text) != text;
+}
+
 // Removes the setting from the map, returning its value as text
 bool take(QSettings::SettingsMap& map, const QString& key, QString* value)
 {
@@ -186,6 +194,50 @@ bool LiquidAppFile::read(QIODevice& device, QSettings::SettingsMap& map)
                 } else {
                     xml.skipCurrentElement();
                 }
+            }
+        } else if (element == "local-storage") {
+            // <local-storage remember="true"><origin url="..."><item key="...">value</item>...</origin>...</local-storage>
+            if (xml.attributes().hasAttribute("remember")) {
+                map.insert(LQD_CFG_KEY_NAME_REMEMBER_LOCAL_STORAGE, xml.attributes().value("remember").toString());
+            }
+
+            QJsonObject localStorage;
+
+            while (xml.readNextStartElement()) {
+                const QString origin = xml.attributes().value("url").toString();
+
+                if (xml.name() != QLatin1String("origin") || origin.isEmpty()) {
+                    xml.skipCurrentElement();
+                    continue;
+                }
+
+                QJsonObject items = localStorage.value(origin).toObject();
+
+                while (xml.readNextStartElement()) {
+                    if (xml.name() != QLatin1String("item") || !xml.attributes().hasAttribute("key")) {
+                        xml.skipCurrentElement();
+                        continue;
+                    }
+
+                    const bool isEncoded = xml.attributes().value("encoding") == QLatin1String("base64");
+                    QString key = xml.attributes().value("key").toString();
+                    QString value = xml.readElementText();
+
+                    if (isEncoded) {
+                        key = QString::fromUtf8(QByteArray::fromBase64(key.toLatin1()));
+                        value = QString::fromUtf8(QByteArray::fromBase64(value.toLatin1()));
+                    }
+
+                    items.insert(key, value);
+                }
+
+                if (!items.isEmpty()) {
+                    localStorage.insert(origin, items);
+                }
+            }
+
+            if (!localStorage.isEmpty()) {
+                map.insert(LQD_CFG_KEY_NAME_LOCAL_STORAGE, QString::fromUtf8(QJsonDocument(localStorage).toJson(QJsonDocument::Compact)));
             }
         } else if (element == "settings") {
             while (xml.readNextStartElement()) {
@@ -281,13 +333,19 @@ bool LiquidAppFile::write(QIODevice& device, const QSettings::SettingsMap& setti
         }
     }
 
-    // Cookies and the icon go last, since they're long and not meant to be read by humans
+    // Cookies, local storage, and the icon go last, since they're long and not meant to be read by humans
     QStringList cookieKeys;
     for (const QString& key : map.keys()) {
         if (key.startsWith(COOKIES_KEY_PREFIX)) {
             cookieKeys.append(key);
         }
     }
+
+    QString rememberLocalStorage;
+    QString localStorageJson;
+    const bool hasRememberLocalStorage = take(map, LQD_CFG_KEY_NAME_REMEMBER_LOCAL_STORAGE, &rememberLocalStorage);
+    take(map, LQD_CFG_KEY_NAME_LOCAL_STORAGE, &localStorageJson);
+    const QJsonObject localStorage = QJsonDocument::fromJson(localStorageJson.toUtf8()).object();
 
     QString icon;
     QString iconType;
@@ -330,6 +388,43 @@ bool LiquidAppFile::write(QIODevice& device, const QSettings::SettingsMap& setti
             xml.writeStartElement("cookie");
             xml.writeAttribute("id", sanitize(key.mid(COOKIES_KEY_PREFIX.size())));
             xml.writeCharacters(sanitize(map.value(key).toString()));
+            xml.writeEndElement();
+        }
+
+        xml.writeEndElement();
+    }
+
+    if (hasRememberLocalStorage || !localStorage.isEmpty()) {
+        xml.writeStartElement("local-storage");
+
+        if (hasRememberLocalStorage) {
+            xml.writeAttribute("remember", rememberLocalStorage);
+        }
+
+        for (QJsonObject::const_iterator origin = localStorage.constBegin(); origin != localStorage.constEnd(); ++origin) {
+            xml.writeStartElement("origin");
+            xml.writeAttribute("url", sanitize(origin.key()));
+
+            const QJsonObject items = origin.value().toObject();
+            for (QJsonObject::const_iterator item = items.constBegin(); item != items.constEnd(); ++item) {
+                const QString key = item.key();
+                const QString value = item.value().toString();
+
+                xml.writeStartElement("item");
+
+                // Anything that can't be stored in XML as-is gets stored as base64-encoded UTF-8
+                if (needsEncoding(key) || needsEncoding(value)) {
+                    xml.writeAttribute("encoding", "base64");
+                    xml.writeAttribute("key", QString::fromLatin1(key.toUtf8().toBase64()));
+                    xml.writeCharacters(QString::fromLatin1(value.toUtf8().toBase64()));
+                } else {
+                    xml.writeAttribute("key", key);
+                    xml.writeCharacters(value);
+                }
+
+                xml.writeEndElement();
+            }
+
             xml.writeEndElement();
         }
 

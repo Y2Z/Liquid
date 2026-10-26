@@ -12,6 +12,7 @@
 #include <QTabWidget>
 #include <QtGui>
 #include <QtWidgets>
+#include <QJsonObject>
 
 #include "liquidappicon.hpp"
 
@@ -39,6 +40,16 @@ private:
     static QFrame* separator(void);
     static QString getSettingsRequiringRestart(QSettings* liquidAppConfig);
     void previewBackground(const QColor& color);
+    static QString getStorageItemId(const QString& origin, const QString& key);
+    void setUpStorageTableView(QTableView* tableView, QStandardItemModel* model, const int stretchingColumn);
+    static QStandardItem* newRemoveButtonItem(void);
+    void addRemoveButtons(QTableView* tableView, QStandardItemModel* model);
+    void removeStorageItem(QTableView* tableView, const int row);
+    void fillCookiesModel(QSettings* liquidAppConfig);
+    void fillLocalStorageModel(QSettings* liquidAppConfig);
+    void fillSessionStorageModel(void);
+    void refreshStorage(const QString& liquidAppName);
+    bool connectToLiquidApp(void);
     void sendPreview(const QByteArray& message);
 
     bool isEditingExistingBool = false;
@@ -87,6 +98,21 @@ private:
     QCheckBox* allowThirdPartyCookiesCheckBox;
     QTableView* cookiesTableView;
     QStandardItemModel* cookiesModel;
+    QCheckBox* rememberLocalStorageCheckBox;
+    QTableView* localStorageTableView;
+    QStandardItemModel* localStorageModel;
+    QTableView* sessionStorageTableView;
+    QStandardItemModel* sessionStorageModel;
+    // What's been removed or edited here, kept on top of what the Liquid app stores (until saved, or discarded)
+    QSet<QString> removedCookieIds; // As identified in the Liquid app's file
+    QSet<QString> removedLocalStorageIds; // See getStorageItemId()
+    QMap<QString, QJsonObject> localStorageEdits; // { "origin", "key", "value" } by ID
+    QSet<QString> removedSessionStorageIds;
+    // Latest session storage the Liquid app has sent over: { "origin", "items" }
+    QJsonObject sessionStorage;
+    // For showing cookies and local storage items as the Liquid app stores them
+    QFileSystemWatcher* liquidAppFileWatcher = Q_NULLPTR;
+    QTimer* storageRefreshTimer = Q_NULLPTR;
 
     // Network tab
     QRadioButton* proxyModeSystemRadioButton;

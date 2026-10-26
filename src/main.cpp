@@ -5,6 +5,11 @@
 #include <QDir>
 #include <QSettings>
 
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLocalSocket>
+
 #include "lqd.h"
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
@@ -185,6 +190,23 @@ attempt_to_create_or_run_liquid_app:
                 } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_SCROLL " ")) {
                     // Temporary, while the settings are being edited (reloading settings brings back the saved one)
                     liquidAppWindow->setScrollBarsHidden(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_SCROLL " ")).trimmed() == "off");
+                }
+            });
+
+            // Settings showing session storage (which is never stored anywhere, so it can only come from here)
+            QObject::connect(singleInstance, &SingleInstance::messageReceivedFrom, liquidAppWindow, [](QLocalSocket* connection, const QByteArray& message) {
+                static const QByteArray removePrefix = QByteArray(LQD_INSTANCE_MSG_REMOVE_SESSION_STORAGE) + " ";
+
+                if (message == LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE) {
+                    liquidAppWindow->watchSessionStorage(connection);
+                } else if (message.startsWith(removePrefix)) {
+                    // { "origin": "...", "keys": [ ... ] }
+                    const QJsonObject removal = QJsonDocument::fromJson(QByteArray::fromBase64(message.mid(removePrefix.size()))).object();
+                    QStringList keys;
+                    for (const QJsonValue& key : removal.value("keys").toArray()) {
+                        keys << key.toString();
+                    }
+                    liquidAppWindow->removeSessionStorageItems(removal.value("origin").toString(), keys);
                 }
             });
 
