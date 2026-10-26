@@ -1273,7 +1273,10 @@ void LiquidAppConfigDialog::save()
     if (isEditingExistingBool) {
         const QString instanceId = LQD_INSTANCE_ID_APP_PREFIX + appName;
 
-        if (getSettingsRequiringRestart(tempLiquidAppConfig) != settingsRequiringRestartBefore) {
+        if (isOpenedFromLiquidAppBool) {
+            // The Liquid app can't be told to quit (and be waited for) from within itself, it takes care of it on its own
+            isRestartRequiredBool = getSettingsRequiringRestart(tempLiquidAppConfig) != settingsRequiringRestartBefore;
+        } else if (getSettingsRequiringRestart(tempLiquidAppConfig) != settingsRequiringRestartBefore) {
             // Restart it (wait for it to quit first, it's not possible to have two instances running at once)
             if (SingleInstance::sendMessage(instanceId, LQD_INSTANCE_MSG_QUIT)) {
                 QElapsedTimer timer;
@@ -1396,4 +1399,14 @@ void LiquidAppConfigDialog::setPlanningToRun(const bool state)
             planningToRunCheckBox->setChecked(state);
         }
     }
+}
+
+void LiquidAppConfigDialog::setOpenedFromLiquidApp(const bool state)
+{
+    isOpenedFromLiquidAppBool = state;
+}
+
+bool LiquidAppConfigDialog::isRestartRequired(void)
+{
+    return isRestartRequiredBool;
 }

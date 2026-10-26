@@ -405,6 +405,18 @@ QByteArray Liquid::makeRaiseMessage(const QString& activationToken)
     return message;
 }
 
+static QString liquidAppToRestart;
+
+void Liquid::requestRestart(const QString liquidAppName)
+{
+    liquidAppToRestart = liquidAppName;
+}
+
+QString Liquid::getRequestedRestart(void)
+{
+    return liquidAppToRestart;
+}
+
 void Liquid::sleep(const int ms)
 {
     // Keep processing events while waiting, but without spinning the CPU:

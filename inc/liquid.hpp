@@ -28,6 +28,9 @@ public:
     static QString getUniqueFilePath(const QString dirPath, const QString baseName, const QString extension);
     static void removeDesktopFile(const QString liquidAppName);
     static void runLiquidApp(const QString liquidAppName, const QString activationToken = QString());
+    // For Liquid apps restarting themselves: they get run again once this program is done (and is no longer in the way)
+    static void requestRestart(const QString liquidAppName);
+    static QString getRequestedRestart(void);
     static void sleep(const int ms);
     static void updateDesktopFileIcon(const QString liquidAppName);
 };

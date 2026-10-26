@@ -25,6 +25,11 @@ public:
     bool isPlanningToRun(void);
     void setPlanningToRun(const bool state);
 
+    // When opened by the Liquid app itself, the dialog doesn't apply saved settings to it (the Liquid app does that)
+    void setOpenedFromLiquidApp(const bool state);
+    // Whether saved settings can only take effect once the Liquid app restarts
+    bool isRestartRequired(void);
+
 public slots:
     void save();
     void reject() override;
@@ -38,6 +43,8 @@ private:
 
     bool isEditingExistingBool = false;
     bool isPlanningToRunBool = false;
+    bool isOpenedFromLiquidAppBool = false;
+    bool isRestartRequiredBool = false;
 
     // Connection to the Liquid app being edited (if running), for previewing changes
     QLocalSocket* liquidAppConnection = Q_NULLPTR;

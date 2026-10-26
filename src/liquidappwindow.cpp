@@ -27,6 +27,7 @@
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappicon.hpp"
+#include "liquidappconfigwindow.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
 #include "liquidappwindow.hpp"
@@ -418,6 +419,12 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(takeSnapshotVectorAction);
     connect(takeSnapshotVectorAction, &QAction::triggered, this, &LiquidAppWindow::takeVectorSnapshot);
 
+    // Connect "edit settings" shortcut
+    editSettingsAction = new QAction;
+    editSettingsAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_EDIT_SETTINGS)));
+    addAction(editSettingsAction);
+    connect(editSettingsAction, &QAction::triggered, this, &LiquidAppWindow::editSettings);
+
     // Connect "save page" shortcut
     savePageAction = new QAction;
     savePageAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_SAVE_PAGE)));
@@ -457,6 +464,11 @@ void LiquidAppWindow::closeEvent(QCloseEvent* event)
         return;
     }
 
+    // Settings being edited (e.g. when told to quit by the main window) get discarded, and their preview undone
+    if (settingsDialog) {
+        settingsDialog->reject();
+    }
+
     event->accept();
     deleteLater();
 }
@@ -465,10 +477,22 @@ void LiquidAppWindow::contextMenuEvent(QContextMenuEvent* event)
 {
     Q_UNUSED(event);
 
-    contextMenuBackAction->setEnabled(history()->canGoBack());
-    contextMenuForwardAction->setEnabled(history()->canGoForward());
+    // Reflect current state (keyboard shortcuts work regardless, so it's only updated here)
+    backAction->setEnabled(history()->canGoBack());
+    forwardAction->setEnabled(history()->canGoForward());
+    muteAudioAction->setChecked(page()->isAudioMuted());
+    toggleFullScreenModeAction->setText((isFullScreen()) ? tr("Exit Full Screen") : tr("Enter Full Screen"));
+    toggleFullScreenModeAction->setIcon(QIcon::fromTheme((isFullScreen()) ? QStringLiteral("view-restore") : QStringLiteral("view-fullscreen")));
+    toggleGeometryLockAction->setChecked(windowGeometryIsLocked);
+    toggleGeometryLockAction->setText((windowGeometryIsLocked) ? tr("Unfreeze Frame Size") : tr("Freeze Frame Size"));
+    toggleGeometryLockAction->setEnabled(!isFullScreen()); // Frame size can't be frozen while in full-screen mode
 
     contextMenu->exec(QCursor::pos());
+
+    // Disabled actions don't respond to keyboard shortcuts either, and the state they reflect changes all the time
+    backAction->setEnabled(true);
+    forwardAction->setEnabled(true);
+    toggleGeometryLockAction->setEnabled(true);
 }
 
 bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
@@ -1136,29 +1160,88 @@ void LiquidAppWindow::saveLiquidAppConfig(void)
 
 void LiquidAppWindow::setupContextMenu(void)
 {
-    contextMenu = new QMenu;
+    contextMenu = new QMenu(this);
 
-    contextMenuCopyUrlAction = new QAction(QIcon::fromTheme(QStringLiteral("internet-web-browser")), tr("Copy Current URL"));
-    contextMenuReloadAction = new QAction(QIcon::fromTheme(QStringLiteral("view-refresh")), tr("Refresh"));
-    contextMenuBackAction = new QAction(QIcon::fromTheme(QStringLiteral("go-previous")), tr("Go Back"));
-    contextMenuForwardAction = new QAction(QIcon::fromTheme(QStringLiteral("go-next")), tr("Go Forward"));
-    contextMenuCloseAction = new QAction(QIcon::fromTheme(QStringLiteral("process-stop")), tr("Quit"));
+    // The menu reuses actions behind keyboard shortcuts, which makes it show the shortcuts next to them
+    const auto present = [](QAction* action, const char* const iconName, const QString& text) {
+        action->setIcon(QIcon::fromTheme(QLatin1String(iconName)));
+        action->setText(text);
+        action->setShortcutVisibleInContextMenu(true);
+    };
 
-    contextMenu->addAction(contextMenuCopyUrlAction);
-    contextMenu->addAction(contextMenuReloadAction);
-    contextMenu->addAction(contextMenuBackAction);
-    contextMenu->addAction(contextMenuForwardAction);
-    contextMenu->addAction(contextMenuCloseAction);
-
+    contextMenuCopyUrlAction = new QAction(QIcon::fromTheme(QStringLiteral("edit-copy")), tr("Copy Current URL"), this);
     connect(contextMenuCopyUrlAction, &QAction::triggered, this, [this](){
         QApplication::clipboard()->setText(page()->url().toString());
     });
-    connect(contextMenuReloadAction, &QAction::triggered, this, &QWebEngineView::reload);
-    connect(contextMenuBackAction, &QAction::triggered, this, &QWebEngineView::back);
-    connect(contextMenuForwardAction, &QAction::triggered, this, &QWebEngineView::forward);
-    connect(contextMenuCloseAction, SIGNAL(triggered()), this, SLOT(close()));
+
+    present(backAction, "go-previous", tr("Go Back"));
+    present(forwardAction, "go-next", tr("Go Forward"));
+    present(reloadAction, "view-refresh", tr("Refresh"));
+    present(savePageAction, "document-save", tr("Save Page"));
+    present(takeSnapshotAction, "camera-photo", tr("Take Screenshot"));
+    present(takeSnapshotFullPageAction, "camera-photo", tr("Take Full-Page Screenshot"));
+    present(takeSnapshotVectorAction, "image-x-generic", tr("Save as Vector Image"));
+    present(muteAudioAction, "audio-volume-muted", tr("Mute Audio"));
+    present(toggleFullScreenModeAction, "view-fullscreen", tr("Enter Full Screen"));
+    present(toggleGeometryLockAction, "object-locked", tr("Freeze Frame Size"));
+    present(editSettingsAction, "preferences-system", tr("Settings…"));
+    present(quitAction, "application-exit", tr("Quit"));
+
+    muteAudioAction->setCheckable(true);
+    toggleGeometryLockAction->setCheckable(true);
+
+    contextMenu->addAction(backAction);
+    contextMenu->addAction(forwardAction);
+    contextMenu->addAction(reloadAction);
+    contextMenu->addSeparator();
+    contextMenu->addAction(contextMenuCopyUrlAction);
+    contextMenu->addAction(savePageAction);
+    contextMenu->addSeparator();
+    contextMenu->addAction(takeSnapshotAction);
+    contextMenu->addAction(takeSnapshotFullPageAction);
+    contextMenu->addAction(takeSnapshotVectorAction);
+    contextMenu->addSeparator();
+    contextMenu->addAction(muteAudioAction);
+    contextMenu->addAction(toggleFullScreenModeAction);
+    contextMenu->addAction(toggleGeometryLockAction);
+    contextMenu->addSeparator();
+    contextMenu->addAction(editSettingsAction);
+    contextMenu->addAction(quitAction);
 
     setContextMenuPolicy(Qt::DefaultContextMenu);
+}
+
+void LiquidAppWindow::editSettings(void)
+{
+    // Only one at a time
+    if (settingsDialog) {
+        Liquid::raiseWindow(settingsDialog);
+        return;
+    }
+
+    LiquidAppConfigDialog dialog(this, liquidAppName);
+    dialog.setOpenedFromLiquidApp(true);
+    settingsDialog = &dialog;
+
+    // Changes get previewed while editing (the dialog talks to this Liquid app the same way it would from the main window)
+    const int result = dialog.exec();
+    settingsDialog = Q_NULLPTR;
+
+    if (result != QDialog::Accepted) {
+        return;
+    }
+
+    if (dialog.isRestartRequired()) {
+        // Quit (saving everything as usual), and have this program run the Liquid app again on its way out
+        Liquid::requestRestart(liquidAppName);
+        close();
+        return;
+    }
+
+    reloadLiquidAppConfig();
+
+    // Let the main window (if it's open) show the icon, in case it's changed
+    SingleInstance::sendMessage(LQD_INSTANCE_ID_MAIN, QByteArray(LQD_INSTANCE_MSG_ICON_CHANGED) + " " + liquidAppName.toUtf8());
 }
 
 void LiquidAppWindow::setForgiveNextPageLoadError(const bool ok)

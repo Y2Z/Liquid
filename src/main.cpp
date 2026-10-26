@@ -231,5 +231,11 @@ done:
         singleInstance = Q_NULLPTR;
     }
 
+    // A Liquid app that has had settings changed that require it to restart (by now, it's saved everything,
+    // and no longer claims its instance, so the new one won't mistake it for itself already running)
+    if (!Liquid::getRequestedRestart().isEmpty()) {
+        Liquid::runLiquidApp(Liquid::getRequestedRestart());
+    }
+
     return ret;
 }
