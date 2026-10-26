@@ -62,6 +62,7 @@ What gets stored (if allowed): cookies.
 | Take snapshot                             | `Ctrl`+`T`         |                                   |
 | Take full-page snapshot                   | `Ctrl`+`Shift`+`T` |                                   |
 | Take vector snapshot (SVG)                | `Ctrl`+`Shift`+`S` |                                   |
+| Save page                                 | `Ctrl`+`S`         |                                   |
 | Toggle window size lock                   | `Ctrl`+`L`         |                                   |
 | Toggle mute                               | `Ctrl`+`M`         |                                   |
 | Refresh current page                      | `Ctrl`+`R`         |                                   |
@@ -70,6 +71,9 @@ What gets stored (if allowed): cookies.
 | Go back                                   | `Ctrl`+`←`         | `Backspace`                       |
 | Go forward                                | `Ctrl`+`→`         |                                   |
 | Open link using default web browser       | `Ctrl`+_click_     |                                   |
+| Edit app settings                         | `Ctrl`+`,`         |                                   |
+
+Most of these can also be found in the right-click menu.
 
 
 ## Working with the codebase

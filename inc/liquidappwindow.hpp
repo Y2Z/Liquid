@@ -5,6 +5,7 @@
 #include <QCoreApplication>
 #include <QImage>
 #include <QMenu>
+#include <QPointer>
 #include <QNetworkProxy>
 #include <QSettings>
 #include <QShortcut>
@@ -78,6 +79,7 @@ private:
     void waitForNextFrame(void);
     bool waitForDocumentToFinishLoading(void);
     void applyIcon(void);
+    void editSettings(void);
     void maybeFetchIcon(void);
     void useFetchedIcon(const LiquidAppIcon& icon);
     bool isShowingOwnWebsite(void);
@@ -91,6 +93,9 @@ private:
     // Fetching the website's icon happens once per run, and only if the Liquid app doesn't have one yet
     LiquidAppIconFetcher* iconFetcher = Q_NULLPTR;
     bool iconFetchAttempted = false;
+
+    // Settings dialog, while it's open
+    QPointer<QDialog> settingsDialog;
 
     LiquidAppWebPage* liquidAppWebPage = Q_NULLPTR;
     QWebEngineProfile* liquidAppWebProfile = Q_NULLPTR;
@@ -122,6 +127,7 @@ private:
     QAction* reloadAction;
     QAction* reloadAction2;
     QAction* savePageAction;
+    QAction* editSettingsAction;
     QAction* stopLoadingOrExitFullScreenModeAction;
     QAction* takeSnapshotAction;
     QAction* takeSnapshotFullPageAction;
@@ -139,10 +145,6 @@ private:
     // Context menu and its actions
     QMenu* contextMenu;
     QAction* contextMenuCopyUrlAction;
-    QAction* contextMenuReloadAction;
-    QAction* contextMenuBackAction;
-    QAction* contextMenuForwardAction;
-    QAction* contextMenuCloseAction;
 
     // Camera flash effect for snapshots
     SnapshotFlashOverlay* snapshotFlashOverlay = Q_NULLPTR;

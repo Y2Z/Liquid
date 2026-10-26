@@ -128,6 +128,7 @@
 #define LQD_KBD_SEQ_QUIT                 "Ctrl+Q"
 #define LQD_KBD_SEQ_QUIT_2               "Ctrl+W"
 #define LQD_KBD_SEQ_SAVE_PAGE            "Ctrl+S"
+#define LQD_KBD_SEQ_EDIT_SETTINGS        "Ctrl+,"
 #define LQD_KBD_SEQ_TAKE_SNAPSHOT_VECTOR "Ctrl+Shift+S"
 #define LQD_KBD_SEQ_ZOOM_LVL_INC         "Ctrl+="
 #define LQD_KBD_SEQ_ZOOM_LVL_INC_FINE    "Ctrl+Shift+="
