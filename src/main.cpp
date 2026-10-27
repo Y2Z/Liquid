@@ -184,6 +184,9 @@ attempt_to_create_or_run_liquid_app:
                     // Temporary, while the settings are being edited (reloading settings brings back the saved one)
                     const QString color = QString::fromUtf8(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_BG " "))).trimmed();
                     liquidAppWindow->setBackground((color == "none") ? QColor() : QColor(color));
+                } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_SCHEME " ")) {
+                    // Temporary, while the settings are being edited (reloading settings brings back the saved one)
+                    liquidAppWindow->setColorScheme(QString::fromUtf8(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_SCHEME " "))).trimmed());
                 } else if (message.startsWith(LQD_INSTANCE_MSG_PREVIEW_FRAME " ")) {
                     // Temporary, while the settings are being edited (reloading settings brings back the saved one)
                     liquidAppWindow->setFrameless(message.mid(qstrlen(LQD_INSTANCE_MSG_PREVIEW_FRAME " ")).trimmed() == "off");

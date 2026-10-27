@@ -376,6 +376,37 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         appearanceTabWidget->setLayout(appearanceTabWidgetLayout);
         tabWidget->addTab(appearanceTabWidget, tr("Appearance"));
 
+        // Color scheme
+        {
+            QHBoxLayout* colorSchemeLayout = new QHBoxLayout();
+
+            QLabel* colorSchemeLabel = new QLabel(tr("Color scheme:"), this);
+            colorSchemeLayout->addWidget(colorSchemeLabel);
+
+            colorSchemeComboBox = new QComboBox(this);
+            colorSchemeComboBox->setCursor(Qt::PointingHandCursor);
+            colorSchemeComboBox->addItem(tr("System"), QString());
+            colorSchemeComboBox->addItem(tr("Light"), QStringLiteral(LQD_COLOR_SCHEME_LIGHT));
+            colorSchemeComboBox->addItem(tr("Dark"), QStringLiteral(LQD_COLOR_SCHEME_DARK));
+
+            if (isEditingExistingBool) {
+                const int index = colorSchemeComboBox->findData(existingLiquidAppConfig->value(LQD_CFG_KEY_NAME_COLOR_SCHEME).toString());
+                colorSchemeComboBox->setCurrentIndex((index >= 0) ? index : 0);
+            }
+
+            // The running Liquid app switches right away
+            connect(colorSchemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+                const QString colorScheme = colorSchemeComboBox->currentData().toString();
+                sendPreview(QByteArray(LQD_INSTANCE_MSG_PREVIEW_SCHEME " ") + ((colorScheme.isEmpty()) ? QByteArray("system") : colorScheme.toUtf8()));
+            });
+
+            colorSchemeLayout->addWidget(colorSchemeComboBox);
+            colorSchemeLayout->addStretch();
+
+            appearanceTabWidgetLayout->addLayout(colorSchemeLayout);
+            appearanceTabWidgetLayout->addWidget(separator());
+        }
+
         // Hide scrollbars checkbox
         #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
         {
@@ -1122,6 +1153,17 @@ void LiquidAppConfigDialog::save()
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    // Color scheme (the system's, unless chosen otherwise)
+    {
+        const QString colorScheme = colorSchemeComboBox->currentData().toString();
+
+        if (colorScheme.isEmpty()) {
+            tempLiquidAppConfig->remove(LQD_CFG_KEY_NAME_COLOR_SCHEME);
+        } else {
+            tempLiquidAppConfig->setValue(LQD_CFG_KEY_NAME_COLOR_SCHEME, colorScheme);
+        }
+    }
+
     // Hide scrollbars
     {
         if (isEditingExistingBool) {

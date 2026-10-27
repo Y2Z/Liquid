@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QDialog>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QJsonArray>
@@ -125,16 +126,6 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--num-raster-threads=4");
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--use-fake-ui-for-media-stream");
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    // Ensure dark mode is enabled on the web page in case the system theme is dark
-    if (Liquid::detectDarkMode()) {
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--force-dark-mode");
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=forceDarkModeEnabled=true");
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkMode=4");
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkModeEnabled=true");
-    }
-#endif
-
     // Set default icon
 #if !defined(Q_OS_LINUX) // This doesn't work on X11
     setWindowIcon(QIcon(":/images/" PROG_NAME ".svg"));
@@ -153,6 +144,27 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     liquidAppName = *name;
 
     liquidAppConfig = LiquidAppFile::open(*name);
+
+    // Color scheme: the one chosen for this Liquid app, or the system's; it applies to this Liquid app's own windows
+    // (e.g. its settings), and to web pages (which can only be told upon start, before the web engine gets going)
+    {
+        const QString colorScheme = liquidAppConfig->value(LQD_CFG_KEY_NAME_COLOR_SCHEME).toString();
+
+        if (colorScheme == LQD_COLOR_SCHEME_DARK || colorScheme == LQD_COLOR_SCHEME_LIGHT) {
+            Liquid::overrideDarkMode(colorScheme == LQD_COLOR_SCHEME_DARK);
+        }
+
+        isDarkUponStart = Liquid::detectDarkMode();
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        if (isDarkUponStart) {
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--force-dark-mode");
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=forceDarkModeEnabled=true");
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkMode=4");
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " " + "--blink-settings=darkModeEnabled=true");
+        }
+#endif
+    }
 
     // These default settings affect everything (including sub-frames)
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -1062,6 +1074,9 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
     if (!pageIsLoading && !pageHasError) {
         maybeFetchIcon();
     }
+
+    // Color scheme
+    setColorScheme(liquidAppConfig->value(LQD_CFG_KEY_NAME_COLOR_SCHEME).toString());
 
     // Local storage (may have been allowed or disallowed to be remembered, or had its items edited)
     liquidAppLocalStorage->reloadConfig();
@@ -2086,4 +2101,81 @@ void LiquidAppWindow::onTypedOutsideOfInputs(QKeyEvent* event)
     if (!typeToFindTimer->isActive()) {
         typeToFindTimer->start();
     }
+}
+
+void LiquidAppWindow::setColorScheme(const QString& colorScheme)
+{
+    const bool isChosen = colorScheme == LQD_COLOR_SCHEME_DARK || colorScheme == LQD_COLOR_SCHEME_LIGHT;
+    const bool isDark = (isChosen) ? colorScheme == LQD_COLOR_SCHEME_DARK : Liquid::detectSystemDarkMode();
+
+    // Liquid's own windows (e.g. settings opened from this Liquid app)
+    if (isChosen) {
+        Liquid::overrideDarkMode(isDark);
+    } else {
+        Liquid::clearDarkModeOverride();
+    }
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        if (widget == this || qobject_cast<QDialog*>(widget) != Q_NULLPTR) {
+            Liquid::applyQtStyleSheets(widget);
+        }
+    }
+
+    // Web pages: as they were told upon start, or emulated
+    if (isDark == isDarkUponStart) {
+        if (colorSchemeDevToolsPage != Q_NULLPTR) {
+            // Detaching ends the emulation
+            page()->setDevToolsPage(Q_NULLPTR);
+            colorSchemeDevToolsPage->deleteLater();
+            colorSchemeDevToolsPage = Q_NULLPTR;
+        }
+        return;
+    }
+
+    isEmulatingDark = isDark;
+
+    if (colorSchemeDevToolsPage == Q_NULLPTR) {
+        colorSchemeDevToolsPage = new QWebEnginePage(liquidAppWebProfile, this);
+        // The DevTools frontend is made of JavaScript (and so is how it gets told what to do)
+        colorSchemeDevToolsPage->settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+
+        // Once it's loaded (and done setting itself up, which includes resetting emulation), and then once more,
+        // just in case it's taken longer than usual
+        connect(colorSchemeDevToolsPage, &QWebEnginePage::loadFinished, this, [this]() {
+            QTimer::singleShot(LQD_COLOR_SCHEME_EMULATION_DELAY, this, &LiquidAppWindow::sendColorSchemeEmulation);
+            QTimer::singleShot(LQD_COLOR_SCHEME_EMULATION_DELAY * 3, this, &LiquidAppWindow::sendColorSchemeEmulation);
+        });
+
+        // Loads the DevTools frontend into it, attached to this Liquid app's page
+        page()->setDevToolsPage(colorSchemeDevToolsPage);
+    } else {
+        sendColorSchemeEmulation();
+    }
+}
+
+void LiquidAppWindow::sendColorSchemeEmulation(void)
+{
+    if (colorSchemeDevToolsPage == Q_NULLPTR) {
+        return;
+    }
+
+    // A DevTools protocol command, passed to the page through the frontend's own (in-process) channel
+    static int commandId = 1000000; // Far from the frontend's own command IDs
+    QJsonObject feature;
+    feature.insert("name", "prefers-color-scheme");
+    feature.insert("value", (isEmulatingDark) ? "dark" : "light");
+    QJsonObject params;
+    params.insert("features", QJsonArray() << feature);
+    QJsonObject command;
+    command.insert("id", ++commandId);
+    command.insert("method", "Emulation.setEmulatedMedia");
+    command.insert("params", params);
+
+    QJsonObject message;
+    message.insert("id", commandId);
+    message.insert("method", "dispatchProtocolMessage");
+    message.insert("params", QJsonArray() << QString::fromUtf8(QJsonDocument(command).toJson(QJsonDocument::Compact)));
+
+    const QString quotedMessage = QString::fromUtf8(QJsonDocument(QJsonArray() << QString::fromUtf8(QJsonDocument(message).toJson(QJsonDocument::Compact)))
+                                                    .toJson(QJsonDocument::Compact)).mid(1).chopped(1);
+    colorSchemeDevToolsPage->runJavaScript(QString("window.DevToolsHost && DevToolsHost.sendMessageToEmbedder(%1);").arg(quotedMessage));
 }

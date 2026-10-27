@@ -147,7 +147,29 @@ void Liquid::updateDesktopFileIcon(const QString liquidAppName)
 #endif
 }
 
+// Whether dark mode is on (1) or off (0) for this program, if not up to the system (-1)
+static int darkModeOverride = -1;
+
+void Liquid::overrideDarkMode(const bool isDark)
+{
+    darkModeOverride = (isDark) ? 1 : 0;
+}
+
+void Liquid::clearDarkModeOverride(void)
+{
+    darkModeOverride = -1;
+}
+
 bool Liquid::detectDarkMode(void)
+{
+    if (darkModeOverride >= 0) {
+        return darkModeOverride == 1;
+    }
+
+    return detectSystemDarkMode();
+}
+
+bool Liquid::detectSystemDarkMode(void)
 {
     // Detecting it may involve spawning a process, do it only once per program run
     static int cachedResult = -1;
@@ -315,6 +337,10 @@ void Liquid::removeDesktopFile(const QString liquidAppName)
 #endif
 }
 
+// Web engine flags as they were upon start: Liquid apps add their own (e.g. for dark mode), which must not get passed on
+// to Liquid apps they run (e.g. upon restarting, with a different color scheme)
+static const QByteArray initialChromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
+
 void Liquid::runLiquidApp(const QString liquidAppName, const QString activationToken)
 {
     QProcess process;
@@ -326,6 +352,10 @@ void Liquid::runLiquidApp(const QString liquidAppName, const QString activationT
     environment.remove("XDG_ACTIVATION_TOKEN");
     if (!activationToken.isEmpty()) {
         environment.insert("XDG_ACTIVATION_TOKEN", activationToken);
+    }
+    environment.remove("QTWEBENGINE_CHROMIUM_FLAGS");
+    if (!initialChromiumFlags.isEmpty()) {
+        environment.insert("QTWEBENGINE_CHROMIUM_FLAGS", QString::fromLocal8Bit(initialChromiumFlags));
     }
     process.setProcessEnvironment(environment);
 

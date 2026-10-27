@@ -35,6 +35,7 @@
 #define LQD_INSTANCE_MSG_RELOAD_SETTINGS "reload-settings" // Liquid apps only
 #define LQD_INSTANCE_MSG_PREVIEW_BG       "preview-background" // Liquid apps only, followed by a space and #AARRGGBB (or "none")
 #define LQD_INSTANCE_MSG_PREVIEW_CSS      "preview-css"        // Liquid apps only, followed by a space and base64-encoded CSS
+#define LQD_INSTANCE_MSG_PREVIEW_SCHEME   "preview-color-scheme" // Liquid apps only, followed by a space and "light", "dark", or "system"
 #define LQD_INSTANCE_MSG_PREVIEW_FRAME    "preview-frame"      // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_PREVIEW_SCROLL   "preview-scrollbars" // Liquid apps only, followed by a space and "on" or "off"
 #define LQD_INSTANCE_MSG_ICON_CHANGED    "icon-changed"    // Main window only, followed by a space and Liquid app's name
@@ -65,6 +66,7 @@
 #define LQD_FIND_BOX_HEIGHT              42                // Pixels
 #define LQD_FIND_BOX_MARGIN              16                // Pixels, between the search box and the edges of small windows
 #define LQD_TYPE_TO_FIND_DELAY           50                // Milliseconds to wait for the page to handle typed keys first
+#define LQD_COLOR_SCHEME_EMULATION_DELAY 1000              // Milliseconds for the hidden DevTools frontend to settle before switching color schemes
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 
 /* Names of scripts Liquid injects into web pages */
@@ -85,6 +87,10 @@
 #define LQD_ICON_RUN     "➤"
 #define LQD_ICON_STOP    "■"
 
+/* Color schemes */
+#define LQD_COLOR_SCHEME_LIGHT "light"
+#define LQD_COLOR_SCHEME_DARK  "dark"
+
 /* Liquid App config file group names */
 #define LQD_CFG_GROUP_NAME_COOKIES               "Cookies"
 #define LQD_CFG_GROUP_NAME_PROXY                 "Proxy"
@@ -101,6 +107,7 @@
 #define LQD_CFG_KEY_NAME_ADDITIONAL_JS           "AdditionalJS" // text
 #define LQD_CFG_KEY_NAME_ALLOW_COOKIES           "AllowCookies" // boolean, defults to FALSE
 #define LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE
+#define LQD_CFG_KEY_NAME_COLOR_SCHEME            "ColorScheme" // text: "light" or "dark", system's if unset
 #define LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR         "CustomBackgroundColor" // text
 #define LQD_CFG_KEY_NAME_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_HIDE_SCROLLBARS         "HideScrollBars" // boolean, defaults to FALSE

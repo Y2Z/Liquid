@@ -82,6 +82,7 @@ private:
     QPlainTextEdit* notesTextArea;
 
     // Appearance tab
+    QComboBox* colorSchemeComboBox;
     QCheckBox* hideScrollBarsCheckBox;
     QCheckBox* removeWindowFrameCheckBox;
     QCheckBox* useCustomBackgroundCheckBox;
