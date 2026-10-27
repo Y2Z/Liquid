@@ -25,6 +25,7 @@ INCLUDEPATH += $${INC_DIR}
 HEADERS     += inc/lqd.h \
                inc/liquid.hpp \
                inc/liquidappfile.hpp \
+               inc/liquidappfind.hpp \
                inc/liquidappicon.hpp \
                inc/liquidapplocalstorage.hpp \
                inc/liquidappcookiejar.hpp \
@@ -37,6 +38,7 @@ HEADERS     += inc/lqd.h \
 
 SOURCES     += src/liquid.cpp \
                src/liquidappfile.cpp \
+               src/liquidappfind.cpp \
                src/liquidappicon.cpp \
                src/liquidapplocalstorage.cpp \
                src/liquidappcookiejar.cpp \

@@ -28,6 +28,7 @@
 
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
+#include "liquidappfind.hpp"
 #include "liquidappicon.hpp"
 #include "liquidapplocalstorage.hpp"
 #include "liquidappconfigwindow.hpp"
@@ -229,6 +230,79 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     activateWindow();
 
     // Connect keyboard shortcuts
+    // Find in page
+    find = new LiquidAppFind(this);
+    typeToFindTimer = new QTimer(this);
+    typeToFindTimer->setSingleShot(true);
+    typeToFindTimer->setInterval(LQD_TYPE_TO_FIND_DELAY);
+    connect(typeToFindTimer, &QTimer::timeout, this, [this]() {
+        // Typing opens the search, unless it's meant for something that takes text, or the page has handled it
+        // (e.g. used it as a shortcut); keys typed in the meantime make it into the search too
+        static const QString script = QStringLiteral(
+            "(function() {"
+                "let element = document.activeElement;"
+                "while (element && element.shadowRoot && element.shadowRoot.activeElement) {"
+                    "element = element.shadowRoot.activeElement;"
+                "}"
+                "const tag = element ? element.tagName : '';"
+                "const nonTextInputTypes = ['checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'file', 'range', 'color'];"
+                "const isEditable = document.designMode === 'on' || (element !== null && ("
+                    "element.isContentEditable || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'IFRAME' || tag === 'EMBED' || tag === 'OBJECT' ||"
+                    "(tag === 'INPUT' && !nonTextInputTypes.includes((element.type || '').toLowerCase()))"
+                "));"
+                "const keys = window.__liquidKeys || [];"
+                "const isPrevented = keys.some(function(event) { return event.defaultPrevented; });"
+                "keys.length = 0;"
+                "return JSON.stringify({ editable: !!isEditable, prevented: isPrevented });"
+            "})()"
+        );
+
+        const QString text = typedText;
+        typedText.clear();
+
+        QPointer<LiquidAppWindow> self(this);
+        page()->runJavaScript(script, QWebEngineScript::ApplicationWorld, [self, text](const QVariant& result) {
+            if (!self) {
+                return;
+            }
+
+            const QJsonObject state = QJsonDocument::fromJson(result.toString().toUtf8()).object();
+
+            // Leading spaces scroll the page, they're no part of what's being looked for
+            QString query = text;
+            while (!query.isEmpty() && query.at(0).isSpace()) {
+                query.remove(0, 1);
+            }
+
+            if (!result.isNull() && !state.value("editable").toBool() && !state.value("prevented").toBool() && !query.isEmpty()) {
+                self->find->open(query, true);
+            }
+        });
+    });
+
+    // Records keys the page receives, so that it can be told whether the page has handled them
+    // (in Liquid's own JS world, before any of the page's own code runs; it never does anything to the keys)
+    {
+        QWebEngineScript script;
+        script.setName(LQD_SCRIPT_NAME_KEY_RECORDER);
+        script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+        script.setRunsOnSubFrames(false);
+        script.setWorldId(QWebEngineScript::ApplicationWorld);
+        script.setSourceCode(QStringLiteral(
+            "(function() {"
+                "if (window.__liquidKeys) return;"
+                "const keys = window.__liquidKeys = [];"
+                "window.addEventListener('keydown', function(event) {"
+                    "if (!event.ctrlKey && !event.altKey && !event.metaKey) {"
+                        "keys.push(event);"
+                        "if (keys.length > 64) keys.shift();"
+                    "}"
+                "}, true);"
+            "})()"
+        ));
+        liquidAppWebPage->scripts().insert(script);
+    }
+
     bindKeyboardShortcuts();
 
     // Initialize context menu
@@ -432,6 +506,14 @@ void LiquidAppWindow::bindKeyboardShortcuts(void)
     addAction(takeSnapshotVectorAction);
     connect(takeSnapshotVectorAction, &QAction::triggered, this, &LiquidAppWindow::takeVectorSnapshot);
 
+    // Connect "find" shortcut
+    findAction = new QAction;
+    findAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_FIND)));
+    addAction(findAction);
+    connect(findAction, &QAction::triggered, this, [this]() {
+        find->open();
+    });
+
     // Connect "edit settings" shortcut
     editSettingsAction = new QAction;
     editSettingsAction->setShortcut(QKeySequence(tr(LQD_KBD_SEQ_EDIT_SETTINGS)));
@@ -540,6 +622,10 @@ bool LiquidAppWindow::eventFilter(QObject* watched, QEvent* event)
 
             case QEvent::MouseButtonPress:
                 liquidAppWebPage->closeJsDialog();
+                break;
+
+            case QEvent::KeyPress:
+                onTypedOutsideOfInputs(static_cast<QKeyEvent*>(event));
                 break;
 
             default:
@@ -1127,6 +1213,11 @@ void LiquidAppWindow::resizeEvent(QResizeEvent* event)
     }
 
     QWebEngineView::resizeEvent(event);
+
+    // Keep the search box in the middle
+    if (find != Q_NULLPTR) {
+        find->updateGeometry();
+    }
 }
 
 void LiquidAppWindow::saveLiquidAppConfig(void)
@@ -1203,6 +1294,7 @@ void LiquidAppWindow::setupContextMenu(void)
     present(forwardAction, "go-next", tr("Go Forward"));
     present(reloadAction, "view-refresh", tr("Refresh"));
     present(savePageAction, "document-save", tr("Save Page"));
+    present(findAction, "edit-find", tr("Find…"));
     present(takeSnapshotAction, "camera-photo", tr("Take Screenshot"));
     present(takeSnapshotFullPageAction, "camera-photo", tr("Take Full-Page Screenshot"));
     present(takeSnapshotVectorAction, "image-x-generic", tr("Save as Vector Image"));
@@ -1221,6 +1313,7 @@ void LiquidAppWindow::setupContextMenu(void)
     contextMenu->addSeparator();
     contextMenu->addAction(contextMenuCopyUrlAction);
     contextMenu->addAction(savePageAction);
+    contextMenu->addAction(findAction);
     contextMenu->addSeparator();
     contextMenu->addAction(takeSnapshotAction);
     contextMenu->addAction(takeSnapshotFullPageAction);
@@ -1276,6 +1369,12 @@ void LiquidAppWindow::setForgiveNextPageLoadError(const bool ok)
 
 void LiquidAppWindow::stopLoadingOrExitFullScreenMode(void)
 {
+    // Searching goes first: it's what's on top
+    if (find->isOpen()) {
+        find->close();
+        return;
+    }
+
     if (pageIsLoading) {
         triggerPageAction(QWebEnginePage::Stop);
     } else {
@@ -1304,6 +1403,9 @@ QString LiquidAppWindow::getSnapshotsDirPath(void)
 
 void LiquidAppWindow::takeSnapshot(const bool fullPage)
 {
+    // Of the page, not of the search (if open)
+    find->hideForSnapshot();
+
     const int ratio = QPaintDevice::devicePixelRatio();
     const QSize snapshotSize = contentsRect().size();
     const QString path = getSnapshotsDirPath();
@@ -1380,6 +1482,8 @@ void LiquidAppWindow::takeSnapshot(const bool fullPage)
     }
 
     // TODO: add shutter sound
+
+    find->showAfterSnapshot();
 }
 
 void LiquidAppWindow::renderSnapshot(QPainter* painter)
@@ -1419,6 +1523,9 @@ void LiquidAppWindow::takeVectorSnapshot(void)
     const QString script = QString::fromUtf8(scriptFile.readAll());
 
     // Ignore user input until done (see eventFilter()), Escape cancels
+    // Of the page, not of the search (if open)
+    find->hideForSnapshot();
+
     isTakingSnapshot = true;
     snapshotCancelled = false;
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -1481,6 +1588,7 @@ void LiquidAppWindow::takeVectorSnapshot(void)
 
     QApplication::restoreOverrideCursor();
     isTakingSnapshot = false;
+    find->showAfterSnapshot();
 }
 
 QImage LiquidAppWindow::captureFullPage(void)
@@ -1961,4 +2069,21 @@ void LiquidAppWindow::sendSessionStorage(QLocalSocket* connection)
 void LiquidAppWindow::removeSessionStorageItems(const QString& origin, const QStringList& keys)
 {
     liquidAppLocalStorage->removeSessionStorageItems(origin, keys);
+}
+
+void LiquidAppWindow::onTypedOutsideOfInputs(QKeyEvent* event)
+{
+    // Only text (no shortcuts), and only what goes to the page (the search box gets its own keys)
+    const Qt::KeyboardModifiers modifiers = event->modifiers() & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier);
+    const QString text = event->text();
+
+    if (modifiers != Qt::NoModifier || text.isEmpty() || !text.at(0).isPrint()) {
+        return;
+    }
+
+    // The key still goes to the page as usual: whether it's meant for finding something can be told only afterwards
+    typedText += text;
+    if (!typeToFindTimer->isActive()) {
+        typeToFindTimer->start();
+    }
 }

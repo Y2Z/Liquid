@@ -3,6 +3,7 @@
     <qresource>
         <file>images/checkers.svg</file>
         <file>images/liquid.svg</file>
+        <file>scripts/find.js</file>
         <file>scripts/html2svg.js</file>
         <file>styles/base.qss</file>
         <file>styles/dark.qss</file>

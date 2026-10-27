@@ -57,12 +57,21 @@
 #define LQD_UI_TOOLTIP_MAX_LENGTH        2000              // Characters of long values shown in tooltips
 #define LQD_STORAGE_REFRESH_DELAY        300               // Milliseconds to wait for the .liquid file to settle before re-reading it in settings
 #define LQD_LOCAL_STORAGE_QUIT_TIMEOUT   1000              // Milliseconds to wait for reading local storage before quitting
+#define LQD_FIND_POLL_INTERVAL           150               // Milliseconds between looking for matches again (pages change)
+#define LQD_FIND_HIDE_TIMEOUT            500               // Milliseconds to wait for the page to hide what it draws for the search
+#define LQD_FIND_REPAINT_DELAY           50                // Milliseconds for the page to get repainted without it
+#define LQD_FIND_DOT_HIT_RADIUS          7                 // Pixels, how close to a dot clicking it counts
+#define LQD_FIND_BOX_WIDTH               440               // Pixels
+#define LQD_FIND_BOX_HEIGHT              42                // Pixels
+#define LQD_FIND_BOX_MARGIN              16                // Pixels, between the search box and the edges of small windows
+#define LQD_TYPE_TO_FIND_DELAY           50                // Milliseconds to wait for the page to handle typed keys first
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 
 /* Names of scripts Liquid injects into web pages */
 #define LQD_SCRIPT_NAME_ADDITIONAL_CSS "liquid-additional-css"
 #define LQD_SCRIPT_NAME_ADDITIONAL_JS  "liquid-additional-js"
 #define LQD_SCRIPT_NAME_LOCAL_STORAGE  "liquid-local-storage"
+#define LQD_SCRIPT_NAME_KEY_RECORDER   "liquid-key-recorder"
 
 /* Textual icons */
 #define LQD_ICON_ADD     "➕"
@@ -140,6 +149,7 @@
 #define LQD_KBD_SEQ_QUIT_2               "Ctrl+W"
 #define LQD_KBD_SEQ_SAVE_PAGE            "Ctrl+S"
 #define LQD_KBD_SEQ_EDIT_SETTINGS        "Ctrl+,"
+#define LQD_KBD_SEQ_FIND                 "Ctrl+F"
 #define LQD_KBD_SEQ_TAKE_SNAPSHOT_VECTOR "Ctrl+Shift+S"
 #define LQD_KBD_SEQ_ZOOM_LVL_INC         "Ctrl+="
 #define LQD_KBD_SEQ_ZOOM_LVL_INC_FINE    "Ctrl+Shift+="

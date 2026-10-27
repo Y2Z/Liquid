@@ -41,7 +41,7 @@ What gets stored (if allowed): cookies.
 | Ability to remove window frame                   |       ✅       |            ❌           |                                   |
 | Minimalistic tabless design                      |       ✅       |            ❌           |                                   |
 | Fine zoom                                        |       ✅       |            ❌           |                                   |
-| Search within the page                           |       ❌       |            ✅           |                                   |
+| Search within the page                           |       ✅       |            ✅           | Liquid keeps finding matches as pages change, and opens it as soon as you start typing |
 | Permanently mute website                         |       ✅       |            ❌           | Browsers automatically unmute, Liquid remembers the state |
 | Ability to go full-screen                        |       ✅       |            ✅           |                                   |
 | Full control over full-screen capabilities       |       ✅       |            ❌           | Liquid acts more like a mobile device simulator when it comes to full-screen |
@@ -71,6 +71,7 @@ What gets stored (if allowed): cookies.
 | Go back                                   | `Ctrl`+`←`         | `Backspace`                       |
 | Go forward                                | `Ctrl`+`→`         |                                   |
 | Open link using default web browser       | `Ctrl`+_click_     |                                   |
+| Find on page                              | `Ctrl`+`F`         | _start typing_                    |
 | Edit app settings                         | `Ctrl`+`,`         |                                   |
 
 Most of these can also be found in the right-click menu.
