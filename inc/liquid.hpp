@@ -12,6 +12,10 @@ public:
     static void applyQtStyleSheets(QWidget* widget);
     static void createDesktopFile(const QString liquidAppName, const QString liquidAppStartingUrl);
     static bool detectDarkMode(void);
+    // Makes detectDarkMode() tell what's been chosen (e.g. for a Liquid app), rather than what the system uses
+    static void overrideDarkMode(const bool isDark);
+    static void clearDarkModeOverride(void);
+    static bool detectSystemDarkMode(void);
     static bool detectDarkModeUncached(void);
     static QByteArray generateRandomByteArray(const int byteLength);
     static QDir getAppsDir(void);

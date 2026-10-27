@@ -47,6 +47,8 @@ public slots:
     void setBackground(const QColor& color);
     void setAdditionalCss(const QString& css);
     void setFrameless(const bool frameless);
+    // "light", "dark", or anything else for the system's; applies right away (to web pages and Liquid's own windows)
+    void setColorScheme(const QString& colorScheme);
     // Keeps sending session storage of the page that's currently shown over the connection, until it closes
     void watchSessionStorage(QLocalSocket* connection);
     void removeSessionStorageItems(const QString& origin, const QStringList& keys);
@@ -102,6 +104,13 @@ private:
 
     // Remembers what websites keep in local storage (if allowed to)
     LiquidAppLocalStorage* liquidAppLocalStorage = Q_NULLPTR;
+
+    // Web pages can only be told which color scheme to use upon start: switching it while running is done by emulating it
+    // through a hidden DevTools frontend (in-process, nothing gets exposed), kept only while it differs from the initial one
+    bool isDarkUponStart = false;
+    QWebEnginePage* colorSchemeDevToolsPage = Q_NULLPTR;
+    bool isEmulatingDark = false;
+    void sendColorSchemeEmulation(void);
     QList<QPointer<QLocalSocket>> sessionStorageWatchers;
     void sendSessionStorage(QLocalSocket* connection);
 

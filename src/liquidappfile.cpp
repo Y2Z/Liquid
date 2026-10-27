@@ -53,6 +53,7 @@ const AttributeMapping ATTRIBUTE_MAPPINGS[] = {
     { LQD_CFG_KEY_NAME_HIDE_SCROLLBARS,         "viewport",   "hide-scrollbars" },
     { LQD_CFG_KEY_NAME_USE_CUSTOM_BG,           "viewport",   "custom-background" },
     { LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR,         "viewport",   "background-color" },
+    { LQD_CFG_KEY_NAME_COLOR_SCHEME,            "viewport",   "color-scheme" },
     { LQD_CFG_KEY_NAME_MUTE_AUDIO,              "audio",      "muted" },
     { LQD_CFG_KEY_NAME_USE_PROXY,               "proxy",      "enabled" },
     { LQD_CFG_KEY_NAME_PROXY_USE_SOCKS,         "proxy",      "socks" },
