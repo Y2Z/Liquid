@@ -17,6 +17,7 @@
 
 class LiquidAppCookieJar;
 class QLocalSocket;
+class LiquidAppFind;
 class LiquidAppIcon;
 class LiquidAppIconFetcher;
 class LiquidAppLocalStorage;
@@ -108,6 +109,12 @@ private:
     LiquidAppCookieJar* liquidAppCookieJar = Q_NULLPTR;
     bool iconFetchAttempted = false;
 
+    // Find in page (also opens upon typing while nothing that takes text is focused)
+    LiquidAppFind* find = Q_NULLPTR;
+    QString typedText;
+    QTimer* typeToFindTimer = Q_NULLPTR;
+    void onTypedOutsideOfInputs(QKeyEvent* event);
+
     // Settings dialog, while it's open
     QPointer<QDialog> settingsDialog;
 
@@ -142,6 +149,7 @@ private:
     QAction* reloadAction2;
     QAction* savePageAction;
     QAction* editSettingsAction;
+    QAction* findAction;
     QAction* stopLoadingOrExitFullScreenModeAction;
     QAction* takeSnapshotAction;
     QAction* takeSnapshotFullPageAction;
