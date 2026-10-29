@@ -66,87 +66,6 @@ void Liquid::applyQtStyleSheets(QWidget* widget)
     widget->setStyleSheet(styleSheet);
 }
 
-void Liquid::createDesktopFile(const QString liquidAppName, const QString liquidAppStartingUrl)
-{
-#if defined(Q_OS_LINUX)
-    // Compose content
-    QString context = "#!/usr/bin/env xdg-open\n\n";
-    context += "[Desktop Entry]\n";
-    context += "Type=Application\n";
-    context += "Name=" + liquidAppName + "\n";
-    context += "Icon=" + getDesktopFileIconValue(liquidAppName) + "\n";
-    context += "Exec=liquid " + liquidAppName + "\n";
-    context += "Comment=" + liquidAppStartingUrl + "\n";
-    context += "Categories=Network;WebBrowser;\n";
-
-    // Construct directory path
-    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
-
-    // Check if the desktop path exists
-    QDir dir(desktopPath);
-    if (dir.exists()) {
-        // Create file
-        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
-        file.open(QIODevice::WriteOnly);
-        file.write(context.toStdString().c_str());
-        file.setPermissions(QFileDevice::ReadUser
-                           |QFileDevice::WriteUser
-                           |QFileDevice::ExeUser
-                           |QFileDevice::ReadGroup
-                           |QFileDevice::ReadOther);
-        file.flush();
-        file.close();
-    }
-#else
-    Q_UNUSED(liquidAppName);
-    Q_UNUSED(liquidAppStartingUrl);
-#endif
-}
-
-QString Liquid::getDesktopFilePath(const QString liquidAppName)
-{
-    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    return QDir::homePath() + QDir::separator() + "Desktop" + QDir::separator() + liquidAppName + ".desktop";
-}
-
-QString Liquid::getDesktopFileIconValue(const QString liquidAppName)
-{
-    const QString iconFilePath = LiquidAppIcon::getIconFilePath(liquidAppName);
-
-    return (iconFilePath.isEmpty()) ? "internet-web-browser" : iconFilePath;
-}
-
-void Liquid::updateDesktopFileIcon(const QString liquidAppName)
-{
-#if defined(Q_OS_LINUX)
-    // Only the icon gets changed, the rest of the file may have been edited by the user
-    QFile file(getDesktopFilePath(liquidAppName));
-    if (!file.open(QIODevice::ReadOnly)) {
-        return;
-    }
-    QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
-    file.close();
-
-    bool changed = false;
-    for (QString& line : lines) {
-        if (line.startsWith("Icon=")) {
-            const QString newLine = "Icon=" + getDesktopFileIconValue(liquidAppName);
-            changed = changed || line != newLine;
-            line = newLine;
-        }
-    }
-
-    // Writing in place keeps the file's permissions (it has to remain executable)
-    if (changed && file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        file.write(lines.join('\n').toUtf8());
-        file.close();
-    }
-#else
-    Q_UNUSED(liquidAppName);
-#endif
-}
-
 // Whether dark mode is on (1) or off (0) for this program, if not up to the system (-1)
 static int darkModeOverride = -1;
 
@@ -315,25 +234,6 @@ void Liquid::raiseWindow(QWidget* window, const QString activationToken)
     if (QGuiApplication::platformName() == "xcb") {
         liquidX11ActivateWindow(window->effectiveWinId());
     }
-#endif
-}
-
-void Liquid::removeDesktopFile(const QString liquidAppName)
-{
-#if defined(Q_OS_LINUX)
-    // Construct directory path
-    // QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    const QString desktopPath = QDir::homePath() + QDir::separator() + "Desktop";
-
-    // Check if the desktop path exists
-    QDir dir(desktopPath);
-    if (dir.exists()) {
-        // Unlink file
-        QFile file(desktopPath + QDir::separator() + liquidAppName + ".desktop");
-        file.remove();
-    }
-#else
-    Q_UNUSED(liquidAppName);
 #endif
 }
 

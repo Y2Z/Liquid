@@ -20,6 +20,8 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    // Dragging Liquid apps out of the list (makes launchers of them wherever they get dropped)
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     void bindShortcuts(void);
@@ -32,7 +34,11 @@ private:
     bool stopLiquidApp(const QString& liquidAppName, const bool waitUntilStopped);
     void updateRunButton(const QString& liquidAppName);
 
-    QTableWidget* appListTable;
+    void dragLiquidAppOut(const QString& liquidAppName);
+
+    QTableWidget* appListTable = Q_NULLPTR;
+    QPoint dragStartPosition;
+    QString draggedLiquidAppName;
     QPushButton* createNewLiquidAppButton;
     QSettings* settings;
 

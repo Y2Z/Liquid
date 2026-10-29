@@ -12,6 +12,7 @@
 
 #include "lqd.h"
 #include "liquid.hpp"
+#include "liquidapplauncher.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "liquidappwindow.hpp"
@@ -118,6 +119,7 @@ int main(int argc, char **argv)
         parser.addHelpOption();
         parser.addVersionOption();
         parser.addPositionalArgument("app-name", QCoreApplication::translate("main", "Liquid App name"));
+        parser.addPositionalArgument("launcher", QCoreApplication::translate("main", "Launcher the Liquid App is being run by (optional)"), "[launcher]");
 
         // Set up CLI flags and options
         const QCommandLineOption listAppsFlag(QStringList() << "l" << "list-apps",
@@ -155,6 +157,12 @@ attempt_to_create_or_run_liquid_app:
 
         // Attempt to load app settings from a config file
         if (!parser.isSet(editAppDialogFlag) && tempAppSettings->contains(LQD_CFG_KEY_NAME_URL)) {
+            // Launchers tell where they are (for the Liquid app to keep those made by dragging it out of Liquid up to date),
+            // whether or not it's already running
+            if (args.size() > 1) {
+                LiquidAppLauncher::adopt(liquidAppName, tempAppSettings, args.at(1));
+            }
+
             // Allow only one instance per Liquid app, bring the already running one to front instead of starting another
             const QString instanceId = LQD_INSTANCE_ID_APP_PREFIX + liquidAppName;
             singleInstance = new SingleInstance(instanceId);
@@ -163,6 +171,10 @@ attempt_to_create_or_run_liquid_app:
                 SingleInstance::sendMessage(instanceId, Liquid::makeRaiseMessage(qEnvironmentVariable("XDG_ACTIVATION_TOKEN")));
                 goto done;
             }
+
+            // Make the system see this program as the Liquid app (and not as Liquid itself), for its windows to be grouped
+            // under its own launcher, with its own icon, and apart from other Liquid apps
+            LiquidAppLauncher::identifyProcess(liquidAppName);
 
             // Found existing liquid app settings file, show it
             liquidAppWindow = new LiquidAppWindow(&liquidAppName);

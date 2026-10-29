@@ -6,11 +6,13 @@
 #include <QElapsedTimer>
 #include <QLocalSocket>
 #include <QNetworkCookie>
+#include <QPair>
 #include <QWebEngineProfile>
 
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplauncher.hpp"
 #include "liquidapplocalstorage.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
@@ -156,19 +158,32 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         basicLayout->addWidget(iconButton, 0, 2, 2, 1, Qt::AlignCenter);
     }
 
-    // Extra checkboxes visible only in "Create" mode
-    if (!isEditingExistingBool) {
+    // Launchers (whether there are any is up to whether their files exist), and "Run after creation" (only in "Create" mode)
+    if (LiquidAppLauncher::isSupported() || !isEditingExistingBool) {
         QHBoxLayout* extraCheckboxesLayout = new QHBoxLayout();
 
+        // "Show in applications menu" checkbox (makes it an app of its own, Liquid apps get one by default)
+        if (LiquidAppLauncher::isSupported(LiquidAppLauncher::ApplicationsMenu)) {
+            menuLauncherCheckBox = new QCheckBox(tr("Show in applications menu"), this);
+            menuLauncherCheckBox->setCursor(Qt::PointingHandCursor);
+            menuLauncherCheckBox->setToolTip(tr("Makes it show up as an app of its own: it can be found by its name, and pinned to the dock"));
+            menuLauncherCheckBox->setChecked((isEditingExistingBool)
+                                             ? LiquidAppLauncher::exists(LiquidAppLauncher::ApplicationsMenu, liquidAppName) : true);
+            extraCheckboxesLayout->addWidget(menuLauncherCheckBox);
+        }
+
         // "Create desktop icon" checkbox
-        {
+        if (LiquidAppLauncher::isSupported(LiquidAppLauncher::Desktop)) {
             createIconCheckBox = new QCheckBox(tr("Create desktop icon"), this);
             createIconCheckBox->setCursor(Qt::PointingHandCursor);
+            createIconCheckBox->setChecked(isEditingExistingBool && LiquidAppLauncher::exists(LiquidAppLauncher::Desktop, liquidAppName));
             extraCheckboxesLayout->addWidget(createIconCheckBox);
         }
 
+        extraCheckboxesLayout->addStretch();
+
         // "Run after creation" checkbox
-        {
+        if (!isEditingExistingBool) {
             planningToRunCheckBox = new QCheckBox(tr("Run after creation"), this);
             planningToRunCheckBox->setChecked(isPlanningToRunBool);
             planningToRunCheckBox->setCursor(Qt::PointingHandCursor);
@@ -1303,16 +1318,27 @@ void LiquidAppConfigDialog::save()
         }
     }
 
-    // Create desktop icon
+    // Launchers (after the icon and the title, for them to use those)
     {
-        // TODO: make it possible to remove and (re-)create desktop icons for existing Liquid Apps
+        for (const QPair<LiquidAppLauncher::Kind, QCheckBox*>& launcher : {
+                qMakePair(LiquidAppLauncher::ApplicationsMenu, menuLauncherCheckBox),
+                qMakePair(LiquidAppLauncher::Desktop, createIconCheckBox),
+             }) {
+            if (launcher.second == Q_NULLPTR) {
+                continue;
+            }
 
-        if (!isEditingExistingBool) {
-            if (createIconCheckBox->isChecked()) {
-                QUrl url(QUrl::fromUserInput(addressInput->text()));
-                Liquid::createDesktopFile(appName, url.toString());
+            const bool exists = LiquidAppLauncher::exists(launcher.first, appName);
+
+            if (launcher.second->isChecked() && !exists) {
+                LiquidAppLauncher::create(launcher.first, appName, tempLiquidAppConfig);
+            } else if (!launcher.second->isChecked() && exists) {
+                LiquidAppLauncher::remove(launcher.first, appName);
             }
         }
+
+        // The title may have changed
+        LiquidAppLauncher::update(appName, tempLiquidAppConfig);
     }
 
     // Custom background color

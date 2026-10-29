@@ -4,6 +4,7 @@
 #define LQD_PROG_TITLE         "Liquid"
 #define LQD_APPS_DIR_NAME      "apps"
 #define LQD_APP_FILE_EXTENSION "liquid"
+#define LQD_LAUNCHERS_DIR_NAME "launchers" // Launchers to be dragged out of Liquid (they get copied wherever they get dropped)
 #define LQD_ICONS_DIR_NAME     "icons" // Copies of Liquid apps' icons, for .desktop files to point at
 #define LQD_DEFAULT_BG_COLOR   Qt::white
 #define LQD_DEFAULT_PROXY_HOST "0.0.0.0"
@@ -109,6 +110,7 @@
 #define LQD_CFG_KEY_NAME_ALLOW_3RD_PARTY_COOKIES "AllowThirdPartyCookies" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_COLOR_SCHEME            "ColorScheme" // text: "light" or "dark", system's if unset
 #define LQD_CFG_KEY_NAME_CUSTOM_BG_COLOR         "CustomBackgroundColor" // text
+#define LQD_CFG_KEY_NAME_LAUNCHERS              "Launchers" // text, newline-separated paths of launchers made by dragging the Liquid app out of Liquid
 #define LQD_CFG_KEY_NAME_ENABLE_JS               "EnableJS" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_HIDE_SCROLLBARS         "HideScrollBars" // boolean, defaults to FALSE
 #define LQD_CFG_KEY_NAME_ICON                    "Icon" // text
