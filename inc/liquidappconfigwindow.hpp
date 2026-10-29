@@ -68,7 +68,8 @@ private:
 
     QLineEdit* nameInput;
     QLineEdit* addressInput;
-    QCheckBox* createIconCheckBox;
+    QCheckBox* menuLauncherCheckBox = Q_NULLPTR;
+    QCheckBox* createIconCheckBox = Q_NULLPTR;
     QToolButton* iconButton;
     LiquidAppIcon chosenIcon;
     bool iconWasEdited = false;

@@ -27,6 +27,7 @@ HEADERS     += inc/lqd.h \
                inc/liquidappfile.hpp \
                inc/liquidappfind.hpp \
                inc/liquidappicon.hpp \
+               inc/liquidapplauncher.hpp \
                inc/liquidapplocalstorage.hpp \
                inc/liquidappcookiejar.hpp \
                inc/liquidappconfigwindow.hpp \
@@ -40,6 +41,7 @@ SOURCES     += src/liquid.cpp \
                src/liquidappfile.cpp \
                src/liquidappfind.cpp \
                src/liquidappicon.cpp \
+               src/liquidapplauncher.cpp \
                src/liquidapplocalstorage.cpp \
                src/liquidappcookiejar.cpp \
                src/liquidappconfigwindow.cpp \

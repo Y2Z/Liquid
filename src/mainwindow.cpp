@@ -1,4 +1,9 @@
+#include <QApplication>
 #include <QDir>
+#include <QDrag>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QUrl>
 #include <QElapsedTimer>
 #include <QScopedPointer>
 #include <QFileInfo>
@@ -11,6 +16,7 @@
 #include "liquid.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplauncher.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "lqd.h"
 #include "mainwindow.hpp"
@@ -54,6 +60,9 @@ MainWindow::MainWindow() : QScrollArea()
     appListTable->setFocusPolicy(Qt::NoFocus);
     // appListTable->setSelectionMode(QAbstractItemView::SingleSelection);
     appListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    if (LiquidAppLauncher::isSupported()) {
+        appListTable->viewport()->installEventFilter(this);
+    }
     mainWindowLayout->addWidget(appListTable);
 
     // Add new liquid app button
@@ -125,6 +134,61 @@ void MainWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    // Not only the list's events come through here: QScrollArea filters its own widget's too (from before the list exists)
+    if (appListTable != Q_NULLPTR && watched == appListTable->viewport()) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            const QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+            const QTableWidgetItem* item = appListTable->itemAt(mouseEvent->pos());
+
+            draggedLiquidAppName.clear();
+            if (mouseEvent->button() == Qt::LeftButton && item != Q_NULLPTR) {
+                dragStartPosition = mouseEvent->pos();
+                draggedLiquidAppName = appListTable->item(item->row(), 0)->text();
+            }
+        } else if (event->type() == QEvent::MouseMove && !draggedLiquidAppName.isEmpty()) {
+            const QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+
+            if (!(mouseEvent->buttons() & Qt::LeftButton)) {
+                draggedLiquidAppName.clear();
+            } else if ((mouseEvent->pos() - dragStartPosition).manhattanLength() >= QApplication::startDragDistance()) {
+                const QString liquidAppName = draggedLiquidAppName;
+                draggedLiquidAppName.clear();
+                dragLiquidAppOut(liquidAppName);
+
+                return true;
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            draggedLiquidAppName.clear();
+        }
+    }
+
+    return QScrollArea::eventFilter(watched, event);
+}
+
+void MainWindow::dragLiquidAppOut(const QString& liquidAppName)
+{
+    QScopedPointer<QSettings> liquidAppConfig(LiquidAppFile::open(liquidAppName));
+
+    // Whatever it gets dropped onto (the desktop, a folder) makes a copy of it
+    const QString launcherFilePath = LiquidAppLauncher::createForDragging(liquidAppName, liquidAppConfig.data());
+    if (launcherFilePath.isEmpty()) {
+        return;
+    }
+
+    QMimeData* mimeData = new QMimeData;
+    mimeData->setUrls(QList<QUrl>() << QUrl::fromLocalFile(launcherFilePath));
+
+    QDrag* drag = new QDrag(this);
+    drag->setMimeData(mimeData);
+    const QIcon icon = LiquidAppIcon::loadIcon(liquidAppConfig.data());
+    const int iconSize = 48;
+    drag->setPixmap(icon.pixmap(iconSize, iconSize));
+    drag->setHotSpot(QPoint(iconSize / 2, iconSize / 2));
+    drag->exec(Qt::CopyAction, Qt::CopyAction);
+}
+
 void MainWindow::flushTable(void)
 {
     runButtons.clear();
@@ -179,7 +243,7 @@ void MainWindow::populateTable(void)
                     return;
                 }
 
-                Liquid::removeDesktopFile(liquidAppName);
+                LiquidAppLauncher::removeAll(liquidAppName);
                 LiquidAppIcon::removeIconFile(liquidAppName);
 
                 // Shred and unlink Liquid app settings file

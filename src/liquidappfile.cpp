@@ -186,6 +186,24 @@ bool LiquidAppFile::read(QIODevice& device, QSettings::SettingsMap& map)
             if (!domains.isEmpty()) {
                 map.insert(LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS, domains.join(' '));
             }
+        } else if (element == "launchers") {
+            QStringList paths;
+
+            while (xml.readNextStartElement()) {
+                if (xml.name() == QLatin1String("launcher")) {
+                    const QString path = xml.readElementText();
+
+                    if (!path.isEmpty()) {
+                        paths.append(path);
+                    }
+                } else {
+                    xml.skipCurrentElement();
+                }
+            }
+
+            if (!paths.isEmpty()) {
+                map.insert(LQD_CFG_KEY_NAME_LAUNCHERS, paths.join('\n'));
+            }
         } else if (element == "cookie-jar") {
             while (xml.readNextStartElement()) {
                 const QString id = xml.attributes().value("id").toString();
@@ -300,6 +318,16 @@ bool LiquidAppFile::write(QIODevice& device, const QSettings::SettingsMap& setti
 
         for (const QString& domain : value.split(' ', Qt::SkipEmptyParts)) {
             xml.writeTextElement("domain", domain);
+        }
+
+        xml.writeEndElement();
+    }
+
+    if (take(map, LQD_CFG_KEY_NAME_LAUNCHERS, &value)) {
+        xml.writeStartElement("launchers");
+
+        for (const QString& path : value.split('\n', Qt::SkipEmptyParts)) {
+            xml.writeTextElement("launcher", path);
         }
 
         xml.writeEndElement();

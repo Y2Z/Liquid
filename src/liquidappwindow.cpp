@@ -31,6 +31,7 @@
 #include "liquidappfile.hpp"
 #include "liquidappfind.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplauncher.hpp"
 #include "liquidapplocalstorage.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "liquidappcookiejar.hpp"
@@ -888,6 +889,9 @@ void LiquidAppWindow::loadLiquidAppConfig(void)
     // Liquid app's own icon (if it has one already)
     applyIcon();
     LiquidAppIcon::ensureIconFile(liquidAppConfig, liquidAppName);
+
+    // Launchers made by older versions of Liquid, or pointing at where Liquid used to be
+    LiquidAppLauncher::update(liquidAppName, liquidAppConfig);
 }
 
 void LiquidAppWindow::applyAllowedDomains(void)

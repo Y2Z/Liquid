@@ -18,6 +18,7 @@
 
 #include "liquid.hpp"
 #include "liquidappicon.hpp"
+#include "liquidapplauncher.hpp"
 #include "lqd.h"
 
 static const QString PNG_DATA_URL_PREFIX = QStringLiteral("data:image/png;base64,");
@@ -238,7 +239,7 @@ void LiquidAppIcon::save(QSettings* liquidAppConfig, const QString& liquidAppNam
         iconFile.commit();
     }
 
-    Liquid::updateDesktopFileIcon(liquidAppName);
+    LiquidAppLauncher::update(liquidAppName);
 #else
     Q_UNUSED(liquidAppName);
 #endif
@@ -250,7 +251,7 @@ void LiquidAppIcon::remove(QSettings* liquidAppConfig, const QString& liquidAppN
     liquidAppConfig->sync();
 
     removeIconFile(liquidAppName);
-    Liquid::updateDesktopFileIcon(liquidAppName);
+    LiquidAppLauncher::update(liquidAppName);
 }
 
 void LiquidAppIcon::ensureIconFile(QSettings* liquidAppConfig, const QString& liquidAppName)
