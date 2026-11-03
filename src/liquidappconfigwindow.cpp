@@ -168,7 +168,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             menuLauncherCheckBox->setCursor(Qt::PointingHandCursor);
             menuLauncherCheckBox->setToolTip(tr("Makes it show up as an app of its own: it can be found by its name, and pinned to the dock"));
             menuLauncherCheckBox->setChecked((isEditingExistingBool)
-                                             ? LiquidAppLauncher::exists(LiquidAppLauncher::ApplicationsMenu, liquidAppName) : true);
+                                             ? LiquidAppLauncher::isShownInMenu(liquidAppName) : true);
             extraCheckboxesLayout->addWidget(menuLauncherCheckBox);
         }
 
@@ -1320,20 +1320,20 @@ void LiquidAppConfigDialog::save()
 
     // Launchers (after the icon and the title, for them to use those)
     {
-        for (const QPair<LiquidAppLauncher::Kind, QCheckBox*>& launcher : {
-                qMakePair(LiquidAppLauncher::ApplicationsMenu, menuLauncherCheckBox),
-                qMakePair(LiquidAppLauncher::Desktop, createIconCheckBox),
-             }) {
-            if (launcher.second == Q_NULLPTR) {
-                continue;
-            }
+        // Hidden from the applications menu rather than removed from it (see LiquidAppLauncher::isShownInMenu())
+        if (menuLauncherCheckBox != Q_NULLPTR
+            && (!LiquidAppLauncher::exists(LiquidAppLauncher::ApplicationsMenu, appName)
+                || menuLauncherCheckBox->isChecked() != LiquidAppLauncher::isShownInMenu(appName))) {
+            LiquidAppLauncher::setShownInMenu(appName, tempLiquidAppConfig, menuLauncherCheckBox->isChecked());
+        }
 
-            const bool exists = LiquidAppLauncher::exists(launcher.first, appName);
+        if (createIconCheckBox != Q_NULLPTR) {
+            const bool exists = LiquidAppLauncher::exists(LiquidAppLauncher::Desktop, appName);
 
-            if (launcher.second->isChecked() && !exists) {
-                LiquidAppLauncher::create(launcher.first, appName, tempLiquidAppConfig);
-            } else if (!launcher.second->isChecked() && exists) {
-                LiquidAppLauncher::remove(launcher.first, appName);
+            if (createIconCheckBox->isChecked() && !exists) {
+                LiquidAppLauncher::create(LiquidAppLauncher::Desktop, appName, tempLiquidAppConfig);
+            } else if (!createIconCheckBox->isChecked() && exists) {
+                LiquidAppLauncher::remove(LiquidAppLauncher::Desktop, appName);
             }
         }
 

@@ -26,6 +26,13 @@ public:
     static bool isSupported(const Kind kind);
 
     static bool exists(const Kind kind, const QString& liquidAppName);
+
+    // Every Liquid app has a launcher in the applications menu (once it's been run, or edited), whether or not it's shown there:
+    // it's what desktop environments take its name and icon from (for its windows, e.g. in the dock), hidden ones are only used for that
+    static bool isShownInMenu(const QString& liquidAppName);
+    static bool setShownInMenu(const QString& liquidAppName, QSettings* liquidAppConfig, const bool shown);
+    // Makes the launcher in the applications menu (hidden from it) unless there's one already
+    static void ensureMenuLauncher(const QString& liquidAppName, QSettings* liquidAppConfig);
     static bool create(const Kind kind, const QString& liquidAppName, QSettings* liquidAppConfig);
     static void remove(const Kind kind, const QString& liquidAppName);
     // Including those made by dragging the Liquid app out of Liquid (that are known to it)
@@ -42,15 +49,21 @@ public:
 
     // Makes this program be seen by the system as the Liquid app itself, has to be done before any window gets created
     static void identifyProcess(const QString& liquidAppName);
+    // Once the Liquid app's first window has been created
+    static void finishIdentifyingProcess(void);
 
     // What the system knows the Liquid app as (e.g. "liquid-YouTube"), it's also the name of its launcher in the applications menu
     static QString getId(const QString& liquidAppName);
 
 private:
+    static bool isResourceNameSet;
+
     static QString getFilePath(const Kind kind, const QString& liquidAppName);
     static QString getName(const QString& liquidAppName, QSettings* liquidAppConfig);
     static QString getContent(const QString& liquidAppName, QSettings* liquidAppConfig, const bool isRunnableFile);
     static bool writeFile(const QString& path, const QString& content, const bool isRunnableFile);
+    static bool setKey(const QString& path, const QString& key, const QString& value);
+    static QString getKey(const QString& path, const QString& key);
     static bool isOwnedBy(const QString& path, const QString& liquidAppName);
     static QStringList getAdoptedFilePaths(QSettings* liquidAppConfig);
     static QString getIconValue(const QString& liquidAppName);
