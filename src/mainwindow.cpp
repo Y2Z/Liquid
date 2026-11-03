@@ -60,7 +60,7 @@ MainWindow::MainWindow() : QScrollArea()
     appListTable->setFocusPolicy(Qt::NoFocus);
     // appListTable->setSelectionMode(QAbstractItemView::SingleSelection);
     appListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    if (LiquidAppLauncher::isSupported()) {
+    if (LiquidAppLauncher::canBeDraggedOut()) {
         appListTable->viewport()->installEventFilter(this);
     }
     mainWindowLayout->addWidget(appListTable);

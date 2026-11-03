@@ -78,6 +78,15 @@ int main(int argc, char **argv)
 
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
 
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    // Qt 5 can't bring windows to front, nor put them where they were, when running natively on Wayland (and draws window
+    // frames of its own there): run on X11 (through XWayland) whenever it's there, as some systems make Qt 5 prefer Wayland.
+    // It can still be chosen by setting QT_QPA_PLATFORM (e.g. to "wayland"), which also gets passed on to Liquid apps run from here.
+    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM") && qEnvironmentVariableIsSet("DISPLAY")) {
+        qputenv("QT_QPA_PLATFORM", "xcb");
+    }
+#endif
+
     QApplication app(argc, argv);
 
     if (argc < 2) {

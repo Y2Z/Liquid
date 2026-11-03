@@ -437,6 +437,18 @@ bool LiquidAppLauncher::create(const Kind kind, const QString& liquidAppName, QS
 #endif
 }
 
+bool LiquidAppLauncher::canBeDraggedOut(void)
+{
+    if (!isSupported()) {
+        return false;
+    }
+
+    // Running on X11 itself, or natively on Wayland, is fine
+    const bool isWaylandSession = qEnvironmentVariable("XDG_SESSION_TYPE") == "wayland" || qEnvironmentVariableIsSet("WAYLAND_DISPLAY");
+
+    return !(QGuiApplication::platformName() == "xcb" && isWaylandSession);
+}
+
 QString LiquidAppLauncher::createForDragging(const QString& liquidAppName, QSettings* liquidAppConfig)
 {
 #if defined(LQD_DESKTOP_ENTRIES)

@@ -41,6 +41,10 @@ public:
     // Keeps existing launchers in line with the Liquid app (its title, icon, how its windows get grouped, where Liquid itself is)
     static void update(const QString& liquidAppName, QSettings* liquidAppConfig = Q_NULLPTR);
 
+    // Whether Liquid apps can be dragged out of Liquid here: drops get lost on their way from X11 apps running through
+    // XWayland to native Wayland ones (e.g. the file manager, the desktop), so it's not possible in that case
+    static bool canBeDraggedOut(void);
+
     // A launcher to be dragged out of Liquid (it gets copied to wherever it gets dropped), an empty string if it can't be made
     static QString createForDragging(const QString& liquidAppName, QSettings* liquidAppConfig);
 
