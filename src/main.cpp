@@ -229,6 +229,8 @@ attempt_to_create_or_run_liquid_app:
 
                 if (message == LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE) {
                     liquidAppWindow->watchSessionStorage(connection);
+                } else if (message == LQD_INSTANCE_MSG_WATCH_REQUESTS) {
+                    liquidAppWindow->watchRequests(connection);
                 } else if (message.startsWith(removePrefix)) {
                     // { "origin": "...", "keys": [ ... ] }
                     const QJsonObject removal = QJsonDocument::fromJson(QByteArray::fromBase64(message.mid(removePrefix.size()))).object();

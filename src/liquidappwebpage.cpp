@@ -58,6 +58,9 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
             // QWebEnginePage::NavigationTypeLinkClicked is the same type for both JS-induced clicks and actual physical clicks made by the user (go figure...)
             // isMainFrame is the only thing that indicates that it was the user who clicked the link, not some JS code (e.g. to redirect / pop some window up)
             if (isMainFrame && (!isDomainAllowed || isKeyModifierActive)) {
+                if (!isDomainAllowed) {
+                    liquidAppWindow->recordRequest(reqUrl, "BROWSER");
+                }
                 QDesktopServices::openUrl(reqUrl);
                 liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
@@ -71,6 +74,7 @@ bool LiquidAppWebPage::acceptNavigationRequest(const QUrl& reqUrl, const QWebEng
         // Prevent form submissions to other hosts
         case QWebEnginePage::NavigationTypeFormSubmitted:
             if (!isDomainAllowed) {
+                liquidAppWindow->recordRequest(reqUrl, "BLOCKED");
                 liquidAppWindow->setForgiveNextPageLoadError(true);
                 return false;
             }

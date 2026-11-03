@@ -279,10 +279,13 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
         {
             generalTabWidgetLayout->addWidget(separator());
 
+            // Additional domains (left), and those the Liquid app is making requests to (right)
+            QGridLayout* domainsLayout = new QGridLayout();
+
             // Additional domains label
             {
                 QLabel* additionalDomainsListLabel = new QLabel(tr("Additional domains:"), this);
-                generalTabWidgetLayout->addWidget(additionalDomainsListLabel);
+                domainsLayout->addWidget(additionalDomainsListLabel, 0, 0);
             }
 
             // Editable list of additional domains
@@ -330,7 +333,42 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
                 });
             }
 
-            generalTabWidgetLayout->addWidget(additionalDomainsListView);
+            domainsLayout->addWidget(additionalDomainsListView, 1, 0);
+
+            // Domains requested by the Liquid app's pages (only known while it's running)
+            if (isEditingExistingBool) {
+                QLabel* requestedDomainsListLabel = new QLabel(tr("Requested domains:"), this);
+                domainsLayout->addWidget(requestedDomainsListLabel, 0, 1);
+
+                requestedDomainsListView = new QListView(this);
+                requestedDomainsModel = new QStandardItemModel(this);
+                requestedDomainsListView->setModel(requestedDomainsModel);
+                requestedDomainsListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+                requestedDomainsListView->setSelectionMode(QAbstractItemView::SingleSelection);
+                requestedDomainsListView->setDragEnabled(true);
+                requestedDomainsListView->setDragDropMode(QAbstractItemView::DragOnly);
+                requestedDomainsListView->setDefaultDropAction(Qt::CopyAction);
+                requestedDomainsListView->setEnabled(false);
+                requestedDomainsListView->setToolTip(tr("Domains the Liquid app's pages make requests to (while it's running), "
+                                                        "which get blocked: add them to additional domains to allow them"));
+                domainsLayout->addWidget(requestedDomainsListView, 1, 1);
+
+                // Double-clicking one adds it too
+                connect(requestedDomainsListView, &QListView::doubleClicked, this, [this](const QModelIndex& index) {
+                    addAdditionalDomain(index.data().toString());
+                });
+
+                // Dropping it onto additional domains adds it
+                additionalDomainsListView->viewport()->setAcceptDrops(true);
+                additionalDomainsListView->viewport()->installEventFilter(this);
+
+                // What's no longer (or newly) an additional domain gets shown (or hidden) right away
+                connect(additionalDomainsModel, &QStandardItemModel::itemChanged, this, &LiquidAppConfigDialog::fillRequestedDomainsModel);
+                connect(additionalDomainsModel, &QStandardItemModel::rowsRemoved, this, &LiquidAppConfigDialog::fillRequestedDomainsModel);
+                connect(addressInput, &QLineEdit::textChanged, this, &LiquidAppConfigDialog::fillRequestedDomainsModel);
+            }
+
+            generalTabWidgetLayout->addLayout(domainsLayout);
         }
 
         // Custom user-agent text input
@@ -833,6 +871,7 @@ LiquidAppConfigDialog::LiquidAppConfigDialog(QWidget* parent, QString liquidAppN
             // Session storage gets sent over by the Liquid app itself
             if (connectToLiquidApp()) {
                 liquidAppConnection->write(LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE "\n");
+                liquidAppConnection->write(LQD_INSTANCE_MSG_WATCH_REQUESTS "\n");
                 liquidAppConnection->flush();
             }
             sessionStorageTableView->setEnabled(liquidAppConnection != Q_NULLPTR && liquidAppConnection->state() == QLocalSocket::ConnectedState);
@@ -1920,6 +1959,7 @@ bool LiquidAppConfigDialog::connectToLiquidApp(void)
         // Things the Liquid app sends back (newline-terminated, like everything else sent between instances)
         connect(liquidAppConnection, &QLocalSocket::readyRead, this, [this]() {
             static const QByteArray sessionStoragePrefix = QByteArray(LQD_INSTANCE_MSG_SESSION_STORAGE) + " ";
+            static const QByteArray requestsPrefix = QByteArray(LQD_INSTANCE_MSG_REQUESTS) + " ";
 
             while (liquidAppConnection->canReadLine()) {
                 const QByteArray message = liquidAppConnection->readLine().trimmed();
@@ -1927,6 +1967,9 @@ bool LiquidAppConfigDialog::connectToLiquidApp(void)
                 if (message.startsWith(sessionStoragePrefix)) {
                     sessionStorage = QJsonDocument::fromJson(QByteArray::fromBase64(message.mid(sessionStoragePrefix.size()))).object();
                     fillSessionStorageModel();
+                } else if (message.startsWith(requestsPrefix)) {
+                    requestedHosts = QJsonDocument::fromJson(QByteArray::fromBase64(message.mid(requestsPrefix.size()))).array();
+                    fillRequestedDomainsModel();
                 }
             }
         });
@@ -1936,8 +1979,149 @@ bool LiquidAppConfigDialog::connectToLiquidApp(void)
             sessionStorage = QJsonObject();
             fillSessionStorageModel();
             sessionStorageTableView->setEnabled(false);
+            requestedHosts = QJsonArray();
+            fillRequestedDomainsModel();
         });
     }
 
     return liquidAppConnection->state() == QLocalSocket::ConnectedState;
+}
+
+void LiquidAppConfigDialog::fillRequestedDomainsModel(void)
+{
+    if (requestedDomainsModel == Q_NULLPTR) {
+        return;
+    }
+
+    // Already allowed ones aren't shown
+    QSet<QString> allowedDomains;
+    allowedDomains.insert(QUrl::fromUserInput(addressInput->text()).host().toLower());
+    for (int i = 0; i < additionalDomainsModel->rowCount(); i++) {
+        allowedDomains.insert(additionalDomainsModel->item(i)->text().toLower());
+    }
+
+    // Most requested ones first
+    QList<QJsonObject> hosts;
+    for (const QJsonValue& host : requestedHosts) {
+        if (!allowedDomains.contains(host.toObject().value("host").toString())) {
+            hosts << host.toObject();
+        }
+    }
+    std::sort(hosts.begin(), hosts.end(), [](const QJsonObject& a, const QJsonObject& b) {
+        const int countA = a.value("count").toInt();
+        const int countB = b.value("count").toInt();
+
+        return (countA != countB) ? countA > countB : a.value("host").toString() < b.value("host").toString();
+    });
+
+    // Kept as they are (rather than refilled) for selection, scrolling, and dragging to remain intact
+    const QModelIndex selectedIndex = requestedDomainsListView->currentIndex();
+    const QString selectedHost = (selectedIndex.isValid()) ? selectedIndex.data().toString() : QString();
+
+    while (requestedDomainsModel->rowCount() > hosts.size()) {
+        requestedDomainsModel->removeRow(requestedDomainsModel->rowCount() - 1);
+    }
+
+    for (int i = 0; i < hosts.size(); i++) {
+        const QString hostName = hosts[i].value("host").toString();
+
+        // Most frequent requests made to it, e.g. "24 POST https://example.com/api"
+        int countWidth = 1;
+        int methodWidth = 1;
+        const QJsonArray requests = hosts[i].value("requests").toArray();
+        for (const QJsonValue& request : requests) {
+            countWidth = qMax(countWidth, QString::number(request.toObject().value("count").toInt()).size());
+            methodWidth = qMax(methodWidth, request.toObject().value("method").toString().size());
+        }
+        QStringList lines;
+        for (const QJsonValue& request : requests) {
+            const QJsonObject requestObject = request.toObject();
+            QString url = requestObject.value("url").toString();
+            if (url.size() > LQD_REQUESTS_TOOLTIP_URL_LENGTH) {
+                url = url.left(LQD_REQUESTS_TOOLTIP_URL_LENGTH - 1) + QChar(0x2026);
+            }
+            lines << (QString::number(requestObject.value("count").toInt()).rightJustified(countWidth)
+                      + ' ' + requestObject.value("method").toString().leftJustified(methodWidth)
+                      + ' ' + url).toHtmlEscaped();
+        }
+        const QString toolTip = "<pre>" + lines.join('\n') + "</pre>";
+
+        if (i >= requestedDomainsModel->rowCount()) {
+            requestedDomainsModel->appendRow(new QStandardItem());
+        }
+        QStandardItem* item = requestedDomainsModel->item(i);
+        if (item->text() != hostName) {
+            item->setText(hostName);
+        }
+        if (item->toolTip() != toolTip) {
+            item->setToolTip(toolTip);
+        }
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
+    }
+
+    // The same host remains selected, wherever it's moved to
+    if (!selectedHost.isEmpty()) {
+        const QList<QStandardItem*> items = requestedDomainsModel->findItems(selectedHost);
+        if (items.isEmpty()) {
+            requestedDomainsListView->clearSelection();
+        } else if (items.first()->row() != selectedIndex.row()) {
+            requestedDomainsListView->setCurrentIndex(items.first()->index());
+        }
+    }
+
+    // The tooltip that's shown (if any) is kept up to date
+    if (QToolTip::isVisible()) {
+        const QPoint position = requestedDomainsListView->viewport()->mapFromGlobal(QCursor::pos());
+        const QModelIndex index = requestedDomainsListView->indexAt(position);
+        if (index.isValid() && requestedDomainsListView->viewport()->rect().contains(position)) {
+            QToolTip::showText(QCursor::pos(), index.data(Qt::ToolTipRole).toString(), requestedDomainsListView->viewport(),
+                               requestedDomainsListView->visualRect(index));
+        }
+    }
+
+    requestedDomainsListView->setEnabled(liquidAppConnection != Q_NULLPTR && liquidAppConnection->state() == QLocalSocket::ConnectedState);
+}
+
+void LiquidAppConfigDialog::addAdditionalDomain(const QString& domain)
+{
+    const QString normalizedDomain = domain.trimmed().toLower();
+    if (normalizedDomain.isEmpty() || !additionalDomainsModel->findItems(normalizedDomain).isEmpty()) {
+        return;
+    }
+
+    // Before the empty row at the end (which is for typing new ones in)
+    additionalDomainsModel->insertRow(qMax(0, additionalDomainsModel->rowCount() - 1), new QStandardItem(normalizedDomain));
+    fillRequestedDomainsModel();
+}
+
+bool LiquidAppConfigDialog::eventFilter(QObject* watched, QEvent* event)
+{
+    if (requestedDomainsListView != Q_NULLPTR && watched == additionalDomainsListView->viewport()) {
+        if (event->type() == QEvent::DragEnter || event->type() == QEvent::DragMove) {
+            QDropEvent* dropEvent = static_cast<QDropEvent*>(event);
+
+            if (dropEvent->source() == requestedDomainsListView) {
+                dropEvent->setDropAction(Qt::CopyAction);
+                dropEvent->accept();
+            } else {
+                dropEvent->ignore();
+            }
+
+            return true;
+        } else if (event->type() == QEvent::Drop) {
+            QDropEvent* dropEvent = static_cast<QDropEvent*>(event);
+
+            if (dropEvent->source() == requestedDomainsListView) {
+                for (const QModelIndex& index : requestedDomainsListView->selectionModel()->selectedIndexes()) {
+                    addAdditionalDomain(index.data().toString());
+                }
+                dropEvent->setDropAction(Qt::CopyAction);
+                dropEvent->accept();
+            }
+
+            return true;
+        }
+    }
+
+    return QDialog::eventFilter(watched, event);
 }

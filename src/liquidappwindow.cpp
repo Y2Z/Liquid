@@ -33,6 +33,7 @@
 #include "liquidappicon.hpp"
 #include "liquidapplauncher.hpp"
 #include "liquidapplocalstorage.hpp"
+#include "liquidapprequests.hpp"
 #include "liquidappconfigwindow.hpp"
 #include "liquidappcookiejar.hpp"
 #include "liquidappwebpage.hpp"
@@ -175,6 +176,7 @@ LiquidAppWindow::LiquidAppWindow(const QString* name) : QWebEngineView()
     liquidAppWebProfile = new QWebEngineProfile(QString(), this);
     liquidAppWebProfile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
     liquidAppWebProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
+    liquidAppRequests = new LiquidAppRequests(liquidAppWebProfile, this);
     defaultHttpUserAgent = liquidAppWebProfile->httpUserAgent();
 
     if (!liquidAppWebProfile->isOffTheRecord()) {
@@ -905,6 +907,8 @@ void LiquidAppWindow::applyAllowedDomains(void)
     }
 
     liquidAppWebPage->setAllowedDomains(domains);
+    // Nothing gets loaded from anywhere else either
+    liquidAppRequests->setAllowedDomains(domains);
 }
 
 void LiquidAppWindow::applyBackgroundColor(void)
@@ -1048,6 +1052,8 @@ void LiquidAppWindow::reloadLiquidAppConfig(void)
         LQD_CFG_KEY_NAME_ENABLE_JS,
         LQD_CFG_KEY_NAME_USER_AGENT,
         LQD_CFG_KEY_NAME_ADDITIONAL_JS,
+        // What used to get blocked may now be allowed to load (or the other way around)
+        LQD_CFG_KEY_NAME_ADDITIONAL_DOMAINS,
     };
     QVariantList previousValues;
     for (const QString& key : pageAffectingKeys) {
@@ -2182,4 +2188,14 @@ void LiquidAppWindow::sendColorSchemeEmulation(void)
     const QString quotedMessage = QString::fromUtf8(QJsonDocument(QJsonArray() << QString::fromUtf8(QJsonDocument(message).toJson(QJsonDocument::Compact)))
                                                     .toJson(QJsonDocument::Compact)).mid(1).chopped(1);
     colorSchemeDevToolsPage->runJavaScript(QString("window.DevToolsHost && DevToolsHost.sendMessageToEmbedder(%1);").arg(quotedMessage));
+}
+
+void LiquidAppWindow::watchRequests(QLocalSocket* connection)
+{
+    liquidAppRequests->watch(connection);
+}
+
+void LiquidAppWindow::recordRequest(const QUrl& url, const QString& method)
+{
+    liquidAppRequests->record(url, method);
 }

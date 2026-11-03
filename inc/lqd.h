@@ -43,6 +43,8 @@
 #define LQD_INSTANCE_MSG_WATCH_SESSION_STORAGE  "watch-session-storage"  // Liquid apps only; they keep sending session storage back
 #define LQD_INSTANCE_MSG_SESSION_STORAGE        "session-storage"        // Sent back to watchers, followed by a space and base64-encoded JSON
 #define LQD_INSTANCE_MSG_REMOVE_SESSION_STORAGE "remove-session-storage" // Liquid apps only, followed by a space and base64-encoded JSON
+#define LQD_INSTANCE_MSG_WATCH_REQUESTS         "watch-requests"         // Liquid apps only; they keep sending what their pages request back
+#define LQD_INSTANCE_MSG_REQUESTS               "requests"               // Sent back to watchers, followed by a space and base64-encoded JSON
 #define LQD_INSTANCE_MSG_STARTED         "started"         // Main window only, followed by a space and Liquid app's name
 #define LQD_ACTIVATION_TOKEN_TIMEOUT     500               // Milliseconds to wait for the compositor to issue an activation token
 #define LQD_PREVIEW_CONNECT_TIMEOUT      100               // Milliseconds to wait for connecting to a Liquid app for previewing settings
@@ -67,6 +69,11 @@
 #define LQD_FIND_BOX_HEIGHT              42                // Pixels
 #define LQD_FIND_BOX_MARGIN              16                // Pixels, between the search box and the edges of small windows
 #define LQD_TYPE_TO_FIND_DELAY           50                // Milliseconds to wait for the page to handle typed keys first
+#define LQD_REQUESTS_SEND_INTERVAL 500  // Milliseconds between updates sent to settings about requests made by the Liquid app's pages
+#define LQD_REQUESTS_MAX_HOSTS     1000 // Hosts kept track of
+#define LQD_REQUESTS_MAX_PER_HOST  1000 // Distinct requests kept track of per host
+#define LQD_REQUESTS_TOP_COUNT     10   // Most frequent requests shown per host
+#define LQD_REQUESTS_TOOLTIP_URL_LENGTH 160 // Characters of URLs shown (longer ones get cut short)
 #define LQD_COLOR_SCHEME_EMULATION_DELAY 1000              // Milliseconds for the hidden DevTools frontend to settle before switching color schemes
 #define LQD_INSTANCE_STOP_TIMEOUT        5000              // Milliseconds to wait for a Liquid app to quit
 

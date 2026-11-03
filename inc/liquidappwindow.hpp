@@ -21,6 +21,7 @@ class LiquidAppFind;
 class LiquidAppIcon;
 class LiquidAppIconFetcher;
 class LiquidAppLocalStorage;
+class LiquidAppRequests;
 class LiquidAppWebPage;
 class SnapshotFlashOverlay;
 class QPainter;
@@ -52,6 +53,10 @@ public slots:
     // Keeps sending session storage of the page that's currently shown over the connection, until it closes
     void watchSessionStorage(QLocalSocket* connection);
     void removeSessionStorageItems(const QString& origin, const QStringList& keys);
+    // Keeps sending what the Liquid app's pages request (and where to) over the connection, until it closes
+    void watchRequests(QLocalSocket* connection);
+    // Navigation that Liquid didn't let happen (or sent to the web browser), see LiquidAppRequests::record()
+    void recordRequest(const QUrl& url, const QString& method);
     void setScrollBarsHidden(const bool hidden);
     void onIconChanged(QIcon icon);
     void stopLoadingOrExitFullScreenMode(void);
@@ -104,6 +109,9 @@ private:
 
     // Remembers what websites keep in local storage (if allowed to)
     LiquidAppLocalStorage* liquidAppLocalStorage = Q_NULLPTR;
+
+    // Keeps track of where the Liquid app's pages make requests to (for settings to show)
+    LiquidAppRequests* liquidAppRequests = Q_NULLPTR;
 
     // Web pages can only be told which color scheme to use upon start: switching it while running is done by emulating it
     // through a hidden DevTools frontend (in-process, nothing gets exposed), kept only while it differs from the initial one

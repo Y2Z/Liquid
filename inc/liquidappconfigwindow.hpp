@@ -12,6 +12,7 @@
 #include <QTabWidget>
 #include <QtGui>
 #include <QtWidgets>
+#include <QJsonArray>
 #include <QJsonObject>
 
 #include "liquidappicon.hpp"
@@ -35,6 +36,10 @@ public slots:
     void save();
     void reject() override;
 
+protected:
+    // Domains dropped onto additional domains (from the list of requested ones)
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
     void bindShortcuts(void);
     static QFrame* separator(void);
@@ -48,6 +53,8 @@ private:
     void fillCookiesModel(QSettings* liquidAppConfig);
     void fillLocalStorageModel(QSettings* liquidAppConfig);
     void fillSessionStorageModel(void);
+    void fillRequestedDomainsModel(void);
+    void addAdditionalDomain(const QString& domain);
     void refreshStorage(const QString& liquidAppName);
     bool connectToLiquidApp(void);
     void sendPreview(const QByteArray& message);
@@ -79,6 +86,11 @@ private:
     QLineEdit* titleInput;
     QListView* additionalDomainsListView;
     QStandardItemModel* additionalDomainsModel;
+    // Domains the Liquid app's pages are making requests to (as told by the Liquid app, while it's running),
+    // other than the ones it's allowed to use: they can be dragged over to (or double-clicked to be added to) additional domains
+    QListView* requestedDomainsListView = Q_NULLPTR;
+    QStandardItemModel* requestedDomainsModel = Q_NULLPTR;
+    QJsonArray requestedHosts;
     QLineEdit* userAgentInput;
     QPlainTextEdit* notesTextArea;
 
