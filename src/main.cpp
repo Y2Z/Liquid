@@ -12,6 +12,7 @@
 
 #include "lqd.h"
 #include "liquid.hpp"
+#include "liquidappicon.hpp"
 #include "liquidapplauncher.hpp"
 #include "liquidappfile.hpp"
 #include "liquidappconfigwindow.hpp"
@@ -175,9 +176,14 @@ attempt_to_create_or_run_liquid_app:
             // Make the system see this program as the Liquid app (and not as Liquid itself), for its windows to be grouped
             // under its own launcher, with its own icon, and apart from other Liquid apps
             LiquidAppLauncher::identifyProcess(liquidAppName);
+            LiquidAppIcon::ensureIconFile(tempAppSettings, liquidAppName);
+            LiquidAppLauncher::ensureMenuLauncher(liquidAppName, tempAppSettings);
 
             // Found existing liquid app settings file, show it
             liquidAppWindow = new LiquidAppWindow(&liquidAppName);
+            // Make sure its window exists (and has been told what it is) before letting go of what tells it
+            liquidAppWindow->winId();
+            LiquidAppLauncher::finishIdentifyingProcess();
 
             QObject::connect(singleInstance, &SingleInstance::messageReceived, liquidAppWindow, [](const QByteArray& message) {
                 QString activationToken;

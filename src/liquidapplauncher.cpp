@@ -232,6 +232,81 @@ bool LiquidAppLauncher::exists(const Kind kind, const QString& liquidAppName)
     return !path.isEmpty() && QFileInfo(path).isFile();
 }
 
+QString LiquidAppLauncher::getKey(const QString& path, const QString& key)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return QString();
+    }
+
+    bool isInGroup = false;
+    for (const QString& line : QString::fromUtf8(file.readAll()).split('\n')) {
+        const QString trimmedLine = line.trimmed();
+
+        if (trimmedLine.startsWith('[')) {
+            isInGroup = trimmedLine == "[Desktop Entry]";
+        } else if (isInGroup && trimmedLine.section('=', 0, 0).trimmed() == key) {
+            return trimmedLine.section('=', 1).trimmed();
+        }
+    }
+
+    return QString();
+}
+
+bool LiquidAppLauncher::setKey(const QString& path, const QString& key, const QString& value)
+{
+#if defined(LQD_DESKTOP_ENTRIES)
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+    QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
+    file.close();
+
+    QList<QPair<QString, QString>> keys;
+    keys << qMakePair(key, value);
+
+    // Writing in place keeps the file's permissions
+    if (setDesktopEntryKeys(lines, keys)) {
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            return false;
+        }
+        file.write(lines.join('\n').toUtf8());
+        file.close();
+    }
+
+    return true;
+#else
+    Q_UNUSED(path);
+    Q_UNUSED(key);
+    Q_UNUSED(value);
+
+    return false;
+#endif
+}
+
+bool LiquidAppLauncher::isShownInMenu(const QString& liquidAppName)
+{
+    return exists(ApplicationsMenu, liquidAppName)
+           && getKey(getFilePath(ApplicationsMenu, liquidAppName), "NoDisplay").toLower() != "true";
+}
+
+bool LiquidAppLauncher::setShownInMenu(const QString& liquidAppName, QSettings* liquidAppConfig, const bool shown)
+{
+    if (!exists(ApplicationsMenu, liquidAppName) && !create(ApplicationsMenu, liquidAppName, liquidAppConfig)) {
+        return false;
+    }
+
+    return setKey(getFilePath(ApplicationsMenu, liquidAppName), "NoDisplay", (shown) ? "false" : "true");
+}
+
+void LiquidAppLauncher::ensureMenuLauncher(const QString& liquidAppName, QSettings* liquidAppConfig)
+{
+    if (isSupported(ApplicationsMenu) && !exists(ApplicationsMenu, liquidAppName)) {
+        setShownInMenu(liquidAppName, liquidAppConfig, false);
+    }
+}
+
 QString LiquidAppLauncher::getIconValue(const QString& liquidAppName)
 {
     const QString iconFilePath = LiquidAppIcon::getIconFilePath(liquidAppName);
@@ -550,16 +625,35 @@ void LiquidAppLauncher::update(const QString& liquidAppName, QSettings* liquidAp
 #endif
 }
 
+bool LiquidAppLauncher::isResourceNameSet = false;
+
 void LiquidAppLauncher::identifyProcess(const QString& liquidAppName)
 {
 #if defined(LQD_DESKTOP_ENTRIES)
     const QString id = getId(liquidAppName);
 
-    // Window class on X11 (matched against StartupWMClass), it gets set once the first window is created
+    // Window class on X11 (WM_CLASS, both of its parts get set once the first window is created). Desktop environments
+    // match it against StartupWMClass of launchers in the applications menu, and if there's none, against names of
+    // launchers there: its first part (the instance name) would otherwise be the name of this program ("liquid"),
+    // which would make Liquid apps that aren't in the applications menu get taken for Liquid itself.
     QCoreApplication::setApplicationName(id);
+    if (!qEnvironmentVariableIsSet("RESOURCE_NAME")) {
+        qputenv("RESOURCE_NAME", id.toLocal8Bit());
+        isResourceNameSet = true;
+    }
     // App ID on Wayland (matched against the name of the launcher in the applications menu)
     QGuiApplication::setDesktopFileName(id);
 #else
     Q_UNUSED(liquidAppName);
 #endif
+}
+
+void LiquidAppLauncher::finishIdentifyingProcess(void)
+{
+    // Done with (the first window has been created), it mustn't be passed on to programs run by the Liquid app
+    // (e.g. a web browser opening links), they'd take it for their own
+    if (isResourceNameSet) {
+        qunsetenv("RESOURCE_NAME");
+        isResourceNameSet = false;
+    }
 }
